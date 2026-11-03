@@ -8,7 +8,6 @@ docs
 logs
 venv
 node_modules
-tools
 uploads
 requirements-dev.txt
 context_files.txt

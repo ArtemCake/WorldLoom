@@ -1,0 +1,102 @@
+<!-- frontend/templates/games/partials/game_map.html -->
+
+{% if can_view_master_map | default(false) %}
+{% if selected_session %}
+<section data-game-map data-game-id="{{ game_id }}" data-session-id="{{ session_id }}"
+         aria-busy="false" aria-labelledby="game-map-heading"
+         data-can-move-tokens="{{ 'true' if can_manage_tokens | default(false) else 'false' }}">
+	<h2 id="game-map-heading">Карта — мастерский просмотр</h2>
+	
+	<p>
+		<label for="game-map-select">Карта выбранной сессии</label>
+		<select id="game-map-select" data-game-map-select disabled>
+			<option value="">Выберите карту</option>
+		</select>
+		
+		<button type="button" data-game-map-refresh disabled>
+			Обновить карты
+		</button>
+	</p>
+	
+	<p data-game-map-message role="status" aria-live="polite"></p>
+	<p data-game-map-tokens-message role="status" aria-live="polite"></p>
+	<p>
+		<label>
+			<input type="checkbox" data-game-map-fog-toggle checked disabled>
+			Показывать сохранённую видимость гексов
+		</label>
+	</p>
+	
+	<p data-game-map-fog-message role="status" aria-live="polite"></p>
+	
+	<div style="position: relative; width: 100%; height: 480px; overflow: hidden;">
+		<canvas id="game-canvas-root" data-game-map-canvas role="img"
+		        aria-label="Карта не отображается" style="display: block;"></canvas>
+		<fieldset data-map-placement disabled>
+			<legend>Размещение токена</legend>
+			
+			<p>
+				<label>
+					Токен
+					<select data-placement-token>
+						<option value="">Выберите токен</option>
+					</select>
+				</label>
+			</p>
+			
+			<p>
+				<label>
+					X — столбец
+					<input type="number" data-placement-x min="0" step="1">
+				</label>
+				
+				<label>
+					Y — строка
+					<input type="number" data-placement-y min="0" step="1">
+				</label>
+			</p>
+			
+			<p>
+				<label>
+					<input type="checkbox" data-placement-pick>
+					Выбирать гекс назначения щелчком по карте
+				</label>
+			</p>
+			
+			<button type="button" data-placement-save disabled>
+				Сохранить размещение
+			</button>
+		</fieldset>
+		
+		<p data-placement-message role="status" aria-live="polite"></p>
+		
+	</div>
+	
+	<p>
+		Выбор карты здесь не активирует её и не изменяет привязку к сессии.
+		Токены показаны маркерами с названиями, без портретов и перетаскивания.
+		Для выбора токена нажмите на его клетку или используйте список.
+		Координаты X/Y отсчитываются с нуля.
+		Размещение записывается только кнопкой «Сохранить размещение».
+		После изменений в отдельной панели токенов нажмите «Обновить карты».
+		Слабое затемнение обозначает исследованные гексы вне видимости,
+		сильное — неисследованные гексы вне видимости.
+		Слой показывает сохранённые признаки, без нового расчёта обзора.
+		Мастер продолжает видеть фон и все загруженные токены.
+		Объекты карты пока не отображаются.
+	
+	</p>
+	
+	<noscript>
+		<p>Для отображения карты необходим JavaScript.</p>
+	</noscript>
+</section>
+{% else %}
+<p>Выберите игровую сессию, чтобы открыть мастерский просмотр карты.</p>
+{% endif %}
+{% else %}
+<p>
+	Игровое поле для участников ещё не подключено.
+	Приватный мастерский фон в этом режиме не загружается.
+</p>
+{% endif %}

@@ -20,18 +20,11 @@
 <section class="lobby-page">
 	<header class="lobby-page__header">
 		<h1>{{ game.title }}</h1>
-		
-		<a
-				href="{{ request.url_for('games_page_get') }}"
-				class="btn btn-outline-primary"
-		>
-			К списку игр
-		</a>
+		<a href="{{ request.url_for('games_page_get') }}" class="btn btn-outline-primary">К списку игр</a>
 	</header>
 	
 	<section aria-labelledby="game-info-title">
 		<h2 id="game-info-title">Об игре</h2>
-		
 		<p>{{ game.description or "Описание пока не добавлено." }}</p>
 		
 		<dl>
@@ -39,129 +32,63 @@
 			<dd>{{ status_labels.get(game.status, game.status) }}</dd>
 			
 			<dt>Приватность</dt>
-			<dd>
-				{{ privacy_labels.get(
-				game.privacy_level,
-				game.privacy_level
-				) }}
-			</dd>
+			<dd>{{ privacy_labels.get(game.privacy_level, game.privacy_level) }}</dd>
 			
 			<dt>Самодельный контент</dt>
-			<dd>
-				{{ "Разрешён" if game.is_homebrew_allowed else "Не разрешён" }}
-			</dd>
+			<dd>{{ "Разрешён" if game.is_homebrew_allowed else "Не разрешён" }}</dd>
 		</dl>
 		
-		<a
-				href="{{ request.url_for(
-					'game_play_page_get',
-					game_id=game.id
-				) }}"
-				class="btn btn-primary"
-		>
-			К игровым сессиям
-		</a>
+		<a href="{{ request.url_for('game_play_page_get', game_id=game.id) }}" class="btn btn-primary">К игровым сессиям</a>
 	</section>
 	
 	{% if is_game_master %}
 	<section aria-labelledby="game-settings-title">
 		<h2 id="game-settings-title">Настройки игры</h2>
 		
-		<form
-				id="game-settings-form"
-				action="{{ request.url_for('update_game', game_id=game.id) }}"
-				data-game-settings
-		>
+		<form id="game-settings-form" action="{{ request.url_for('update_game', game_id=game.id) }}" data-game-settings data-game-id="{{ game.id }}">
 			<label for="game-settings-title-input">Название</label>
-			<input
-					id="game-settings-title-input"
-					type="text"
-					name="title"
-					value="{{ game.title }}"
-					required
-					maxlength="255"
-			>
+			<input id="game-settings-title-input" type="text" name="title" value="{{ game.title }}" required maxlength="255">
 			
 			<label for="game-settings-description">Описание</label>
-			<textarea
-					id="game-settings-description"
-					name="description"
-			>{{ game.description or "" }}</textarea>
+			<textarea id="game-settings-description" name="description">{{ game.description or "" }}</textarea>
 			
 			<label for="game-settings-status">Статус</label>
 			<select id="game-settings-status" name="status" required>
 				{% for value, label in status_labels.items() %}
-				<option
-						value="{{ value }}"
-						{% if game.status == value %}selected{% endif %}
-				>
-					{{ label }}
-				</option>
+				<option value="{{ value }}" {% if game.status == value %}selected{% endif %}>{{ label }}</option>
 				{% endfor %}
 			</select>
 			
 			<label for="game-settings-privacy">Приватность</label>
-			<select
-					id="game-settings-privacy"
-					name="privacy_level"
-					required
-			>
+			<select id="game-settings-privacy" name="privacy_level" required>
 				{% for value, label in privacy_labels.items() %}
-				<option
-						value="{{ value }}"
-						{% if game.privacy_level == value %}selected{% endif %}
-				>
-					{{ label }}
-				</option>
+				<option value="{{ value }}" {% if game.privacy_level == value %}selected{% endif %}>{{ label }}</option>
 				{% endfor %}
 			</select>
 			
 			<label class="lobby-checkbox">
-				<input
-						type="checkbox"
-						name="is_homebrew_allowed"
-						{% if game.is_homebrew_allowed %}checked{% endif %}
-				>
+				<input type="checkbox" name="is_homebrew_allowed" {% if game.is_homebrew_allowed %}checked{% endif %}>
 				Разрешить самодельный контент (homebrew)
 			</label>
 			
 			<p data-game-settings-message role="status" aria-live="polite"></p>
-			
-			<button type="submit" class="btn btn-primary">
-				Сохранить настройки
-			</button>
+			<button type="submit" class="btn btn-primary">Сохранить настройки</button>
 		</form>
 	</section>
+	
 	<section aria-labelledby="game-delete-title">
 		<h2 id="game-delete-title">Удаление игры</h2>
 		
 		<p>
-			Игра, её сессии, история, листы персонажей внутри игры
-			и все карты будут удалены без возможности восстановления.
+			Игра, её сессии, история, листы персонажей внутри игры и все карты будут удалены без возможности восстановления.
 			Базовые персонажи пользователей сохранятся.
 		</p>
 		
-		<div
-				data-game-delete
-				data-delete-url="{{ request.url_for(
-					'delete_game_permanently',
-					game_id=game.id
-				) }}"
-				data-return-url="{{ request.url_for('games_page_get') }}"
-		>
-			<button
-					type="button"
-					class="btn btn-danger"
-					data-game-delete-button
-			>
-				Удалить игру навсегда
-			</button>
-			
-			<p
-					data-game-delete-message
-					role="status"
-					aria-live="polite"
-			></p>
+		<div data-game-delete data-game-id="{{ game.id }}"
+		     data-delete-url="{{ request.url_for('delete_game_permanently', game_id=game.id) }}"
+		     data-return-url="{{ request.url_for('games_page_get') }}" aria-busy="false">
+			<button type="button" class="btn btn-danger" data-game-delete-button>Удалить игру навсегда</button>
+			<p data-game-delete-message role="status" aria-live="polite"></p>
 		</div>
 	</section>
 	{% else %}

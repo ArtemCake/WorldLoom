@@ -1,0 +1,81 @@
+<!-- frontend/templates/games/partials/token_create.html -->
+
+{% if can_manage_tokens %}
+<details>
+	<summary>Добавить токен в выбранную сессию</summary>
+	
+	<form data-token-create-form hx-boost="false">
+		<fieldset>
+			<legend>Новый токен</legend>
+			
+			<p>
+				<label for="token-create-name">Название — необязательно</label>
+				<input id="token-create-name" name="display_name" type="text" maxlength="100">
+			</p>
+			
+			<p>
+				<label for="token-create-image">Адрес изображения</label>
+				<input id="token-create-image" name="image_url" type="text" maxlength="1000"
+				       aria-describedby="token-create-image-help" required>
+			</p>
+			
+			<p id="token-create-image-help">
+				Укажите путь от корня этого сайта или полный адрес изображения.
+				Для другого сайта требуется HTTPS.
+				Файл через эту форму не загружается, предпросмотр не выполняется.
+			</p>
+			
+			<p>
+				<label for="token-create-x">Координата X</label>
+				<input id="token-create-x" name="grid_x" type="number" value="0"
+				       min="-2147483648" max="2147483647" step="1" required>
+			</p>
+			
+			<p>
+				<label for="token-create-y">Координата Y</label>
+				<input id="token-create-y" name="grid_y" type="number" value="0"
+				       min="-2147483648" max="2147483647" step="1" required>
+			</p>
+			
+			<p>
+				<label for="token-create-hp-current">Текущее здоровье</label>
+				<input id="token-create-hp-current" name="hp_current" type="number" value="0"
+				       min="-2147483648" max="2147483647" step="1" required>
+			</p>
+			
+			<p>
+				<label for="token-create-hp-max">Максимальное здоровье</label>
+				<input id="token-create-hp-max" name="hp_max" type="number" value="0"
+				       min="-2147483648" max="2147483647" step="1" required>
+			</p>
+			
+			<p>
+				<label for="token-create-vision">Дальность обзора, гексы</label>
+				<input id="token-create-vision" name="vision_radius_cells" type="number" value="6"
+				       min="0" max="2147483647" step="1" required>
+			</p>
+			
+			<p>
+				<label for="token-create-visible">
+					<input id="token-create-visible" name="is_visible_to_players" type="checkbox">
+					Показывать токен в списке игрокам
+				</label>
+			</p>
+			
+			<p>
+				Токен создаётся в выбранной сессии без назначения карты и гекса,
+				без связи с листом персонажа или НПС.
+				Координаты сохраняются как числовые значения и пока не размещают спрайт на поле.
+			</p>
+			
+			<p>
+				Доступность токена игрокам не означает видимость через туман войны.
+				Значения здоровья и обзора перед созданием можно изменить.
+			</p>
+			
+			<button type="submit" class="btn btn-primary">Создать токен</button>
+			<button type="reset" class="btn btn-outline-primary">Сбросить поля</button>
+		</fieldset>
+	</form>
+</details>
+{% endif %}

@@ -5,101 +5,77 @@
 {% block title %}Редактирование карты — WorldLoom{% endblock %}
 
 {% block content %}
+{% set catalog_url = request.url_for('maps_page_get') ~ '?game_id=' ~ campaign_map.game_id %}
+
 <section class="lobby-page">
 	<header class="lobby-page__header">
 		<h1>Редактирование карты</h1>
-		
-		<a href="/maps/{{ campaign_map.id }}/view">
-			Вернуться к просмотру
-		</a>
+		<a href="{{ catalog_url }}" class="btn btn-outline-primary">К списку карт</a>
 	</header>
 	
-	<form
-			id="map-edit-form"
-			action="/maps/{{ campaign_map.id }}/upload"
-			method="post"
-			enctype="multipart/form-data"
-			data-return-url="/maps/{{ campaign_map.id }}/view"
-			data-background-url="{{ campaign_map.background_image_url or '' }}"
-	>
-		<p>
-			<label for="map-edit-title">Название карты</label>
-			<input
-					id="map-edit-title"
-					name="title"
-					type="text"
-					value="{{ campaign_map.title }}"
-					maxlength="255"
-					required
-			>
-		</p>
+	<form id="map-edit-form" action="{{ request.url_for('update_map_with_image', map_id=campaign_map.id) }}"
+	      method="post" enctype="multipart/form-data" data-map-edit-form
+	      data-map-id="{{ campaign_map.id }}" data-game-id="{{ campaign_map.game_id }}"
+	      data-return-url="{{ catalog_url }}"
+	      data-background-url="{{ request.url_for('get_map_background', map_id=campaign_map.id) if campaign_map.background_image_url else '' }}"
+	      aria-busy="false" hx-boost="false">
+		<p data-map-edit-message role="status" aria-live="polite"></p>
 		
-		<p>
-			<label for="map-edit-fog">
-				<input
-						id="map-edit-fog"
-						name="fog_of_war_enabled"
-						type="checkbox"
-						{% if campaign_map.fog_of_war_enabled %}checked{% endif %}
-				>
-				Включить туман войны
-			</label>
-		</p>
-		
-		{% if campaign_map.map_type == "image_upload" %}
-		<p>
-			<label for="map-edit-background">
-				Новое изображение карты
-			</label>
-			<input
-					id="map-edit-background"
-					name="background_image"
-					type="file"
-					accept="image/png,image/jpeg,image/webp"
-					data-max-bytes="{{ map_image_max_bytes }}"
-					aria-describedby="map-edit-background-help"
-			>
-		</p>
-		
-		<p id="map-edit-background-help">
-			PNG, JPEG или WebP без анимации.
-			Если новый файл не выбран, текущий фон сохранится.
-		</p>
-		{% endif %}
-		
-		<section aria-labelledby="map-edit-preview-heading">
-			<h2 id="map-edit-preview-heading">Предпросмотр фона</h2>
+		<fieldset data-map-edit-fields>
+			<legend>Параметры карты</legend>
 			
-			<p
-					id="map-edit-preview-message"
-					role="status"
-					aria-live="polite"
-			></p>
+			<p>
+				<label for="map-edit-title">Название карты</label>
+				<input id="map-edit-title" name="title" type="text" value="{{ campaign_map.title }}"
+				       maxlength="255" required>
+			</p>
 			
-			<img
-					id="map-edit-preview"
-					alt="Предпросмотр фонового изображения карты"
-					style="max-width: 100%; height: auto;"
-					hidden
-			>
-		</section>
-		
-		<div
-				id="map-edit-message"
-				role="status"
-				aria-live="polite"
-		></div>
-		
-		<p>
-			<button type="submit" class="btn btn-primary">
-				Сохранить изменения
-			</button>
+			<p>
+				<label for="map-edit-fog">
+					<input id="map-edit-fog" name="fog_of_war_enabled" type="checkbox"
+					       {% if campaign_map.fog_of_war_enabled %}checked{% endif %}>
+					Включить туман войны
+				</label>
+			</p>
 			
-			<a href="/maps/{{ campaign_map.id }}/view">
-				Отмена
-			</a>
-		</p>
+			{% if campaign_map.map_type == "image_upload" %}
+			<p>
+				<label for="map-edit-background">Новое изображение карты — необязательно</label>
+				<input id="map-edit-background" name="background_image" type="file"
+				       accept="image/png,image/jpeg,image/webp" data-max-bytes="{{ map_image_max_bytes }}"
+				       aria-describedby="map-edit-background-help">
+			</p>
+			
+			<p id="map-edit-background-help">
+				PNG, JPEG или WebP без анимации.
+				Если новый файл не выбран, текущий фон сохранится.
+				Выбранное изображение отправляется только при сохранении формы.
+			</p>
+			{% endif %}
+			
+			<section aria-labelledby="map-edit-preview-heading">
+				<h2 id="map-edit-preview-heading">Предпросмотр фона</h2>
+				
+				<p data-map-edit-preview-message role="status" aria-live="polite"></p>
+				
+				<img data-map-edit-preview alt="Предпросмотр фонового изображения карты"
+				     style="max-width: 100%; height: auto;" hidden>
+			</section>
+			
+			<p>
+				Изменение фона не перестраивает сетку и не перемещает объекты.
+				При другом размере или масштабе изображения проверьте их совмещение с новым фоном.
+			</p>
+			
+			<button type="submit" class="btn btn-primary">Сохранить изменения</button>
+		</fieldset>
 	</form>
+	
+	<p>
+		<a href="{{ request.url_for('map_edit_page_get', map_id=campaign_map.id) }}"
+		   class="btn btn-outline-primary" hx-boost="false">Открыть сохранённые данные заново</a>
+		<a href="{{ catalog_url }}" class="btn btn-outline-primary">Вернуться без сохранения</a>
+	</p>
 	
 	<noscript>
 		<p>Для сохранения изменений необходим JavaScript.</p>

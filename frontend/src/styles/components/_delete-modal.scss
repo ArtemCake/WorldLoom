@@ -1,0 +1,53 @@
+/* frontend/src/styles/components/_delete-modal.scss */
+
+.modal-overlay {
+   position: fixed;
+   inset: 0;
+   background: rgba(0, 0, 0, 0.65);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   z-index: 2000;
+   overflow-y: auto;
+   padding: 1rem;
+
+   &.hidden {
+     display: none;
+   }
+}
+
+.modal-box {
+   background: var(--color-bg-panel);
+   color: var(--color-text-primary);
+   border-radius: var(--radius-md);
+   padding: 1.5rem;
+   max-width: 420px;
+   width: 100%;
+   max-height: 90vh;
+   overflow-y: auto;
+   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+   margin: auto;
+   border: 1px solid var(--border-subtle);
+
+  h3 {
+    text-transform: none; // отменяем капс, унаследованный от общего правила заголовков
+  }
+ }
+
+.modal-actions {
+   display: flex;
+   gap: 0.5rem;
+   justify-content: flex-end;
+   margin-top: 1rem;
+   flex-wrap: wrap;
+ }
+
+.delete-option {
+  border-left: 3px solid var(--accent-magic);
+  padding-left: 0.75rem;
+  margin: 0.75rem 0;
+
+  &--danger {
+    border-left-color: var(--color-text-error);
+  }
+}

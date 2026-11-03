@@ -1,0 +1,26 @@
+<!-- frontend/templates/games/partials/token_map_select.html -->
+
+<p>
+	<label for="token-edit-map">Карта токена</label>
+	
+	<select id="token-edit-map" name="current_map_id" aria-describedby="token-edit-map-help">
+		<option value="">Карта не назначена</option>
+		
+		{% for token_map in token_maps | default([]) %}
+		<option value="{{ token_map.id }}">{{ token_map.title }}</option>
+		{% endfor %}
+	</select>
+</p>
+
+<p id="token-edit-map-help">
+	Смена карты или снятие назначения сбрасывает привязку к гексу.
+	Сохранённые координаты X/Y при этом не меняются.
+	Назначение карты не активирует её.
+	Чтобы увидеть назначенный токен на открытой карте, нажмите «Обновить карты».
+	Токен отображается, если его координаты находятся внутри сетки.
+</p>
+
+<p>
+	Список карт получен при открытии страницы.
+	Если состав карт изменился, перезагрузите страницу перед выбором.
+</p>

@@ -1,0 +1,96 @@
+<!-- frontend/templates/shared/menu.html -->
+
+{% set menu_user = user | default(none) %}
+{% set menu_roles = (menu_user.roles or []) if menu_user else [] %}
+{% set menu_is_master = 'master' in menu_roles %}
+{% set menu_is_admin = 'admin' in menu_roles %}
+{% set menu_groups = [
+('Бестиарий', [('/bestiary', 'Монстры'), ('/npcs', 'НПС')]),
+('Заклинания', [('/spells', 'Все заклинания'), ('/magic-schools', 'Школы магии')]),
+('Персонаж', [
+('/races', 'Расы'), ('/classes', 'Классы'), ('/subclasses', 'Подклассы'),
+('/backgrounds', 'Предыстории'), ('/traits', 'Черты'), ('/origins', 'Происхождения'), ('/abilities', 'Способности')
+])
+] %}
+
+<header class="main-header">
+	<div class="main-header__inner">
+		<a href="/" class="main-header__logo">{{ project_name }}</a>
+		
+		<nav class="main-nav" aria-label="Основная навигация">
+			{% if menu_user %}
+			<a href="/games" class="nav-link">Игры</a>
+			<a href="/friends" class="nav-link">Друзья</a>
+			<a href="/maps" class="nav-link">Карты</a>
+			{% endif %}
+			
+			{% for title, links in menu_groups %}
+			<div class="nav-dropdown">
+				<button class="nav-dropdown-toggle" type="button">{{ title }}</button>
+				<div class="nav-dropdown-menu">
+					{% for href, label in links %}
+					<a href="{{ href }}">{{ label }}</a>
+					{% endfor %}
+				</div>
+			</div>
+			{% endfor %}
+			
+			<a href="/equipment" class="nav-link">Снаряжение</a>
+			
+			<div class="nav-dropdown">
+				<button class="nav-dropdown-toggle" type="button">Информация</button>
+				<div class="nav-dropdown-menu">
+					<a href="/languages">Языки</a>
+					<a href="/effects">Эффекты</a>
+					<a href="/lore">Лор</a>
+				</div>
+			</div>
+			
+			{% if menu_is_master or menu_is_admin %}
+			<a href="/dm-tools" class="nav-link">Инструменты DM</a>
+			{% endif %}
+			
+			{% if menu_user %}
+			<a href="/game-systems/catalog" class="nav-link">Игровые системы</a>
+			{% endif %}
+			
+			{% if menu_is_master or menu_is_admin %}
+			<div class="nav-dropdown">
+				<button class="nav-dropdown-toggle" type="button">Управление контентом</button>
+				<div class="nav-dropdown-menu">
+					<a href="/content-management">Контент</a>
+				</div>
+			</div>
+			{% endif %}
+			
+			{% if menu_is_admin %}
+			<a href="/admin" class="nav-link">Админ-панель</a>
+			{% endif %}
+		</nav>
+		
+		<div class="main-header__controls">
+			<select id="theme-select" class="theme-select" aria-label="Тема оформления">
+				<option value="dark-fantasy">Тёмное фэнтези</option>
+				<option value="light-fantasy">Светлое фэнтези</option>
+				<option value="fantasy">Фэнтези</option>
+				<option value="custom">Кастомная</option>
+			</select>
+			<input type="color" id="accent-picker" class="accent-picker" value="#8a5cf6" aria-label="Цвет оформления">
+		</div>
+		
+		<div class="nav-user">
+			{% if menu_user %}
+			<span class="nav-nickname">{{ menu_user.nickname }}</span>
+			<a href="/profile" class="avatar-sm" aria-label="Открыть профиль">
+				<img alt="Аватар" src="{{ menu_user.avatar_url or static_url('images/default-avatar.jpg') }}">
+			</a>
+			<form action="/auth/logout" method="post" hx-post="/auth/logout" hx-swap="none">
+				<button type="submit" class="btn btn-danger btn-sm">Выйти</button>
+			</form>
+			{% else %}
+			<a href="/login" class="btn btn-outline-primary btn-sm me-2">Войти</a>
+			<a href="/register" class="btn btn-outline-primary btn-sm me-2">Регистрация</a>
+			{% endif %}
+		</div>
+	</div>
+</header>

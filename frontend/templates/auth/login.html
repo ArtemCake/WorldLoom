@@ -1,0 +1,30 @@
+<!-- frontend/templates/auth/login.html -->
+
+{% extends "base.html" %}
+{% block title %}Вход — {{ project_name }}{% endblock %}
+{% block content %}
+<div class="auth-container" hx-history="false">
+	<h2>Вход в аккаунт</h2>
+	<div id="message-box" aria-live="polite"></div>
+	
+	<form id="login-form" action="/auth/login" method="post" hx-post="/auth/login" hx-swap="none" hx-disabled-elt="find button">
+		<label for="login-email">Email</label>
+		<input id="login-email" type="email" name="email" required autocomplete="username">
+		<label for="login-password">Пароль</label>
+		<input id="login-password" type="password" name="password" required autocomplete="current-password">
+		<button type="submit">Войти</button>
+	</form>
+	
+	<form id="mfa-code-form" action="/auth/login/verify-mfa" method="post" hx-post="/auth/login/verify-mfa"
+	      hx-swap="none" hx-disabled-elt="find button" class="hidden" hidden>
+		<input type="hidden" name="mfa_token" id="mfa-token-field" value="">
+		<label for="mfa-code">Код из приложения-аутентификатора или резервный код</label>
+		<input id="mfa-code" type="text" name="code" required autocomplete="one-time-code" autocapitalize="none" spellcheck="false">
+		<button type="submit">Подтвердить</button>
+	</form>
+	
+	<p id="register-prompt" class="hidden" hidden>Аккаунт не найден. <a href="/register">Зарегистрироваться</a></p>
+	<p><a href="/forgot-password">Забыли пароль?</a></p>
+	<p><a href="/register">Нет аккаунта? Регистрация</a></p>
+</div>
+{% endblock %}

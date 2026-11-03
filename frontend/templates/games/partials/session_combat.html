@@ -1,0 +1,81 @@
+<!-- frontend/templates/games/partials/session_combat.html -->
+
+{% if selected_session %}
+<section data-session-combat data-session-id="{{ selected_session.id }}"
+         data-can-manage="{{ 'true' if can_manage_combat else 'false' }}"
+         aria-labelledby="session-combat-title" aria-busy="false">
+	<header class="lobby-page__header">
+		<h3 id="session-combat-title">Очередь боя</h3>
+		
+		<button type="button" class="btn btn-outline-primary" data-combat-refresh>
+			Обновить очередь
+		</button>
+	</header>
+	
+	<p data-combat-status>Состояние боя ещё не загружено.</p>
+	<p data-combat-message role="status" aria-live="polite"></p>
+	<p data-combat-round hidden></p>
+	
+	<ol data-combat-order aria-label="Участники боя"></ol>
+	
+	{% if can_manage_combat %}
+	<details>
+		<summary>Подготовить новую очередь</summary>
+		
+		<form data-combat-start-form hx-boost="false">
+			<fieldset disabled>
+				<legend>Участники в порядке ходов</legend>
+				
+				<p>
+					<label for="combat-start-participants">Один участник на строку</label>
+					
+					<textarea id="combat-start-participants" name="combatants" rows="8"
+					          aria-describedby="combat-start-help" required></textarea>
+				</p>
+				
+				<p id="combat-start-help">
+					Формат строки: имя; инициатива.
+					Инициативу можно не указывать, оставив только имя.
+					Для дробных чисел используйте точку.
+					Порядок строк определяет порядок ходов — автоматической сортировки нет.
+				</p>
+				
+				<p>
+					Начало доступно только в активной сессии,
+					если в ней ещё нет сохранённой очереди.
+				</p>
+				
+				<button type="submit" class="btn btn-primary">Начать бой</button>
+			</fieldset>
+		</form>
+	</details>
+	
+	<p>
+		<button type="button" class="btn btn-primary" data-combat-next disabled>
+			Следующий ход
+		</button>
+		
+		<button type="button" class="btn btn-danger" data-combat-end disabled>
+			Завершить бой и удалить очередь
+		</button>
+	</p>
+	
+	<p>
+		После последнего участника начинается следующий раунд.
+		Завершение боя удаляет очередь без сохранения её истории.
+		Удалить сохранённую очередь можно и после завершения игровой сессии.
+	</p>
+	{% else %}
+	<p>Управление очередью доступно мастеру игры.</p>
+	{% endif %}
+	
+	<p>
+		Очередь обновляется при открытии панели и по кнопке.
+		Изменения из других вкладок автоматически не подгружаются.
+	</p>
+	
+	<noscript>
+		<p>Для загрузки и управления очередью боя необходим JavaScript.</p>
+	</noscript>
+</section>
+{% endif %}

@@ -8,66 +8,39 @@
 <section class="lobby-page">
 	<header class="lobby-page__header">
 		<h1>Карты</h1>
+		<a href="{{ request.url_for('games_page_get') }}" class="btn btn-outline-primary">К списку игр</a>
 	</header>
 	
-	<div
-			id="maps-delete-message"
-			role="status"
-			aria-live="polite"
-	></div>
-	
-	<form action="/maps" method="get">
+	<form action="{{ request.url_for('maps_page_get') }}" method="get" hx-boost="false">
 		<label for="maps-game-select">Игра</label>
 		
 		<select id="maps-game-select" name="game_id" required>
-			<option
-					value=""
-					disabled
-					{% if not selected_game %}selected{% endif %}
-			>
-				Выберите игру
-			</option>
+			<option value="" disabled {% if not selected_game %}selected{% endif %}>Выберите игру</option>
 			
 			{% for game in games %}
-			<option
-					value="{{ game.id }}"
-					{% if selected_game and selected_game.id == game.id %}
-					selected
-					{% endif %}
-			>
+			<option value="{{ game.id }}" {% if selected_game and selected_game.id == game.id %}selected{% endif %}>
 				{{ game.title }}
 			</option>
 			{% endfor %}
 		</select>
 		
-		<button
-				type="submit"
-				class="btn btn-primary"
-				{% if not games %}disabled{% endif %}
-		>
-			Показать карты
-		</button>
+		<button type="submit" class="btn btn-primary" {% if not games %}disabled{% endif %}>Показать карты</button>
 	</form>
 	
 	{% if not games %}
 	<p class="lobby-empty">
 		В списке пока нет доступных игр.
-		<a href="/games">Перейти к играм</a>
+		<a href="{{ request.url_for('games_page_get') }}">Перейти к играм</a>
 	</p>
 	{% endif %}
 	
 	{% if selected_game %}
 	<section aria-labelledby="maps-catalog-heading">
 		<header class="lobby-page__header">
-			<h2 id="maps-catalog-heading">
-				{{ selected_game.title }}
-			</h2>
+			<h2 id="maps-catalog-heading">{{ selected_game.title }}</h2>
 			
 			{% if can_manage_maps %}
-			<a
-					href="/maps/create?game_id={{ selected_game.id }}"
-					class="btn btn-primary"
-			>
+			<a href="{{ request.url_for('map_create_page_get') }}?game_id={{ selected_game.id }}" class="btn btn-primary">
 				Создать карту
 			</a>
 			{% endif %}
@@ -76,65 +49,54 @@
 		{% if can_manage_maps %}
 		<div class="lobby-grid">
 			{% for campaign_map in campaign_maps %}
-			<article>
+			<article class="lobby-card" data-map-operation-root aria-busy="false">
 				<h3>{{ campaign_map.title }}</h3>
 				
-				<p>
-					Тип:
-					{% if campaign_map.map_type == "image_upload" %}
-					Карта на основе изображения
-					{% elif campaign_map.map_type == "procedural_generation" %}
-					Процедурная карта
-					{% else %}
-					{{ campaign_map.map_type }}
-					{% endif %}
-				</p>
+				<div data-map-existing>
+					<p>
+						Тип:
+						{% if campaign_map.map_type == "image_upload" %}
+						Карта на основе изображения
+						{% elif campaign_map.map_type == "procedural_generation" %}
+						Процедурная карта
+						{% else %}
+						{{ campaign_map.map_type }}
+						{% endif %}
+					</p>
+					
+					<p>Туман войны: {{ "включён" if campaign_map.fog_of_war_enabled else "выключен" }}</p>
+					<p>Статус: {{ "активна" if campaign_map.is_active_in_session else "не активна" }}</p>
+					
+					<a href="{{ request.url_for('map_view_page_get', map_id=campaign_map.id) }}" class="btn btn-primary">
+						Открыть
+					</a>
+					<a href="{{ request.url_for('map_edit_page_get', map_id=campaign_map.id) }}"
+					   class="btn btn-outline-primary">Редактировать</a>
+				</div>
 				
-				<p>
-					Туман войны:
-					{{ "включён" if campaign_map.fog_of_war_enabled else "выключен" }}
-				</p>
-				
-				<p>
-					Статус:
-					{{ "активна" if campaign_map.is_active_in_session else "не активна" }}
-				</p>
-				
-				<a
-						href="/maps/{{ campaign_map.id }}/view"
-						class="btn btn-primary"
-				>
-					Открыть
-				</a>
-				<button
-						type="button"
-						class="btn btn-danger"
-						data-map-delete="/maps/{{ campaign_map.id }}"
-						data-map-title="{{ campaign_map.title }}"
-						data-return-url="/maps?game_id={{ selected_game.id }}"
-				>
+				<button type="button" class="btn btn-danger"
+				        data-map-delete="{{ request.url_for('delete_map', map_id=campaign_map.id) }}"
+				        data-cleanup-url="{{ request.url_for('finish_map_deletion_cleanup', map_id=campaign_map.id) }}"
+				        data-map-id="{{ campaign_map.id }}" data-map-title="{{ campaign_map.title }}">
 					Удалить
 				</button>
-			
+				
+				<p data-map-delete-message role="status" aria-live="polite"></p>
 			</article>
 			{% else %}
-			<p class="lobby-empty">
-				В этой игре пока нет карт.
-				Для добавления нажмите «Создать карту».
-			</p>
+			<p class="lobby-empty">В этой игре пока нет карт. Для добавления нажмите «Создать карту».</p>
 			{% endfor %}
 		</div>
 		{% else %}
-		<p>
-			Каталог карт кампании доступен мастеру.
-			Показ игровой карты участникам пока не подключён.
-		</p>
+		<p>Каталог карт кампании доступен мастеру. Показ игровой карты участникам пока не подключён.</p>
 		{% endif %}
 	</section>
 	{% elif games %}
-	<p class="lobby-empty">
-		Выберите игру, чтобы открыть её раздел карт.
-	</p>
+	<p class="lobby-empty">Выберите игру, чтобы открыть её раздел карт.</p>
 	{% endif %}
+	
+	<noscript>
+		<p>Просмотр каталога доступен без JavaScript. Для удаления карт и очистки файлов нужен JavaScript.</p>
+	</noscript>
 </section>
 {% endblock %}

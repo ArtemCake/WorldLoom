@@ -1,0 +1,122 @@
+<!-- frontend/templates/games/partials/session_tokens.html -->
+
+{% if selected_session %}
+<section data-session-tokens data-session-id="{{ selected_session.id }}"
+         data-can-manage="{{ 'true' if can_manage_tokens else 'false' }}"
+         aria-busy="false" aria-labelledby="session-tokens-heading">
+	<header class="lobby-page__header">
+		<h2 id="session-tokens-heading">Сохранённые токены сессии</h2>
+		
+		<button type="button" class="btn btn-outline-primary" data-session-tokens-refresh>
+			Обновить токены
+		</button>
+	</header>
+	
+	<p data-session-tokens-message role="status" aria-live="polite"></p>
+	
+	{% include "games/partials/token_create.html" %}
+	
+	<p data-session-tokens-empty hidden>
+		В выбранной сессии нет доступных вам токенов.
+	</p>
+	
+	<div style="max-width: 100%; overflow-x: auto;">
+		<table data-session-tokens-table hidden>
+			<caption>Состояние токенов выбранной сессии, полученное с сервера</caption>
+			
+			<thead>
+			<tr>
+				<th scope="col">Токен</th>
+				<th scope="col">Координата X</th>
+				<th scope="col">Координата Y</th>
+				<th scope="col">Размещение</th>
+				<th scope="col">Здоровье</th>
+				<th scope="col">Обзор, гексы</th>
+				<th scope="col">Доступен в списке игрокам</th>
+				
+				{% if can_manage_tokens %}
+				<th scope="col">Действия мастера</th>
+				{% endif %}
+			</tr>
+			</thead>
+			
+			<tbody data-session-tokens-body></tbody>
+		</table>
+	</div>
+	
+	{% if can_manage_tokens %}
+	<form data-token-edit-form hx-boost="false" hidden>
+		<fieldset>
+			<legend>Редактирование токена</legend>
+			
+			<p>
+				<label for="token-edit-name">Название — необязательно</label>
+				<input id="token-edit-name" name="display_name" type="text" maxlength="100">
+			</p>
+			{% include "games/partials/token_map_select.html" %}
+			<p>
+				<label for="token-edit-hp-current">Текущее здоровье</label>
+				<input id="token-edit-hp-current" name="hp_current" type="number"
+				       min="-2147483648" max="2147483647" step="1" required>
+			</p>
+			
+			<p>
+				<label for="token-edit-hp-max">Максимальное здоровье</label>
+				<input id="token-edit-hp-max" name="hp_max" type="number"
+				       min="-2147483648" max="2147483647" step="1" required>
+			</p>
+			
+			<p>
+				<label for="token-edit-vision">Дальность обзора, гексы</label>
+				<input id="token-edit-vision" name="vision_radius_cells" type="number"
+				       min="0" max="2147483647" step="1" required>
+			</p>
+			
+			<p>
+				<label for="token-edit-visible">
+					<input id="token-edit-visible" name="is_visible_to_players" type="checkbox">
+					Показывать токен в списке игрокам
+				</label>
+			</p>
+			
+			<p>
+				Эта форма изменяет название, назначение карты, здоровье,
+				дальность обзора и доступность токена в списке игрокам.
+				Координаты X/Y не меняются.
+				При смене карты или снятии назначения привязка к гексу сбрасывается.
+			</p>
+			
+			<button type="submit" class="btn btn-primary">Сохранить изменения</button>
+			
+			<button type="button" class="btn btn-outline-primary" data-token-edit-cancel>
+				Отмена
+			</button>
+		</fieldset>
+	</form>
+	{% else %}
+	<p>
+		Редактирование и удаление через эту панель доступны мастеру
+		в незавершённой сессии неархивной игры.
+	</p>
+	{% endif %}
+	
+	<p>
+		Координаты показаны в сохранённом сервером виде.
+		Они пока не преобразуются в пиксели локального графического поля.
+	</p>
+	
+	<p>
+		Доступность токена в списке не означает видимость его области через туман войны.
+		Эта панель не рассчитывает обзор.
+		Назначение карты сохраняет связь с серверной картой, но пока не отображает токен на ней.
+	</p>
+	
+	<p>
+		Изменение дальности обзора само по себе не запускает пересчёт тумана войны.
+	</p>
+	
+	<noscript>
+		<p>Для загрузки списка токенов необходим JavaScript.</p>
+	</noscript>
+</section>
+{% endif %}

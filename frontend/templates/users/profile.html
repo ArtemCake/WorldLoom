@@ -1,0 +1,188 @@
+<!-- frontend/templates/users/profile.html -->
+
+{% extends "base.html" %}
+{% block title %}Профиль — {{ project_name }}{% endblock %}
+
+{% block content %}
+<section data-profile-root hx-history="false">
+	<div class="auth-container">
+		<div class="profile-container">
+			<h2 class="profile-heading">Настройки профиля</h2>
+			<p class="profile-note"><a href="/profile/">Обновить данные страницы</a></p>
+			
+			{% if not user.is_email_verified %}
+			<div class="profile-section profile-section--warning">
+				<p class="profile-warning-text">
+					{% if verification_required_notice %}
+					Чтобы войти в игры и создавать контент, подтвердите почту <strong>{{ user.email }}</strong>.
+					{% else %}
+					Email <strong>{{ user.email }}</strong> не подтверждён. Некоторые действия недоступны до подтверждения.
+					{% endif %}
+				</p>
+				<form data-profile-form="verification" action="/profile/resend-verification" method="post">
+					<button type="submit" class="btn btn-outline-primary">Отправить письмо повторно</button>
+					<div class="message-box" data-profile-message aria-live="polite"></div>
+				</form>
+			</div>
+			{% endif %}
+			
+			<div class="profile-section">
+				<h3 class="profile-subheading">Личные данные</h3>
+				<form data-profile-form="details" action="/profile/update" method="post" enctype="multipart/form-data">
+					<div class="profile-avatar-row">
+						<div class="profile-avatar-wrap">
+							<img src="{{ user.avatar_url or static_url('images/default-avatar.jpg') }}"
+							     alt="Аватар" class="profile-avatar-img" data-avatar-preview>
+							<input type="file" id="avatar-input" name="avatar" accept="image/jpeg,image/png,image/webp" class="hidden">
+							<button type="button" class="btn btn-outline-primary profile-avatar-edit-btn" data-avatar-select>
+								Изменить
+							</button>
+						</div>
+						<div class="profile-fields-grid">
+							<div>
+								<label for="nickname" class="form-label">Никнейм</label>
+								<input id="nickname" name="nickname" value="{{ user.nickname }}" required maxlength="50" autocomplete="nickname">
+							</div>
+							<div>
+								<label for="email" class="form-label">Email</label>
+								<input type="email" id="email" name="email" value="{{ user.email }}" required autocomplete="email">
+							</div>
+						</div>
+					</div>
+					<p class="profile-note">Для аватара выберите статичное изображение JPEG, PNG или WebP.</p>
+					<div id="message-box-profile" class="message-box" data-profile-message aria-live="polite"></div>
+					<div class="profile-actions">
+						<button type="submit" class="btn btn-primary">Сохранить изменения</button>
+					</div>
+				</form>
+			</div>
+			
+			<div class="profile-section">
+				<h3 class="profile-subheading">Роли</h3>
+				<form data-profile-form="roles" action="/profile/roles" method="post">
+					<div class="profile-roles-grid">
+						{% for role in editable_roles %}
+						<label class="role-option">
+							<input type="checkbox" name="roles" value="{{ role.value }}" {% if role in user.roles %}checked{% endif %}>
+							{{ role_labels[role] }}
+						</label>
+						{% endfor %}
+					</div>
+					{% if locked_roles %}
+					<p class="profile-note">
+						Закреплено администратором:
+						{% for role in locked_roles %}{{ role_labels[role] }}{% if not loop.last %}, {% endif %}{% endfor %}.
+					</p>
+					{% endif %}
+					<div class="message-box" data-profile-message aria-live="polite"></div>
+					<div class="profile-actions">
+						<button type="submit" class="btn btn-primary">Сохранить роли</button>
+					</div>
+				</form>
+			</div>
+			
+			<div class="profile-section">
+				<h3 class="profile-subheading">Безопасность</h3>
+				
+				<section class="profile-security" data-mfa-root>
+					<div id="mfa-status" aria-live="polite"></div>
+					
+					{% if user.is_2fa_enabled %}
+					<p>Двухфакторная аутентификация включена.</p>
+					<form id="mfa-disable-form" action="/profile/mfa/disable" method="post">
+						<label for="mfa-password" class="form-label">Текущий пароль</label>
+						<input type="password" id="mfa-password" name="password" required autocomplete="current-password">
+						<button type="submit" class="btn btn-danger">Отключить 2FA</button>
+					</form>
+					{% else %}
+					<p>Двухфакторная аутентификация выключена.</p>
+					<button type="button" id="mfa-start-setup" class="btn btn-primary">Включить 2FA</button>
+					
+					<div id="mfa-setup-block" class="hidden" hidden>
+						<p>Отсканируйте QR-код приложением-аутентификатором или введите секрет вручную:</p>
+						<canvas id="mfa-qr-canvas" hidden></canvas>
+						<p><code id="mfa-manual-secret"></code></p>
+						<form id="mfa-confirm-form" action="/profile/mfa/confirm" method="post">
+							<label for="mfa-setup-code" class="form-label">Код из приложения</label>
+							<input id="mfa-setup-code" name="code" required autocomplete="one-time-code" inputmode="numeric">
+							<button type="submit" class="btn btn-primary">Подтвердить и включить</button>
+						</form>
+					</div>
+					
+					<div class="mfa-backup-wrapper hidden" id="mfa-backup-wrapper" hidden>
+						<p><strong>Сохраните резервные коды до закрытия страницы. Каждый код можно использовать один раз.</strong></p>
+						<ul id="mfa-backup-codes"></ul>
+						<button type="button" id="mfa-backup-download" class="btn btn-secondary">Скачать .txt</button>
+						<button type="button" id="mfa-backup-ack" class="btn btn-primary">Коды сохранены</button>
+					</div>
+					{% endif %}
+				</section>
+				
+				<form data-profile-form="password" action="/profile/change-password" method="post">
+					<div>
+						<label for="current-password" class="form-label">Текущий пароль</label>
+						<input type="password" id="current-password" name="current_password" required autocomplete="current-password">
+					</div>
+					<div>
+						<label for="new-password" class="form-label">Новый пароль</label>
+						<input type="password" id="new-password" name="new_password" required
+						       minlength="8" maxlength="128" autocomplete="new-password">
+					</div>
+					<div class="message-box" data-profile-message aria-live="polite"></div>
+					<div class="profile-actions">
+						<button type="submit" class="btn btn-primary">Изменить пароль</button>
+					</div>
+				</form>
+			</div>
+			
+			<div class="profile-section profile-section--danger">
+				<h3 class="profile-subheading">Опасная зона</h3>
+				<p class="profile-warning-text">Удаление аккаунта прекратит доступ к нему и затронет связанные данные.</p>
+				<button type="button" class="btn btn-danger" data-delete-action="open-step1">Удалить аккаунт</button>
+			</div>
+		</div>
+	</div>
+	
+	<!-- Окна находятся вне auth-container, чтобы backdrop-filter не менял их позиционирование. -->
+	<div id="delete-modal-step1" class="modal-overlay hidden" role="dialog" aria-modal="true"
+	     aria-labelledby="delete-title-step1" tabindex="-1" hidden>
+		<div class="modal-box">
+			<h3 id="delete-title-step1">Удалить аккаунт?</h3>
+			<p>Действие затронет аккаунт и связанные с ним данные. Продолжить?</p>
+			<div class="modal-actions">
+				<button type="button" class="btn btn-outline-primary" data-delete-action="close">Отмена</button>
+				<button type="button" class="btn btn-danger" data-delete-action="open-step2">Продолжить</button>
+			</div>
+		</div>
+	</div>
+	
+	<div id="delete-modal-step2" class="modal-overlay hidden" role="dialog" aria-modal="true"
+	     aria-labelledby="delete-title-step2" tabindex="-1" hidden>
+		<div class="modal-box">
+			<h3 id="delete-title-step2">Выберите тип удаления</h3>
+			<div class="delete-option">
+				<strong>С возможностью восстановления</strong>
+				<p class="profile-note">Аккаунт будет деактивирован. Для восстановления потребуется обратиться в поддержку.</p>
+			</div>
+			<div class="delete-option delete-option--danger">
+				<strong>Навсегда</strong>
+				<p class="profile-note">Необратимое удаление аккаунта. Отменить его нельзя.</p>
+			</div>
+			<form id="delete-account-form" action="/auth/delete-account" method="post">
+				<label for="delete-password" class="form-label">Подтвердите паролем</label>
+				<input type="password" id="delete-password" name="password" required autocomplete="current-password">
+				<div id="message-box-delete" class="message-box" aria-live="polite"></div>
+				<div class="modal-actions">
+					<button type="submit" name="permanent" value="false" class="btn btn-secondary">Удалить восстановимо</button>
+					<button type="submit" name="permanent" value="true" class="btn btn-danger">Удалить навсегда</button>
+				</div>
+			</form>
+			<button type="button" class="btn btn-outline-primary" data-delete-action="close">Отмена</button>
+		</div>
+	</div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+{% endblock %}

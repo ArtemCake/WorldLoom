@@ -1,83 +1,74 @@
 <!-- frontend/templates/maps/map_management.html -->
 
-<section
-		id="map-management"
-		data-map-id="{{ campaign_map.id }}"
-		data-source-game-id="{{ campaign_map.game_id }}"
-		aria-labelledby="map-management-heading"
->
+<section data-map-management data-map-id="{{ campaign_map.id }}"
+         data-source-game-id="{{ campaign_map.game_id }}" aria-labelledby="map-management-heading">
 	<h2 id="map-management-heading">Управление картой</h2>
 	
-	<div
-			id="map-management-message"
-			role="status"
-			aria-live="polite"
-	></div>
+	<p data-map-management-message role="status" aria-live="polite"></p>
 	
 	<p>
 		Статус:
-		<strong>
-			{{ "активна" if campaign_map.is_active_in_session else "не активна" }}
-		</strong>
+		<strong>{{ "активна" if campaign_map.is_active_in_session else "не активна" }}</strong>
 	</p>
 	
 	<p>
-		<button
-				type="button"
-				class="btn btn-primary"
-				data-map-action="{{ 'deactivate' if campaign_map.is_active_in_session else 'activate' }}"
-		>
-			{{ "Деактивировать" if campaign_map.is_active_in_session else "Активировать" }}
+		{% if campaign_map.is_active_in_session %}
+		<button type="button" class="btn btn-primary" data-map-action="deactivate"
+		        data-map-url="{{ request.url_for('deactivate_map', map_id=campaign_map.id) }}">
+			Деактивировать
 		</button>
+		{% else %}
+		<button type="button" class="btn btn-primary" data-map-action="activate"
+		        data-map-url="{{ request.url_for('activate_map', map_id=campaign_map.id) }}">
+			Активировать
+		</button>
+		{% endif %}
 	</p>
 	
 	<p>
 		Активность действует на уровне игры.
-		При активации этой карты остальные карты игры
-		станут неактивными.
+		При активации этой карты остальные карты игры станут неактивными.
+		Деактивация не выбирает другую карту автоматически.
 	</p>
 	
 	{% if target_games %}
 	<p>
 		<label for="map-destination-game">Другая игра</label>
-		<select id="map-destination-game">
+		
+		<select id="map-destination-game" data-map-destination>
 			<option value="" selected disabled>Выберите игру</option>
+			
 			{% for game in target_games %}
-			<option value="{{ game.id }}">{{ game.title }}</option>
+			<option value="{{ game.id }}"
+			        data-catalog-url="{{ request.url_for('maps_page_get') }}?game_id={{ game.id }}">
+				{{ game.title }}
+			</option>
 			{% endfor %}
 		</select>
 	</p>
 	
 	<p>
-		<button
-				type="button"
-				class="btn btn-primary"
-				data-map-action="copy"
-		>
-			Копировать в выбранную игру
+		<button type="button" class="btn btn-primary" data-map-action="copy"
+		        data-map-url="{{ request.url_for('copy_map', map_id=campaign_map.id) }}">
+			Копировать основу в выбранную игру
 		</button>
 		
-		<button
-				type="button"
-				class="btn btn-outline-primary"
-				data-map-action="move"
-		>
-			Перенести в выбранную игру
+		<button type="button" class="btn btn-outline-primary" data-map-action="move"
+		        data-map-url="{{ request.url_for('move_map', map_id=campaign_map.id) }}">
+			Перенести оригинал в выбранную игру
 		</button>
 	</p>
 	
 	<p>
-		Копия включает фон, настройки, слои и сетку,
-		но не токены, объекты, аудиозоны и исследованные области.
-		Она создаётся неактивной и без привязки к сессии.
+		Копируются фон, настройки, слои и гексы.
+		Токены, объекты, аудиозоны и исследованные области не копируются.
+		Копия создаётся неактивной, без привязки к сессии.
 	</p>
 	
 	<p>
-		При переносе оригинал станет неактивным
-		и отвяжется от прежней сессии.
-		Состояние сетки и тумана сохранится.
-		Перенос с токенами, объектами или аудиозонами
-		в этой версии недоступен.
+		При переносе оригинал станет неактивным и отвяжется от прежней сессии.
+		Сетка и состояние тумана сохранятся.
+		Перенос с привязанными токенами, объектами или аудиозонами не поддерживается.
 	</p>
 	{% else %}
 	<p>

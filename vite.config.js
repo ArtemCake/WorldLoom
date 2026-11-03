@@ -1,104 +1,142 @@
 // vite.config.js
+
+import { extname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import autoprefixer from 'autoprefixer';
 import { defineConfig } from 'vite';
-import path from 'path';
-import { exec } from 'child_process';
+
+
+const projectPath = (relativePath) => (
+    fileURLToPath(new URL(relativePath, import.meta.url))
+);
+
+
+function buildMessages() {
+    return {
+        name: 'worldloom-build-messages',
+        apply: 'build',
+
+        buildStart() {
+            console.log(
+                '\n[VITE] Начата сборка JavaScript и SCSS...',
+            );
+        },
+
+        buildEnd(error) {
+            if (error) {
+                console.error(
+                    '\n❌ [BUILD FAILED] Ошибка подготовки сборки:',
+                );
+                console.error(error.message);
+            }
+        },
+
+        renderError(error) {
+            console.error(
+                '\n❌ [BUILD FAILED] Ошибка формирования сборки:',
+            );
+            console.error(error.message);
+        },
+
+        writeBundle: {
+            order: 'post',
+            sequential: true,
+
+            handler() {
+                console.log(
+                    '\n✅ [SUCCESS] Результат сборки записан '
+                    + 'в frontend/dist/.',
+                );
+            },
+        },
+    };
+}
+
 
 export default defineConfig({
-    root: '.',
+    root: projectPath('./frontend/'),
 
-    // Vite будет отдавать файлы из frontend/ напрямую:
-    // /static/fonts/Cinzel-Bold.woff2 → frontend/static/fonts/Cinzel-Bold.woff2
-    publicDir: path.resolve(__dirname, 'frontend'),
+    base: '/frontend/static/',
 
-    server: {
-        port: 8080,
-        open: true
+    publicDir: projectPath('./frontend/public/'),
+
+    plugins: [
+        buildMessages(),
+    ],
+
+    resolve: {
+        alias: {
+            '@': projectPath('./frontend/src/'),
+        },
     },
 
     css: {
         modules: {
-            generateScopedName: '[name]__[local]___[hash:base64:5]'
+            generateScopedName: '[name]__[local]___[hash:base64:5]',
         },
-        preprocessorOptions: {
-            scss: {
-                additionalData: `
-                    @use "@/static/css/modules/base/_variables" as *;
-                `
-            }
-        }
+
+        postcss: {
+            plugins: [
+                autoprefixer(),
+            ],
+        },
     },
 
     build: {
-        outDir: 'dist',
-        assetsDir: 'static',
+        outDir: projectPath('./frontend/dist/'),
+        assetsDir: 'assets',
         emptyOutDir: true,
+
+        manifest: true,
+        sourcemap: false,
+        minify: 'esbuild',
+        cssCodeSplit: true,
+
         rollupOptions: {
             input: {
-                main: path.resolve(__dirname, 'frontend/static/js/main.js'),
-                app: path.resolve(__dirname, 'frontend/static/css/style.scss')
+                main: projectPath('./frontend/src/js/main.js'),
+                styles: projectPath('./frontend/src/styles/style.scss'),
             },
+
             output: {
-                entryFileNames: 'js/[name]-[hash].js',
-                chunkFileNames: 'js/[name]-[hash].js',
+                entryFileNames: 'assets/js/[name]-[hash].js',
+                chunkFileNames: 'assets/js/[name]-[hash].js',
+
                 assetFileNames: (assetInfo) => {
-                    if (!assetInfo.name) return 'assets/[name]-[hash].[ext]';
+                    const name = (
+                        assetInfo.names?.[0]
+                        ?? assetInfo.name
+                        ?? ''
+                    );
 
-                    const extType = assetInfo.name.split('.')[1]?.toLowerCase();
+                    const extension = extname(name).toLowerCase();
 
-                    if (extType === 'css') return 'css/[name]-[hash].[ext]';
+                    if (extension === '.css') {
+                        return 'assets/css/[name]-[hash][extname]';
+                    }
 
-                    else if (/png|jpe?g|svg|gif|tiff|bmp|webp|ico/i.test(extType)) {
-                        // Берём исходный путь ДО обработки, чтобы сохранить подпапку
-                        // (borders/, textures/ и т.п.) — иначе Rollup кладёт все картинки
-                        // из разных подкаталогов images/ в одну общую папку.
-                        const original = assetInfo.originalFileNames?.[0] ?? assetInfo.name;
-                        const match = original.match(/frontend\/static\/images\/(.+)$/);
-                        const relPath = match ? match[1] : assetInfo.name;
-                        return `frontend/static/images/${relPath}`;
+                    if (
+                        /^\.(avif|png|jpe?g|svg|gif|tiff?|bmp|webp|ico)$/
+                            .test(extension)
+                    ) {
+                        return 'assets/images/[name]-[hash][extname]';
                     }
-                    else if (/woff2|woff/i.test(extType)) {
-                        return 'frontend/static/fonts/[name][extname]';
+
+                    if (
+                        /^\.(woff2?|ttf|otf|eot)$/.test(extension)
+                    ) {
+                        return 'assets/fonts/[name]-[hash][extname]';
                     }
-                    else if (/md/i.test(extType)) {
-                        return 'frontend/static/docs/[name][extname]';
-                    }
-                    else {
-                        return 'frontend/static/assets/[name]-[hash][extname]';
-                    }
-                }
-            }
+
+                    return 'assets/other/[name]-[hash][extname]';
+                },
+            },
         },
-        onCloseBundle: async () => {
-            console.log('[VITE] Сборка завершена. Выполняю нормализацию имен файлов...');
-            return new Promise((resolve, reject) => {
-                const scriptPath = path.resolve(__dirname, 'rename-script.js');
-                const child = exec(
-                    `node "${scriptPath}"`,
-                    { stdio: 'inherit' },
-                    (error) => {
-                        if (error) {
-                            console.error('\n❌ [BUILD FAILED] Скрипт rename-script.js вернул ошибку:');
-                            console.error(error.message);
-                            reject(error);
-                            return;
-                        }
-                        console.log('\n✅ [SUCCESS] Post-build обработка (rename-script.js) завершена.');
-                        resolve();
-                    }
-                );
-            });
-        }
-    },
-
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, 'frontend'),
-            '~': path.resolve(__dirname, 'frontend', 'static')
-        }
     },
 
     esbuild: {
         jsxFactory: 'h',
-        jsxFragment: 'Fragment'
-    }
+        jsxFragment: 'Fragment',
+    },
 });

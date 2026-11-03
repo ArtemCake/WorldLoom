@@ -5,38 +5,31 @@
 {% block title %}{{ campaign_map.title }} — WorldLoom{% endblock %}
 
 {% block content %}
-<section class="lobby-page">
+{% set catalog_url = request.url_for('maps_page_get') ~ '?game_id=' ~ campaign_map.game_id %}
+
+<section class="lobby-page" data-map-operation-root aria-busy="false">
 	<header class="lobby-page__header">
 		<h1>{{ campaign_map.title }}</h1>
 		
-		<a href="/maps?game_id={{ campaign_map.game_id }}">
-			К списку карт
+		<a href="{{ catalog_url }}" class="btn btn-outline-primary" hx-boost="false">
+			Каталог исходной игры
 		</a>
 	</header>
 	
-	<div
-			id="maps-delete-message"
-			role="status"
-			aria-live="polite"
-	></div>
+	<p>
+		<a href="{{ request.url_for('map_edit_page_get', map_id=campaign_map.id) }}"
+		   class="btn btn-outline-primary" hx-boost="false">Редактировать карту</a>
+		
+		<a href="{{ request.url_for('map_view_page_get', map_id=campaign_map.id) }}"
+		   class="btn btn-outline-primary" hx-boost="false">Открыть сохранённое состояние заново</a>
+	</p>
 	
-	<a
-			href="/maps/{{ campaign_map.id }}/edit"
-			class="btn btn-outline-primary"
-	>
-		Редактировать карту
-	</a>
+	<p>
+		<a data-map-target-catalog class="btn btn-outline-primary" hx-boost="false" hidden>
+			Каталог выбранной игры
+		</a>
+	</p>
 	
-	<button
-			type="button"
-			class="btn btn-danger"
-			data-map-delete="/maps/{{ campaign_map.id }}"
-			data-map-title="{{ campaign_map.title }}"
-			data-return-url="/maps?game_id={{ campaign_map.game_id }}"
-	>
-		Удалить карту
-	</button>
-	{% include "maps/map_management.html" %}
 	<details>
 		<summary>Сведения о карте</summary>
 		
@@ -52,44 +45,48 @@
 		</p>
 		
 		<p>
-			Туман войны:
-			{{ "включён" if campaign_map.fog_of_war_enabled else "выключен" }}
-		</p>
-		
-		<p>
-			Статус:
-			{{ "активна" if campaign_map.is_active_in_session else "не активна" }}
+			Сохранённая настройка тумана войны:
+			{{ "включён" if campaign_map.fog_of_war_enabled else "выключен" }}.
 		</p>
 	</details>
 	
-	<section
-			id="map-view-root"
-			data-background-url="{{ campaign_map.background_image_url or '' }}"
-			aria-labelledby="map-background-heading"
-	>
-		<h2 id="map-background-heading">Фон карты</h2>
+	<fieldset data-map-controls>
+		<legend>Просмотр и операции мастера</legend>
 		
-		<p id="map-view-message" role="status" aria-live="polite">
-			Подготовка просмотра…
-		</p>
+		{% include "maps/map_management.html" %}
 		
-		<img
-				id="map-view-background"
-				alt="Фоновое изображение карты «{{ campaign_map.title }}»"
-				referrerpolicy="no-referrer"
-				style="display: none;"
-				hidden
-		>
-		{% set sandbox_saved = true %}
-		{% include "maps/map_sandbox.html" %}
-		<noscript>
-			<p>Для загрузки фонового изображения необходим JavaScript.</p>
-		</noscript>
-	</section>
+		<section data-map-view
+		         data-background-url="{{ request.url_for('get_map_background', map_id=campaign_map.id) if campaign_map.background_image_url else '' }}"
+		         aria-labelledby="map-view-heading">
+			<h2 id="map-view-heading">Предпросмотр карты</h2>
+			
+			<p data-map-view-message role="status" aria-live="polite"></p>
+			
+			<img data-map-view-background alt="Источник фонового изображения для предпросмотра" hidden>
+			
+			{% set sandbox_saved = true %}
+			{% include "maps/map_sandbox.html" %}
+		</section>
+	</fieldset>
 	
 	<p>
-		Это предварительный просмотр фона для мастера.
-		Гексы, токены и маска тумана войны здесь пока не отображаются.
+		Это инструмент мастера: фон, гексы и тестовый обзор.
+		Переключение режима на «Игрок» не открывает доступ участникам.
+		Тестовая фишка не является игровым токеном.
 	</p>
+	
+	<p>
+		Переключатели сетки и тумана в предпросмотре не сохраняют настройки карты.
+		Кнопка создания сетки, если она доступна, выполняет отдельную операцию сохранения.
+	</p>
+	
+	<p>
+		Удаление карты и завершение очистки файлов доступны
+		<a href="{{ catalog_url }}" hx-boost="false">в каталоге исходной игры</a>.
+	</p>
+	
+	<noscript>
+		<p>Для просмотра сетки и выполнения операций необходим JavaScript.</p>
+	</noscript>
 </section>
 {% endblock %}

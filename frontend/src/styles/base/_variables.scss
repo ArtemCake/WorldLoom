@@ -1,0 +1,160 @@
+/* frontend/src/styles/base/_variables.scss */
+
+// Нейтральная база по умолчанию — до применения JS-темы
+// и основа для кастомной темы с цветовым пикером
+:root {
+    --color-bg-page: #16161a;
+    --color-bg-panel: #202024;
+    --color-bg-panel-alt: #1a1a1e;
+    --color-text-primary: #e8e8ea;
+    --color-text-secondary: #a0a0a6;
+    --color-text-accent: #9ca3af;
+    --color-border-accent: #9ca3af;
+    --color-border-subtle: rgba(255, 255, 255, 0.14);
+    --color-text-error: #ef4444;
+    --color-text-success: #22c55e;
+    --btn-primary-text: #f5f3f7;
+    --color-hover-overlay: rgba(255, 255, 255, 0.06);
+    --bg-scrim: rgba(20, 20, 24, 0.5);
+    --color-panel-glass: rgba(40, 40, 46, 0.28);
+    --color-panel-glass-alt: rgba(24, 24, 28, 0.38);
+    --glow-color-1: rgba(156, 163, 175, 0.05);
+    --glow-color-2: rgba(156, 163, 175, 0.03);
+    --btn-primary-start: #4a2c5a;
+    --btn-primary-end: #2a1435;
+    --heading-glow: rgba(255, 215, 0, 0.2);
+    --font-weight-heading: 700;
+    --letter-spacing-heading: 0.01em;
+    --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --toast-warning: #f59e0b;
+    --toast-info: #3b82f6;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+	--radius-md: 14px;
+    --radius-xl: 28px;
+    --radius-sm: 10px;
+}
+
+:root {
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --accent-magic: #a855f7;
+    --clr-accent-hover: #8b8f99;
+    --border-subtle: var(--color-border-subtle);
+    --bg-card: var(--color-bg-panel);
+}
+
+// ═══════════════════════════════════════════════════════════
+// ТЁМНОЕ ФЭНТЕЗИ — руины, кровавая луна, некромантия, проклятый лес
+// Гнилостный баклажан как база, кровавый багрянец как сила,
+// приглушённый "призрачный" фиолет как магия — отдельно от акцента,
+// чтобы не слипались в один "фиолетово-красный" на глаз
+// ═══════════════════════════════════════════════════════════
+.theme-dark-fantasy {
+    --color-bg-page: #150f14;
+    --color-bg-panel: #241620;
+    --color-bg-panel-alt: #190f16;
+    --color-text-primary: #ede3e2;
+    --color-text-secondary: #ad8e95;
+    --color-text-accent: #b1324a;
+    --color-border-accent: #b1324a;
+    --color-border-subtle: rgba(255, 255, 255, 0.14);
+    --color-text-error: #ef4444;
+    --color-text-success: #6fae55; // приглушённая мшисто-кладбищенская зелень
+    --color-hover-overlay: rgba(255, 255, 255, 0.06);
+    --accent-magic: #953030; // блуждающий призрачный свет, не спорит с багрянцем
+    --clr-accent-hover: #d65271;
+    --bg-scrim: rgba(18, 10, 14, 0.58);
+    --color-panel-glass: rgba(45, 18, 26, 0.3);
+    --color-panel-glass-alt: rgba(20, 10, 16, 0.4);
+    --glow-color-1: rgba(177, 50, 74, 0.08); // кровавая дымка
+    --glow-color-2: rgba(109, 90, 140, 0.05); // призрачная дымка
+	--btn-primary-start: #6d2338; // кровавый багрянец
+	--btn-primary-end: #1a0e13;
+    --heading-glow: rgba(177, 50, 74, 0.3);
+    --font-weight-heading: 900; // Cinzel Black — тяжёлый, похоронный
+    --letter-spacing-heading: 0.04em;
+    --font-family-base: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+    --toast-warning: #c97f3f;
+    --toast-info: #6d5a8c;
+     --radius-md: 14px;
+     --radius-xl: 28px;
+     --radius-sm: 10px;
+}
+
+// ═══════════════════════════════════════════════════════════
+// СВЕТЛОЕ ФЭНТЕЗИ — золотой замок, изумрудный лес, феи и подсолнухи
+// Тёплые сливки как база, солнечное золото как акцент, изумрудная
+// зелень леса, фейский розово-лавандовый — отдельно от золота
+// ═══════════════════════════════════════════════════════════
+.theme-light-fantasy {
+    --color-bg-page: #fffbf2;
+    --color-bg-panel: #fcf3e3;
+    --color-bg-panel-alt: #eef5e4;
+    --color-text-primary: #2b2410;
+    --color-text-secondary: #6b6140;
+    --color-border-accent: #d99a2b;
+    --color-text-accent: #d99a2b;
+    --color-border-subtle: rgba(60, 45, 10, 0.18);
+    --color-text-error: #c62828;
+    --color-text-success: #0e351a;
+    --color-hover-overlay: rgba(60, 45, 10, 0.07);
+    --accent-magic: #c97fc9; // фейская магия, лиловато-розовая
+    --clr-accent-hover: #b5791f;
+    --bg-scrim: rgba(255, 253, 245, 0.4);
+    --color-panel-glass: rgba(255, 248, 230, 0.32);
+    --color-panel-glass-alt: rgba(220, 238, 205, 0.38);
+    --glow-color-1: rgba(217, 154, 43, 0.06); // золотая дымка
+    --glow-color-2: rgba(63, 145, 66, 0.05); // лиственная дымка
+    --btn-primary-start: #d99a2b; // солнечное золото
+    --btn-primary-end: #8a5e18;
+    --heading-glow: rgba(217, 154, 43, 0.3);
+    --font-weight-heading: 400; // Cinzel Regular — легче и воздушнее, под фей и золото
+    --letter-spacing-heading: 0.02em;
+    --font-family-base: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --toast-warning: #d98f2b;
+    --toast-info: #5a9bd9;
+    --radius-md: 14px;
+    --radius-xl: 28px;
+    --radius-sm: 10px;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ПРОСТО ФЭНТЕЗИ — кристальный город, лёд, пустыня с драконом, парящий остров
+// Космический индиго как база, ледяная бирюза как акцент,
+// электрический аметист как магия — холодная и разнородная
+// палитра, объединяющая самые разные по сюжету фоны
+// ═══════════════════════════════════════════════════════════
+.theme-fantasy {
+     --color-bg-page: #070a16;
+     --color-bg-panel: #0e1224;
+     --color-bg-panel-alt: #060811;
+     --color-text-primary: #eef3ff;
+     --color-text-secondary: #a9b4d6;
+     --color-text-accent: #7fa8b8;
+     --color-border-accent: #7fa8b8;
+     --color-border-subtle: rgba(180, 200, 255, 0.3);
+     --color-text-error: #fb7185;
+     --color-text-success: #4fd68a;
+     --color-hover-overlay: rgba(180, 200, 255, 0.15);
+     --accent-magic: #9f7af0;
+     --clr-accent-hover: #6a93a3;
+     --bg-scrim: rgba(5, 7, 15, 0.5);
+     --color-panel-glass: rgba(14, 18, 36, 0.3);
+     --color-panel-glass-alt: rgba(6, 8, 17, 0.4);
+     --glow-color-1: rgba(127, 168, 184, 0.06);// кристальная дымка
+     --glow-color-2: rgba(159, 122, 240, 0.06); // арканная дымка
+     --btn-primary-start: #9f7af0; // арканный аметист
+     --btn-primary-end: #262c55;
+     --heading-glow: rgba(127, 168, 184, 0.3);
+     --font-weight-heading: 700; // Cinzel Bold — текущий холодный аркан
+     --letter-spacing-heading: 0.06em; // шире, кристальнее
+     --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+     --toast-warning: #e0a458;
+     --toast-info: #7fa8b8;
+     --radius-md: 14px;
+     --radius-xl: 28px;
+     --radius-sm: 10px;
+}

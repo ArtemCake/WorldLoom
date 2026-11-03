@@ -1,0 +1,14 @@
+<!-- frontend/templates/errors/not_found.html -->
+
+{% extends "base.html" %}
+{% block title %}Страница не найдена — {{ project_name }}{% endblock %}
+
+{% block content %}
+<section class="legal-page not-found-page">
+	<h1 class="not-found-page__code">404</h1>
+	<p class="not-found-page__text">
+		Такой страницы пока нет: либо она ещё строится, либо ссылка ведёт не туда.
+	</p>
+	<a href="/" class="btn btn-primary">Вернуться на главную</a>
+</section>
+{% endblock %}

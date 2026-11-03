@@ -2,99 +2,110 @@
 
 {% extends "base.html" %}
 
+{% block title %}Мои игры — WorldLoom{% endblock %}
+
 {% block content %}
-<section class="lobby-page">
+<section class="lobby-page" data-games-lobby data-user-id="{{ user.id }}"
+         data-list-url="{{ request.url_for('list_games') }}"
+         data-create-url="{{ request.url_for('create_game') }}"
+         data-systems-url="{{ request.url_for('list_game_systems') }}"
+         data-claim-url="{{ request.url_for('claim_invite') }}" aria-busy="false">
+	
 	<header class="lobby-page__header">
 		<h1>Мои игры</h1>
-		<button type="button" class="btn btn-primary" data-lobby-action="create-game-open">Создать игру</button>
+		
+		<div class="lobby-card__actions">
+			<button type="button" class="btn btn-outline-primary" data-lobby-action="reload">Обновить список</button>
+			<button type="button" class="btn btn-primary" data-lobby-action="create-open">Создать игру</button>
+		</div>
 	</header>
 	
-	<div id="message-box-lobby"></div>
+	<p data-lobby-message role="status" aria-live="polite"></p>
 	
-	<section class="lobby-join">
-		<h2>Присоединиться по приглашению</h2>
-		<div class="lobby-join__row">
-			<input type="text" id="lobby-invite-token-input" placeholder="Вставьте токен приглашения" maxlength="64">
-			<button type="button" class="btn btn-outline-primary" data-lobby-action="claim-invite">Присоединиться</button>
-		</div>
+	<section class="lobby-join" aria-labelledby="lobby-join-title">
+		<h2 id="lobby-join-title">Присоединиться по приглашению</h2>
+		
+		<form class="lobby-join__row" data-claim-form>
+			<label for="lobby-invite-token-input">Токен приглашения</label>
+			<input id="lobby-invite-token-input" type="text" name="token" required maxlength="64" autocomplete="off">
+			<button type="submit" class="btn btn-outline-primary">Присоединиться</button>
+		</form>
 	</section>
 	
-	<div id="games-list" class="lobby-grid">
-		<p id="games-empty" class="lobby-empty hidden">У вас пока нет игр — создайте первую или присоединитесь по приглашению.</p>
-	</div>
-</section>
-
-<!-- Модалка создания игры -->
-<div id="lobby-create-modal" class="lobby-modal hidden">
-	<div class="modal-box">
-		<h2>Новая игра</h2>
-		<form id="lobby-create-form">
-			<label>
-				Название
-				<input type="text" name="title" required maxlength="255">
-			</label>
-			<label>
-				Описание
-				<textarea name="description" maxlength="2000"></textarea>
-			</label>
-			<label>
-				Игровая система
-				<select name="system_id" id="lobby-system-select" required>
-					<option value="" disabled selected>Загрузка...</option>
-				</select>
-			</label>
-			<label>
-				Приватность
-				<select name="privacy_level">
-					<option value="private">Приватная</option>
-					<option value="invite_only" selected>По приглашению</option>
-					<option value="friends_only">Только друзья</option>
-					<option value="public">Публичная</option>
-				</select>
-			</label>
+	<section class="lobby-card" data-create-panel hidden aria-labelledby="lobby-create-title">
+		<h2 id="lobby-create-title">Новая игра</h2>
+		
+		<form data-create-form>
+			<label for="lobby-game-title">Название</label>
+			<input id="lobby-game-title" type="text" name="title" required maxlength="255">
+			
+			<label for="lobby-game-description">Описание</label>
+			<textarea id="lobby-game-description" name="description" maxlength="2000"></textarea>
+			
+			<label for="lobby-system-select">Игровая система</label>
+			<select id="lobby-system-select" name="system_id" required disabled>
+				<option value="">Загрузка…</option>
+			</select>
+			
+			<label for="lobby-game-privacy">Приватность</label>
+			<select id="lobby-game-privacy" name="privacy_level" required>
+				<option value="private">Приватная</option>
+				<option value="invite_only" selected>По приглашению</option>
+				<option value="friends_only">Только друзья</option>
+				<option value="public">Публичная</option>
+			</select>
+			
 			<label class="lobby-checkbox">
 				<input type="checkbox" name="is_homebrew_allowed">
 				Разрешить самодельный контент (homebrew)
 			</label>
-			<div id="message-box-lobby-create"></div>
-			<div class="modal-actions">
-				<button type="button" class="btn btn-outline-primary" data-lobby-action="create-game-close">Отмена</button>
+			
+			<p data-create-message role="status" aria-live="polite"></p>
+			
+			<div class="lobby-card__actions">
+				<button type="button" class="btn btn-outline-primary" data-lobby-action="create-close">Отмена</button>
 				<button type="submit" class="btn btn-primary">Создать</button>
 			</div>
 		</form>
-	</div>
-</div>
-
-<!-- Модалка приглашения -->
-<div id="lobby-invite-modal" class="lobby-modal hidden">
-	<div class="lobby-modal__dialog">
-		<h2>Пригласить игрока</h2>
-		<form id="lobby-invite-form">
-			<label>
-				Срок действия
-				<input type="datetime-local" name="expires_at">
-			</label>
-			<label>
-				Лимит использований
-				<input type="number" name="uses_limit" min="1" placeholder="например, 1">
-			</label>
-			<label>
-				Сообщение приглашённому
-				<input type="text" name="message" maxlength="500">
-			</label>
-			<div id="message-box-lobby-invite"></div>
-			<div id="lobby-invite-result" class="hidden">
-				<label>
-					Токен приглашения
-					<input type="text" id="lobby-invite-token-output" readonly>
-				</label>
+	</section>
+	
+	<section class="lobby-card" data-invite-panel hidden aria-labelledby="lobby-invite-title">
+		<h2 id="lobby-invite-title">Пригласить игрока</h2>
+		
+		<form data-invite-form>
+			<label for="lobby-invite-expires">Срок действия</label>
+			<input id="lobby-invite-expires" type="datetime-local" name="expires_at">
+			<p>Время указывается в часовом поясе браузера. Пустое поле — срок по умолчанию на сервере.</p>
+			
+			<label for="lobby-invite-uses">Количество использований</label>
+			<input id="lobby-invite-uses" type="number" name="uses_limit" min="1" step="1">
+			<p>Если оставить поле пустым, сервер создаст одноразовое приглашение.</p>
+			
+			<label for="lobby-invite-message">Сообщение приглашённому</label>
+			<input id="lobby-invite-message" type="text" name="message" maxlength="500">
+			
+			<p data-invite-message role="status" aria-live="polite"></p>
+			
+			<div data-invite-result hidden>
+				<label for="lobby-invite-token-output">Токен приглашения</label>
+				<input id="lobby-invite-token-output" type="text" name="token_output" readonly autocomplete="off">
 				<button type="button" class="btn btn-outline-primary" data-lobby-action="copy-invite">Скопировать</button>
 			</div>
-			<div class="lobby-modal__actions">
+			
+			<div class="lobby-card__actions">
 				<button type="button" class="btn btn-outline-primary" data-lobby-action="invite-close">Закрыть</button>
 				<button type="submit" class="btn btn-primary">Создать приглашение</button>
 			</div>
 		</form>
-	</div>
-</div>
+	</section>
+	
+	<div class="lobby-grid" data-games-list aria-busy="false"></div>
+	<p class="lobby-empty" data-games-empty hidden>
+		У вас пока нет игр — создайте первую или присоединитесь по приглашению.
+	</p>
+	
+	<noscript>
+		<p>Для загрузки списка игр, создания и использования приглашений нужен JavaScript.</p>
+	</noscript>
+</section>
 {% endblock %}

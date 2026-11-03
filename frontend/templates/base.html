@@ -4,54 +4,49 @@
 <html lang="ru">
 <head>
 	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="csrf-token" content="{{ csrf_token }}">
-	<title>{% block title %}WorldLoom{% endblock %}</title>
+	<title>{% block title %}{{ project_name }}{% endblock %}</title>
 	<script src="{{ static_url('js/theme-init.js') }}"></script>
 	<script src="https://unpkg.com/htmx.org@2.0.4"></script>
 	<script src="https://unpkg.com/htmx-ext-json-enc@2.0.1/json-enc.js"></script>
 	<link rel="stylesheet" href="{{ static_url('css/style.min.css') }}">
-	<link rel="icon" href="{{ static_url('images/favicon.ico') }}" type="image/x-icon">
+	<link rel="icon" href="{{ static_url('images/favicon.ico') }}">
+	{% block extra_head %}{% endblock %}
 </head>
-{% block extra_head %}
-{% endblock %}
 <body class="auth-body"
-{% if user %}
-	data-user-theme="{{ user.profile_settings.theme if user.profile_settings and user.profile_settings.theme else 'dark-fantasy' }}"
-	data-user-accent="{{ user.profile_settings.theme_color if user.profile_settings and user.profile_settings.theme_color else '' }}"
-{% endif %}
+      {% if user %}
+      data-user-theme="{{ (user.profile_settings or {}).get('theme') or 'dark-fantasy' }}"
+      data-user-accent="{{ (user.profile_settings or {}).get('theme_color') or '' }}"
+      {% endif %}
 >
-<header class="site-header">
-	<!-- Подключение меню навигации -->
-	{% include "menu.html" %}
-</header>
+{% include "shared/menu.html" %}
 
-<!-- БЛОК СООБЩЕНИЙ (ИСПРАВЛЕНО ДЛЯ FASTAPI) -->
-{% set messages = request.session.pop('_flashes', []) if '_flashes' in request.session else [] %}
+{% set session_data = request.scope.get('session') %}
+{% set messages = session_data.pop('_flashes', []) if session_data is not none else [] %}
 {% if messages %}
 <div id="global-message-box">
 	{% for category, message in messages %}
-	<div class="alert alert-{{ category }}">{{ message }}</div>
+	<div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
 	{% endfor %}
 </div>
 {% endif %}
 
-<!-- Центральный контейнер формы -->
-<div class="page-content">
+<main class="page-content">
 	{% block content %}{% endblock %}
-</div>
+</main>
 
-<footer class="site-footer">
+<footer class="site-footer"></footer>
 
-</footer>
-<div id="cookie-banner" class="cookie-banner hidden">
+<div id="cookie-banner" class="cookie-banner hidden" hidden>
 	<p class="cookie-banner__text">
 		Мы используем только технически необходимые cookie — для входа в аккаунт и защиты форм.
 		Подробнее — в <a href="/cookie-policy">политике использования cookie</a>.
 	</p>
 	<button type="button" id="cookie-banner-accept" class="btn btn-primary btn-sm">Понятно</button>
 </div>
+
 <script type="module" src="{{ static_url('js/main.min.js') }}"></script>
-{% block extra_scripts %}
-{% endblock %}
+{% block extra_scripts %}{% endblock %}
 </body>
 </html>

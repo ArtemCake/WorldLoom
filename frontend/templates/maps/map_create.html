@@ -5,12 +5,12 @@
 {% block title %}Создание карты — WorldLoom{% endblock %}
 
 {% block content %}
+{% set catalog_url = request.url_for('maps_page_get') ~ '?game_id=' ~ selected_game.id %}
+
 <section class="lobby-page">
 	<header class="lobby-page__header">
 		<h1>Создание карты</h1>
-		<a href="/maps?game_id={{ selected_game.id }}">
-			К списку карт
-		</a>
+		<a href="{{ catalog_url }}" class="btn btn-outline-primary">К списку карт</a>
 	</header>
 	
 	<p>
@@ -18,84 +18,50 @@
 		Карта создаётся без привязки к отдельной сессии.
 	</p>
 	
-	<div
-			id="maps-create-message"
-			role="status"
-			aria-live="polite"
-	></div>
-	
-	<form
-			id="maps-create-form"
-			action="/maps/upload"
-			method="post"
-			enctype="multipart/form-data"
-	>
-		<input
-				type="hidden"
-				name="game_id"
-				value="{{ selected_game.id }}"
-		>
+	<form id="maps-create-form" action="{{ request.url_for('create_map_with_image') }}"
+	      method="post" enctype="multipart/form-data" data-map-create-form
+	      data-return-url="{{ catalog_url }}" aria-busy="false" hx-boost="false">
+		<p data-map-create-message role="status" aria-live="polite"></p>
 		
-		<p>
-			<label for="maps-create-title">Название карты</label>
-			<input
-					id="maps-create-title"
-					name="title"
-					type="text"
-					maxlength="255"
-					required
-			>
-		</p>
-		
-		<p>
-			<label for="maps-create-background">
-				Изображение карты — необязательно
-			</label>
-			<input
-					id="maps-create-background"
-					name="background_image"
-					type="file"
-					accept="image/png,image/jpeg,image/webp"
-					data-max-bytes="{{ map_image_max_bytes }}"
-					aria-describedby="maps-create-background-help"
-			>
-		</p>
-		
-		<p id="maps-create-background-help">
-			Выберите PNG, JPEG или WebP без анимации.
-			Изображение будет загружено при создании карты.
-		</p>
-		
-		<img
-				id="maps-create-preview"
-				alt="Предпросмотр выбранного изображения"
-				style="display: none;"
-				hidden
-		>
-		{% set sandbox_saved = false %}
-		{% include "maps/map_sandbox.html" %}
-		<p>
-			<label>
-				<input
-						name="fog_of_war_enabled"
-						type="checkbox"
-						checked
-				>
-				Включить туман войны
-			</label>
-		</p>
-		
-		<button type="submit" class="btn btn-primary">
-			Создать карту
-		</button>
-		
-		<a href="/maps?game_id={{ selected_game.id }}">
-			Отмена
-		</a>
+		<fieldset data-map-create-fields>
+			<legend>Параметры новой карты</legend>
+			
+			<input type="hidden" name="game_id" value="{{ selected_game.id }}">
+			
+			<p>
+				<label for="maps-create-title">Название карты</label>
+				<input id="maps-create-title" name="title" type="text" maxlength="255" required>
+			</p>
+			
+			<p>
+				<label for="maps-create-background">Изображение карты — необязательно</label>
+				<input id="maps-create-background" name="background_image" type="file"
+				       accept="image/png,image/jpeg,image/webp" data-max-bytes="{{ map_image_max_bytes }}"
+				       aria-describedby="maps-create-background-help">
+			</p>
+			
+			<p id="maps-create-background-help">
+				Выберите PNG, JPEG или WebP без анимации.
+				Файл отправляется на сервер только при создании карты.
+				Без изображения будет создана карта с пустым фоном.
+			</p>
+			
+			<p data-map-create-preview-message role="status" aria-live="polite"></p>
+			
+			<img data-map-create-preview alt="Предпросмотр выбранного изображения"
+			     style="max-width: 100%; height: auto;" hidden>
+			
+			{% set sandbox_saved = false %}
+			{% include "maps/map_sandbox.html" %}
+			
+			<button type="submit" class="btn btn-primary">Создать карту</button>
+		</fieldset>
 	</form>
 	
+	<p><a href="{{ catalog_url }}" class="btn btn-outline-primary">Вернуться без отправки формы</a></p>
+	
 	<noscript>
-		<p>Для отправки этой формы необходим JavaScript.</p>
+		<p>Для предпросмотра и отправки формы необходим JavaScript.</p>
 	</noscript>
 </section>
 {% endblock %}

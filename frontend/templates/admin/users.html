@@ -1,72 +1,126 @@
 <!-- frontend/templates/admin/users.html -->
 
 {% extends "base.html" %}
+{% block title %}Пользователи — {{ project_name }}{% endblock %}
+
 {% block content %}
-<div class="admin-page">
+<section class="admin-page" data-admin-root hx-history="false">
 	<h2 class="profile-heading">Пользователи</h2>
+	<p><a href="/admin/">Панель администратора</a></p>
+	<p><a href="{{ request.url }}">Обновить данные страницы</a></p>
 	
-	<form class="admin-search" method="get" hx-get="/admin/users" hx-target="body" hx-push-url="true">
-		<input type="text" name="search" value="{{ search }}" placeholder="Никнейм или email">
+	<form class="admin-search" method="get" action="/admin/users">
+		<label for="admin-user-search">Поиск пользователей</label>
+		<input id="admin-user-search" type="search" name="search" value="{{ search }}" placeholder="Часть никнейма или точный email">
 		<button type="submit" class="btn btn-outline-primary btn-sm">Найти</button>
 	</form>
 	
+	<div id="message-box-admin-page" aria-live="polite"></div>
+	
 	<table class="admin-table">
-		<thead><tr><th>Никнейм</th><th>Email</th><th>Роли</th><th>Права разделов</th><th>Статус</th><th></th></tr></thead>
+		<thead>
+		<tr>
+			<th scope="col">Никнейм</th>
+			<th scope="col">Email</th>
+			<th scope="col">Роли</th>
+			<th scope="col">Права разделов</th>
+			<th scope="col">Статус</th>
+			<th scope="col">Действия</th>
+		</tr>
+		</thead>
 		<tbody>
 		{% for u in users %}
 		<tr>
 			<td>{{ u.nickname }}</td>
 			<td>{{ u.email }}</td>
-			<td>{% for r in u.roles %}{{ role_labels[r] }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
 			<td>
-				{% if 'admin' in u.roles %}
-				{% for p in u.admin_permissions %}{{ permission_labels[p] }}{% if not loop.last %}, {% endif %}{% endfor %}
-				{% if not u.admin_permissions %}<span class="profile-note">нет прав</span>{% endif %}
-				{% else %}<span class="profile-note">—</span>{% endif %}
+				{% for role in u.roles or [] %}
+				{{ role_labels[role] }}{% if not loop.last %}, {% endif %}
+				{% endfor %}
+			</td>
+			<td>
+				{% if 'admin' in (u.roles or []) %}
+				{% for permission in u.admin_permissions or [] %}
+				{{ permission_labels[permission] }}{% if not loop.last %}, {% endif %}
+				{% else %}
+				<span class="profile-note">Нет прав</span>
+				{% endfor %}
+				{% else %}
+				<span class="profile-note">—</span>
+				{% endif %}
 			</td>
 			<td>{{ "Активен" if u.is_active else "Деактивирован" }}</td>
 			<td>
-				<button type="button" class="btn btn-outline-primary btn-sm" data-admin-action="manage"
+				<button type="button" class="btn btn-outline-primary btn-sm" data-admin-action="manage" data-admin-mutation
 				        data-user-id="{{ u.id }}" data-user-nickname="{{ u.nickname }}"
-				        data-user-roles="{{ u.roles | map('string') | join(',') }}"
-				        data-user-permissions="{{ u.admin_permissions | map('string') | join(',') }}">
+				        data-user-roles="{{ (u.roles or []) | map(attribute='value') | join(',') }}"
+				        data-user-permissions="{{ (u.admin_permissions or []) | map(attribute='value') | join(',') }}">
 					Управлять
 				</button>
 			</td>
 		</tr>
+		{% else %}
+		<tr>
+			<td colspan="6" class="profile-note">Пользователи не найдены.</td>
+		</tr>
 		{% endfor %}
 		</tbody>
 	</table>
-	<p class="profile-note">Всего найдено: {{ total }}</p>
 	
-	<div id="admin-manage-modal" class="modal-overlay hidden">
+	<p class="profile-note">Всего найдено: {{ total }}. Страница: {{ page }}.</p>
+	
+	<nav aria-label="Страницы списка пользователей">
+		{% if page > 1 %}
+		<a href="{{ request.url.include_query_params(page=page - 1) }}">Предыдущая</a>
+		{% endif %}
+		{% if page * page_size < total %}
+		<a href="{{ request.url.include_query_params(page=page + 1) }}">Следующая</a>
+		{% endif %}
+	</nav>
+	
+	<div id="admin-manage-modal" class="modal-overlay hidden" role="dialog" aria-modal="true"
+	     aria-labelledby="admin-manage-title" tabindex="-1" hidden>
 		<div class="modal-box">
-			<h3>Управление: <span id="admin-manage-nickname"></span></h3>
+			<h3 id="admin-manage-title">Управление: <span id="admin-manage-nickname"></span></h3>
 			
 			<p class="form-label">Роли</p>
 			<div id="admin-manage-roles">
-				{% for r in all_roles %}
-				<label class="admin-checkbox"><input type="checkbox" value="{{ r.value }}" data-role-checkbox> {{ role_labels[r] }}</label>
+				{% for role in all_roles %}
+				<label class="admin-checkbox">
+					<input type="checkbox" value="{{ role.value }}" data-role-checkbox data-admin-edit>
+					{{ role_labels[role] }}
+				</label>
 				{% endfor %}
 			</div>
 			
-			<p class="form-label">Права административных разделов (только при роли «Администратор»)</p>
+			<p class="form-label">Права административных разделов — только при сохранённой роли «Администратор»</p>
 			<div id="admin-manage-permissions">
-				{% for p in all_permissions %}
-				<label class="admin-checkbox"><input type="checkbox" value="{{ p.value }}" data-permission-checkbox> {{ permission_labels[p] }}</label>
+				{% for permission in all_permissions %}
+				<label class="admin-checkbox">
+					<input type="checkbox" value="{{ permission.value }}" data-permission-checkbox data-admin-edit>
+					{{ permission_labels[permission] }}
+				</label>
 				{% endfor %}
 			</div>
 			
-			<div id="message-box-admin" class="message-box"></div>
+			<div id="message-box-admin" class="message-box" aria-live="polite"></div>
 			
 			<div class="modal-actions">
+				<button type="button" class="btn btn-secondary" data-admin-action="save-roles" data-admin-mutation>
+					Сохранить роли
+				</button>
+				<button type="button" class="btn btn-secondary" data-admin-action="save-permissions" data-admin-mutation>
+					Сохранить права
+				</button>
+				<button type="button" class="btn btn-danger" data-admin-action="deactivate" data-admin-mutation>
+					Деактивировать
+				</button>
+				<button type="button" class="btn btn-danger" data-admin-action="delete-permanent" data-admin-mutation>
+					Удалить навсегда
+				</button>
 				<button type="button" class="btn btn-outline-primary" data-admin-action="close">Закрыть</button>
-				<button type="button" class="btn btn-secondary" data-admin-action="save-roles">Сохранить роли</button>
-				<button type="button" class="btn btn-secondary" data-admin-action="save-permissions">Сохранить права</button>
-				<button type="button" class="btn btn-danger" data-admin-action="deactivate">Деактивировать</button>
-				<button type="button" class="btn btn-danger" data-admin-action="delete-permanent">Удалить навсегда</button>
 			</div>
 		</div>
 	</div>
-</div>
+</section>
 {% endblock %}

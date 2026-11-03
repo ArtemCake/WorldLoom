@@ -1,3 +1,5 @@
+# backend/db_migrations/rule_engine_protection.py
+
 """Автоматическое добавление и обновление защиты публикаций Alembic."""
 
 from alembic.operations import ops
@@ -7,7 +9,6 @@ from sqlalchemy import text
 TABLE_NAME = "rule_engine_versions"
 TRIGGER_NAME = "trg_rule_engine_versions_immutable"
 FUNCTION_NAME = "worldloom_guard_rule_engine_version"
-
 
 # Предыдущая известная реализация.
 # Нужна для распознавания старой защиты и формирования downgrade.
@@ -19,7 +20,6 @@ BEGIN
     RETURN NULL;
 END;
 """
-
 
 # Актуальная реализация.
 #
@@ -56,13 +56,11 @@ def _create_function_sql(body):
 		"$$;\n"
 	)
 
-
 CREATE_FUNCTION_SQL = _create_function_sql(FUNCTION_BODY)
 
 LEGACY_CREATE_FUNCTION_SQL = _create_function_sql(
 	LEGACY_FUNCTION_BODY
 )
-
 
 CREATE_TRIGGER_SQL = """
 CREATE TRIGGER trg_rule_engine_versions_immutable
@@ -71,17 +69,14 @@ FOR EACH ROW
 EXECUTE FUNCTION worldloom_guard_rule_engine_version();
 """
 
-
 DROP_TRIGGER_SQL = """
 DROP TRIGGER trg_rule_engine_versions_immutable
 ON rule_engine_versions;
 """
 
-
 DROP_FUNCTION_SQL = """
 DROP FUNCTION worldloom_guard_rule_engine_version();
 """
-
 
 FIND_TRIGGER_SQL = text("""
     SELECT
@@ -108,11 +103,9 @@ FIND_TRIGGER_SQL = text("""
       AND NOT t.tgisinternal
 """)
 
-
 def _normalize_body(body):
 	"""Игнорировать только различия пробелов и переносов строк."""
 	return " ".join(body.split())
-
 
 def _migration_operations(directives):
 	if len(directives) != 1:
@@ -135,12 +128,7 @@ def _migration_operations(directives):
 		script.downgrade_ops_list[0].ops,
 	)
 
-
-def add_rule_engine_protection(
-		migration_context,
-		revision,
-		directives,
-):
+def add_rule_engine_protection(migration_context, revision, directives):
 	"""Дополнить создаваемую миграцию защитой публикаций.
 
 	Подключается через process_revision_directives в env.py.

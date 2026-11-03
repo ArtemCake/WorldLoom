@@ -1,0 +1,67 @@
+<!-- frontend/templates/games/partials/session_management.html -->
+
+{% if is_game_master %}
+<section class="lobby-card" data-session-management data-game-id="{{ game_id }}"
+         aria-labelledby="session-management-title" aria-busy="false" hx-boost="false">
+	<h2 id="session-management-title">Управление сессиями</h2>
+	
+	<p data-session-management-message role="status" aria-live="polite"></p>
+	
+	{% if active_session %}
+	<p>
+		Сейчас активна сессия «{{ active_session.title or "Без названия" }}».
+		Чтобы создать следующую, сначала завершите текущую.
+	</p>
+	<a href="{{ request.url_for('game_play_page_get', game_id=game_id) }}?session_id={{ active_session.id }}"
+	   class="btn btn-outline-primary">Открыть активную сессию</a>
+	{% else %}
+	<form action="{{ request.url_for('start_session', game_id=game_id) }}" method="post" data-session-create-form>
+		<h3>Новая сессия</h3>
+		
+		<label for="session-create-title">Название</label>
+		<input id="session-create-title" type="text" name="title" maxlength="255"
+		       placeholder="Можно оставить пустым" autocomplete="off">
+		
+		<button type="submit" class="btn btn-primary">Создать и начать сессию</button>
+	</form>
+	{% endif %}
+	
+	{% if selected_session %}
+	<form action="{{ request.url_for('update_session', game_id=game_id, session_id=selected_session.id) }}"
+	      method="post" data-session-update-form data-session-id="{{ selected_session.id }}">
+		<h3>Название и итоги выбранной сессии</h3>
+		
+		<label for="session-update-title">Название</label>
+		<input id="session-update-title" type="text" name="title" maxlength="255"
+		       value="{{ selected_session.title or '' }}" autocomplete="off">
+		
+		<label for="session-update-summary">Итоги сессии</label>
+		<textarea id="session-update-summary" name="summary_log" rows="8">{{ selected_session.summary_log or "" }}</textarea>
+		
+		<p>
+			Название и итоги можно менять и после завершения сессии.
+			Пустое поле очищает соответствующее значение.
+		</p>
+		
+		<button type="submit" class="btn btn-primary">Сохранить название и итоги</button>
+	</form>
+	
+	{% if selected_session.is_active %}
+	<form action="{{ request.url_for('end_session', game_id=game_id, session_id=selected_session.id) }}/end"
+	      method="post" data-session-end-form data-session-id="{{ selected_session.id }}">
+		<h3>Завершение сессии</h3>
+		<p>
+			После завершения новые броски в этой сессии станут недоступны.
+			Журнал сохранится. Перед завершением отдельно сохраните изменения названия и итогов.
+		</p>
+		
+		<button type="submit" class="btn btn-outline-primary">Завершить сессию</button>
+	</form>
+	{% endif %}
+	{% endif %}
+	
+	<noscript>
+		<p>Для управления сессиями нужен JavaScript.</p>
+	</noscript>
+</section>
+{% endif %}

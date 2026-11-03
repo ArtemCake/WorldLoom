@@ -1,0 +1,70 @@
+<!-- frontend/templates/home/index.html -->
+
+{% extends "base.html" %}
+{% block title %}{{ project_name }} — универсальный стол для твоих приключений{% endblock %}
+
+{% block content %}
+<section class="hero">
+	<div class="hero__inner">
+		<h1 class="hero__title">{{ project_name }}</h1>
+		<p class="hero__subtitle">
+			Виртуальный стол для настольных ролевых игр — карты, бестиарий, заклинания и персонажи
+			в одном атмосферном пространстве.
+		</p>
+		
+		<div class="hero__actions">
+			{% if user %}
+			<a href="/games" class="btn btn-primary btn-lg">Перейти к играм</a>
+			{% else %}
+			<a href="/register" class="btn btn-primary btn-lg">Начать играть</a>
+			<a href="/login" class="btn btn-outline-primary btn-lg">Войти</a>
+			{% endif %}
+		</div>
+	</div>
+</section>
+
+<section class="features">
+	<div class="features__grid">
+		<article class="feature-card">
+			<h3 class="feature-card__title">Карты и туман войны</h3>
+			<p class="feature-card__text">
+				Гексагональные карты, перемещение токенов и постепенное раскрытие мира для игроков.
+			</p>
+		</article>
+		
+		<article class="feature-card">
+			<h3 class="feature-card__title">Бестиарий и НПС</h3>
+			<p class="feature-card__text">
+				Готовые монстры и неигровые персонажи — или создай своих, под любую историю.
+			</p>
+		</article>
+		
+		<article class="feature-card">
+			<h3 class="feature-card__title">Персонажи и заклинания</h3>
+			<p class="feature-card__text">
+				Расы, классы, предыстории и школы магии — всё необходимое для создания героя.
+			</p>
+		</article>
+		
+		<article class="feature-card">
+			<h3 class="feature-card__title">Своя атмосфера</h3>
+			<p class="feature-card__text">
+				Тёмное фэнтези, светлое фэнтези или своя тема с подобранным акцентом —
+				стол подстраивается под настроение кампании.
+			</p>
+		</article>
+	</div>
+</section>
+
+<section class="how-it-works">
+	<h2 class="section-title">Как начать</h2>
+	
+	<ol class="steps">
+		{% if not user %}
+		<li class="steps__item">Зарегистрируйся и создай профиль мастера или игрока.</li>
+		{% endif %}
+		<li class="steps__item">Собери игру и пригласи друзей.</li>
+		<li class="steps__item">Выбери карту, тему и начинай приключение.</li>
+	</ol>
+</section>
+{% endblock %}

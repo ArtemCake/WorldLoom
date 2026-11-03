@@ -1,0 +1,18 @@
+# Служебные каталоги — исключить на любой глубине
+.git/
+.gigaide/
+.venv/
+.idea/
+venv/
+context_exports/
+node_modules/
+__pycache__/
+docs/
+
+structure_ignore.txt
+
+# Конкретные каталоги относительно корня проекта
+/frontend/dist/
+/frontend/uploads/
+/context_exports/
+/logs/

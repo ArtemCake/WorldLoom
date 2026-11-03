@@ -1,330 +1,485 @@
-Корень
-
-.gitignore
-LICENSE
-README.md                 (пустой)
-alembic.ini
-amvera.yml
-eslint.config.mjs
-main.py
-package.json
-package-lock.json
-rename-script.js
-requirements.txt
-structure.txt
-vite.config.js
-
-CONFIG
-Config/
-	├── __init__.py
-	├── Config.py
-	├── csrf_config.py
-	├── imports.py
-	└── logger.py
-
-Tests/
-├── python/
-│ 	├── test_attribute_engine.py
-│ 	├── test_auth_refresh.py
-│ 	├── test_csrf_coverage.py
-│ 	├── test_game_system_rules_view.py
-│ 	├── test_game_system_engine_editor.py
-│ 	├── test_rules_composition.py
-│ 	├── test_rule_engine_lifecycle.py
-│ 	├── test_lobby_session_start.py
-│ 	├── test_rule_engine_removal_preview.py
-│ 	├── test_game_creation_activity.py
-│ 	├── test_game_deletion_staging.py
-│ 	├── test_csrf_protection.py
-│ 	├── test_rule_engine_models.py
-│ 	├── test_rule_engine_service.py
-│ 	├── test_game_system_origin.py
-│ 	├── test_game_system_engines_api.py
-│ 	├── test_rule_engine_lists.py
-│ 	├── test_rule_engine_protection.py
-│ 	├── test_rule_engine_removal_execution.py
-│ 	├── test_game_system_delete_service.py
-│ 	├── test_custom_attribute_modifiers.py
-│ 	├── test_game_system_editor_service.py
-│ 	├── test_attribute_preview_api.py
-│ 	├── test_rules_draft_api.py
-│ 	└── test_rules_engine.py
-├── js/
-	├── test_game_system_engine_origin.mjs
-	├── test_rule_engine_api.mjs
-	└── session-client.test.js
-
-BACKEND
-backend/
-├── __init__.py
-├── app/
-│   ├── __init__.py
-│   ├── Core/
-│   ├── __init__.py
-│   │   ├── csrf.py
-│   │   ├── static_files.py
-│   │   └── crypto.py
-│   ├── Enums/
-│   ├── __init__.py
-│   │   └── enums_BD.py
-│   ├── Routers/
-│   ├── __init__.py
-│   │   ├── admin.py
-│   │   ├── api.py
-│   │   ├── game_state.py
-│   │   ├── game_system_engines.py
-│   │   ├── maps.py
-│   │   ├── content.py
-│   │   ├── character.py
-│   │   ├── lobby.py
-│   │   ├── profile.py
-│   │   └── web.py
-│   ├── Schemas/
-│   ├── __init__.py
-│   │   ├── auth.py
-│   │   ├── content.py
-│   │   ├── rule_calculations.py
-│   │   ├── rule_engines.py
-│   │   ├── game_system_editor.py
-│   │   ├── rule_engine_removal.py
-│   │   ├── character.py
-│   │   ├── game_rules.py
-│   │   ├── rule_engine_lifecycle.py
-│   │   ├── game_system_origin.py
-│   │   ├── maps.py
-│   │   └── lobby.py
-│   ├── Services/
-│   │   ├── GameSystems/
-│   │   │    ├── __init__.py
-│   │   │    ├── dnd5e_system.py
-│   │   │    ├── rule_engine_removal_service.py
-│   │   │    ├── delete_service.py
-│   │   │    ├── rule_engine_lifecycle_service.py
-│   │   │    ├── editor_service.py
-│   │   │    ├── formula_engine.py
-│   │   │    ├── system_rule_origin.py
-│   │   │    ├── rules_composition.py
-│   │   │    ├── rule_engine_service.py
-│   │   │    ├── registry.py
-│   │   │    ├── attribute_engine.py
-│   │   │    ├── rules_engine.py
-│   │   │    ├── rules_presets.py
-│   │   │    └── i_system.py
-│   │   ├── Core/
-│   │   │    ├── __init__.py
-│   │   │    ├── mail_service.py
-│   │   │    ├── mfa_service.py
-│   │   │    ├── rate_limit_service.py
-│   │   │    ├── security_service.py
-│   │   │    └── user_service.py
-│   │   ├── Games/
-│   │   │    ├── __init__.py
-│   │   │    ├── dice_service.py
-│   │   │    ├── game_deletion_service.py
-│   │   │    ├── initiative_service.py
-│   │   │    ├── lobby_service.py
-│   │   │    └── token_service.py
-│   │   ├── Maps/
-│   │   │    ├── __init__.py
-│   │   │    ├── hex_geometry.py
-│   │   │    ├── map_cleanup_service.py
-│   │   │    ├── map_preview_service.py
-│   │   │    ├── map_hex_service.py
-│   │   │    ├── map_image_service.py
-│   │   │    ├── map_storage_service.py
-│   │   │    └── map_management_service.py
+WorldLoom/
+├── backend/
+│   ├── app/
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   ├── crypto.py
+│   │   │   ├── errors.py
+│   │   │   ├── logging.py
+│   │   │   ├── map_storage.py
+│   │   │   ├── paths.py
+│   │   │   └── settings.py
+│   │   ├── infrastructure/
+│   │   │   ├── database/
+│   │   │   │   ├── models/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── active_session_cache.py
+│   │   │   │   │   └── system_event.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── base.py
+│   │   │   │   ├── model_registry.py
+│   │   │   │   └── session.py
+│   │   │   ├── mail/
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── transport.py
+│   │   │   ├── storage/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── local_storage.py
+│   │   │   │   └── paths.py
+│   │   │   └── __init__.py
+│   │   ├── modules/
+│   │   │   ├── admin/
+│   │   │   │   ├── models/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── audit_log.py
+│   │   │   │   │   └── content_report.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── api.py
+│   │   │   │   ├── catalog_api.py
+│   │   │   │   ├── dependencies.py
+│   │   │   │   ├── errors.py
+│   │   │   │   ├── management_api.py
+│   │   │   │   ├── pages.py
+│   │   │   │   ├── router.py
+│   │   │   │   ├── schemas.py
+│   │   │   │   └── service.py
+│   │   │   ├── auth/
+│   │   │   │   ├── models/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── mfa.py
+│   │   │   │   │   └── oauth.py
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── authentication.py
+│   │   │   │   │   ├── email_verification.py
+│   │   │   │   │   ├── mfa.py
+│   │   │   │   │   ├── notifications.py
+│   │   │   │   │   ├── password_reset.py
+│   │   │   │   │   ├── passwords.py
+│   │   │   │   │   ├── rate_limit.py
+│   │   │   │   │   ├── registration.py
+│   │   │   │   │   └── tokens.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── api.py
+│   │   │   │   ├── cookies.py
+│   │   │   │   ├── dependencies.py
+│   │   │   │   ├── errors.py
+│   │   │   │   ├── http.py
+│   │   │   │   ├── pages.py
+│   │   │   │   └── schemas.py
+│   │   │   ├── catalog/
+│   │   │   │   ├── models/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── character_building.py
+│   │   │   │   │   ├── equipment.py
+│   │   │   │   │   ├── magic.py
+│   │   │   │   │   ├── skills.py
+│   │   │   │   │   └── worldbuilding.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── api.py
+│   │   │   │   ├── errors.py
+│   │   │   │   ├── http.py
+│   │   │   │   ├── schemas.py
+│   │   │   │   └── service.py
+│   │   │   ├── characters/
+│   │   │   │   ├── api/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── api.py
+│   │   │   │   │   ├── content_api.py
+│   │   │   │   │   └── runtime_api.py
+│   │   │   │   ├── schemas/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── content_schemas.py
+│   │   │   │   │   ├── schemas.py
+│   │   │   │   │   └── sheet_runtime.py
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── content_service.py
+│   │   │   │   │   ├── service.py
+│   │   │   │   │   └── sheet_runtime_service.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── errors.py
+│   │   │   │   ├── http.py
+│   │   │   │   └── models.py
+│   │   │   ├── game_systems/
+│   │   │   │   ├── models/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── game_systems.py
+│   │   │   │   │   └── rule_engines.py
+│   │   │   │   ├── routers/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── calculations.py
+│   │   │   │   │   └── systems.py
+│   │   │   │   ├── rules/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── attribute_engine.py
+│   │   │   │   │   ├── formula_engine.py
+│   │   │   │   │   ├── rules_composition.py
+│   │   │   │   │   └── rules_engine.py
+│   │   │   │   ├── schemas/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── game_rules.py
+│   │   │   │   │   ├── game_system_editor.py
+│   │   │   │   │   ├── game_system_origin.py
+│   │   │   │   │   ├── rule_calculations.py
+│   │   │   │   │   ├── rule_engine_lifecycle.py
+│   │   │   │   │   ├── rule_engine_removal.py
+│   │   │   │   │   ├── rule_engines.py
+│   │   │   │   │   └── rule_previews.py
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── delete_service.py
+│   │   │   │   │   ├── editor_service.py
+│   │   │   │   │   ├── rule_engine_lifecycle_service.py
+│   │   │   │   │   ├── rule_engine_removal_service.py
+│   │   │   │   │   ├── rule_engine_service.py
+│   │   │   │   │   └── system_rule_origin.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── api.py
+│   │   │   │   ├── errors.py
+│   │   │   │   └── pages.py
+│   │   │   ├── games/
+│   │   │   │   ├── models/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── communication.py
+│   │   │   │   │   └── lobby.py
+│   │   │   │   ├── routers/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── game_state.py
+│   │   │   │   │   └── lobby.py
+│   │   │   │   ├── schemas/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── dice.py
+│   │   │   │   │   ├── game_state.py
+│   │   │   │   │   └── lobby.py
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── cleanup_worker.py
+│   │   │   │   │   ├── dice_engine.py
+│   │   │   │   │   ├── dice_service.py
+│   │   │   │   │   ├── game_deletion_service.py
+│   │   │   │   │   ├── game_state_access.py
+│   │   │   │   │   ├── initiative_service.py
+│   │   │   │   │   ├── lobby_service.py
+│   │   │   │   │   └── token_service.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── api.py
+│   │   │   │   ├── dependencies.py
+│   │   │   │   ├── errors.py
+│   │   │   │   └── pages.py
+│   │   │   ├── legal/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── pages.py
+│   │   │   │   └── service.py
+│   │   │   ├── maps/
+│   │   │   │   ├── geometry/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   └── hex_geometry.py
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── map_cleanup_service.py
+│   │   │   │   │   ├── map_hex_service.py
+│   │   │   │   │   ├── map_image_service.py
+│   │   │   │   │   ├── map_management_service.py
+│   │   │   │   │   ├── map_preview_service.py
+│   │   │   │   │   └── map_storage_service.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── api.py
+│   │   │   │   ├── errors.py
+│   │   │   │   ├── models.py
+│   │   │   │   ├── pages.py
+│   │   │   │   └── schemas.py
+│   │   │   ├── media/
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── models.py
+│   │   │   ├── users/
+│   │   │   │   ├── models/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── friendship.py
+│   │   │   │   │   └── user.py
+│   │   │   │   ├── routers/
+│   │   │   │   │   └── __init__.py
+│   │   │   │   ├── schemas/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   └── schemas.py
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── account_deletion.py
+│   │   │   │   │   ├── avatars.py
+│   │   │   │   │   ├── profile.py
+│   │   │   │   │   └── users.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── api.py
+│   │   │   │   ├── enums.py
+│   │   │   │   ├── errors.py
+│   │   │   │   ├── http.py
+│   │   │   │   ├── pages.py
+│   │   │   │   └── permissions.py
+│   │   │   └── __init__.py
+│   │   ├── web/
+│   │   │   ├── __init__.py
+│   │   │   ├── application_errors.py
+│   │   │   ├── assets.py
+│   │   │   ├── csrf.py
+│   │   │   ├── csrf_config.py
+│   │   │   ├── error_responses.py
+│   │   │   ├── exception_handlers.py
+│   │   │   ├── middleware.py
+│   │   │   ├── pages.py
+│   │   │   ├── rendering.py
+│   │   │   ├── routing.py
+│   │   │   ├── security_headers.py
+│   │   │   └── static_files.py
 │   │   ├── __init__.py
-│   │   ├── admin_service.py
-│   │   ├── content_service.py
-│   │   ├── legal_service.py
-│   │   └── character_service.py
-│   └── Database/
-│       ├── __init__.py
-│       ├── _models.py
-│       ├── database.py
-│       └── Models/
-│           ├── __init__.py
-│           ├── Content/
-│           │   ├── __init__.py
-│           │   ├── character_building.py
-│           │   ├── equipment.py
-│           │   ├── game_systems.py
-│           │   ├── rules_composition.py
-│           │   ├── magic.py
-│           │   ├── skills.py
-│           │   └── worldbuilding.py
-│           ├── Core/
-│           │   ├── __init__.py
-│           │   └── user.py
-│           ├── Gameplay/
-│           │   ├── __init__.py
-│           │   ├── characters.py
-│           │   ├── communication.py
-│           │   ├── lobby.py
-│           │   └── maps.py
-│           ├── Medias/
-│           │   ├── __init__.py
-│           │   └── media.py
-│           └── Systems/
-│               ├── __init__.py
-│               └── system.py            ⚠ cache.py отсутствует
-└── db_migrations/
-    ├── README
-    ├── env.py
-    ├── rule_engine_protection.py
-    ├── script.py.mako
-    └── versions/
-
-FRONTEND
-frontend/
-├── templates/
-│   ├── base.html
-│   ├── index.html
-│   ├── login.html
-│   ├── menu.html
-│   ├── forgot_password.html
-│   ├── password_reset.html
-│   ├── reset_password.html
-│   ├── not_found.html
-│   ├── profile.html
-│   ├── register.html
-│   ├── games/
-│   │   ├── game_play.html
-│   │   ├── game_details.html
-│   │   ├── game_systems.html
-│   │   └── games.html
-│   ├── maps/
-│   │   ├── maps.html
-│   │   ├── map_create.html
-│   │   ├── map_view.html
-│   │   ├── map_sandbox.html
-│   │   ├── map_management.html
-│   │   └── map_edit.html
-│   ├── partials/
-│   │   └── session_dice.html
-│   ├── admin/
-│   │   ├── audit.html
-│   │   ├── dashboard.html
-│   │   ├── reports.html
-│   │   └── users.html
-│   ├── docs/
-│   │   ├── cookie_policy.html
-│   │   ├── privacy_policy.html
-│   │   └── terms.html
-│   └── emails/
-│       ├── password_reset.html
-│       └── verification_email.html
-└── static/
-    ├── avatars/ # Аватары пользователей, которые разбиты по каталогам с никами пользователей
-    ├── private/ # Карты мастеров, которые разбиты по подкаталогам никам мастеров в которых подкаталоги с названиям игр
-    ├── css/
-    │   ├── style.scss
-    │   ├── style.min.css
-    │   └── modules/
-    │       ├── auth/_auth.scss
-    │       ├── base/
-    │       │   ├── _reset.scss
-    │       │   ├── _responsive.scss
-    │       │   ├── _typography.scss
-    │       │   └── _variables.scss
-    │       ├── buttons/_buttons.scss
-    │       ├── components/
-    │       │   ├── _cookie-banner.scss
-    │       │   └── _delete-modal.scss
-    │       ├── forms/_inputs.scss
-    │       ├── layout/
-    │       │   ├── _container.scss
-    │       │   └── _navbar.scss
-    │       ├── pages/
-    │       │   ├── _admin.scss
-    │       │   ├── _landing.scss
-    │       │   ├── _game-system-editor.scss
-    │       │   ├── _legal.scss
-    │       │   ├── _session-dice.scss
-    │       │   ├── _lobby.scss
-    │       │   └── _profile.scss
-    │       └── toast/_toast.scss
-    ├── docs/                       (исходники .md — рендерятся в templates/docs/*.html)
-    │   ├── cookie_policy.md
-    │   ├── privacy_policy.md
-    │   └── terms_of_service.md
-    ├── fonts/
-    │   ├── Cinzel-Black.woff / .woff2
-    │   ├── Cinzel-Bold.woff / .woff2
-    │   └── Cinzel-Regular.woff / .woff2
-    ├── images/
-    │   ├── default-avatar.jpg
-    │   ├── favicon.ico
-    │   ├── backgrounds/
-    │   │   ├──dark_fantasy/
-    │   │   │   ├──fantasy-1.webp
-    │   │   │   ├──fantasy-2.webp
-    │   │   │   ├──fantasy-3.webp
-    │   │   │   ├──fantasy-5.webp
-    │   │   │   └──fantasy-5.webp
-    │   │   ├──light_fantasy/
-    │   │   │   ├──fantasy-1.webp
-    │   │   │   ├──fantasy-2.webp
-    │   │   │   ├──fantasy-3.webp
-    │   │   │   ├──fantasy-5.webp
-    │   │   │   └──fantasy-5.webp
-    │   │   ├──general_fantasy/
-    │   │   │   ├──fantasy-1.webp
-    │   │   │   ├──fantasy-2.webp
-    │   │   │   ├──fantasy-3.webp
-    │   │   │   ├──fantasy-5.webp
-    │   │   │   └──fantasy-5.webp
-    │   ├── borders/
-    │   │   └──parchment_corner.png
-    │   └── textures/
-    │       └──paper-fibers.webp
-    └── js/
-        ├── main.js
-        ├── main.min.js
-        ├── theme-init.js
-        ├── config/
-        │   └── appConfig.js
-        └── modules/
-            ├── maps/
-            │   ├── map.js
-            │   ├── map-delete.js
-            │   ├── map-edit.js
-            │   ├── map-management.js
-            │   ├── map-sandbox.js
-            │   ├── map-operation-state.js
-            │   ├── maps.js
-            │   └── map-view.js
-            ├── games/
-            │   ├── dice-roller.js
-            │   ├── session-client.js
-            │   ├── game-details.js
-            │   ├── game-delete.js
-            │   ├── game-state-api.js
-            │   ├── session-combat.js
-            │   ├── lobby.js
-            │   └── session-dice.js
-            ├── admin/
-            │   └── admin.js
-            ├── auth.js
-            ├── cookie-banner.js
-            ├── delete-account.js
-            ├── mfa-setup.js
-            ├── network-error-handler.js
-            ├── ui.js
-            ├── UI/
-            │   ├── avatar-preview.js
-            │   ├── sticky-navigation.js
-            │   ├── password-toggle.js
-            │   └── theme-switcher.js
-            ├── pixi/
-            │   ├── DisplayObjectPool.js
-            │   └── TokenFactory.js
-            └── systems/
-                ├── Dnd5eSystem.js
-                ├── rule-engine-api.js
-                ├── rule-engine-manager.js
-                ├── game-system-engine-origin.js
-                ├── game-system-rules-view.js
-                ├── game-system-rules-editor.js
-                ├── game-systems-catalog.js
-                └── ISystem.js
+│   │   ├── application.py
+│   │   ├── bootstrap.py
+│   │   └── lifespan.py
+│   ├── commands/
+│   │   ├── __init__.py
+│   │   ├── create_initial_admin.py
+│   │   └── migrate.py
+│   ├── db_migrations/
+│   │   ├── versions/
+│   │   │   └── 5e49fa4b7183_describe_schema_change.py
+│   │   ├── __init__.py
+│   │   ├── env.py
+│   │   ├── README
+│   │   ├── rule_engine_protection.py
+│   │   └── script.py.mako
+│   └── __init__.py
+├── content/
+│   └── legal/
+│       ├── cookie_policy.md
+│       ├── privacy_policy.md
+│       └── terms_of_service.md
+├── data/
+│   └── .env
+├── frontend/
+│   ├── public/
+│   │   ├── fonts/
+│   │   │   ├── Cinzel-Black.woff
+│   │   │   ├── Cinzel-Black.woff2
+│   │   │   ├── Cinzel-Bold.woff
+│   │   │   ├── Cinzel-Bold.woff2
+│   │   │   ├── Cinzel-Regular.woff
+│   │   │   └── Cinzel-Regular.woff2
+│   │   ├── images/
+│   │   │   ├── backgrounds/
+│   │   │   │   ├── dark_fantasy/
+│   │   │   │   │   ├── fantasy-1.webp
+│   │   │   │   │   ├── fantasy-2.webp
+│   │   │   │   │   ├── fantasy-3.webp
+│   │   │   │   │   ├── fantasy-4.webp
+│   │   │   │   │   └── fantasy-5.webp
+│   │   │   │   ├── general_fantasy/
+│   │   │   │   │   ├── fantasy-1.webp
+│   │   │   │   │   ├── fantasy-2.webp
+│   │   │   │   │   ├── fantasy-3.webp
+│   │   │   │   │   ├── fantasy-4.webp
+│   │   │   │   │   └── fantasy-5.webp
+│   │   │   │   └── light_fantasy/
+│   │   │   │       ├── fantasy-1.webp
+│   │   │   │       ├── fantasy-2.webp
+│   │   │   │       ├── fantasy-3.webp
+│   │   │   │       ├── fantasy-4.webp
+│   │   │   │       └── fantasy-5.webp
+│   │   │   ├── borders/
+│   │   │   │   ├── dark_fantasy/
+│   │   │   │   ├── general_fantasy/
+│   │   │   │   ├── light_fantasy/
+│   │   │   │   └── parchment_corner.png
+│   │   │   ├── textures/
+│   │   │   │   ├── dark_fantasy/
+│   │   │   │   ├── general_fantasy/
+│   │   │   │   ├── light_fantasy/
+│   │   │   │   └── paper-fibers.webp
+│   │   │   ├── default-avatar.jpg
+│   │   │   └── favicon.ico
+│   │   └── js/
+│   │       └── theme-init.js
+│   ├── src/
+│   │   ├── content/
+│   │   │   └── legal/
+│   │   ├── js/
+│   │   │   ├── app/
+│   │   │   │   └── page-lifecycle.js
+│   │   │   ├── config/
+│   │   │   │   └── app-config.js
+│   │   │   ├── features/
+│   │   │   │   ├── admin/
+│   │   │   │   │   └── admin.js
+│   │   │   │   ├── auth/
+│   │   │   │   │   ├── auth.js
+│   │   │   │   │   ├── mfa-setup.js
+│   │   │   │   │   └── password-toggle.js
+│   │   │   │   ├── game-systems/
+│   │   │   │   │   ├── api/
+│   │   │   │   │   │   ├── game-system-api.js
+│   │   │   │   │   │   └── rule-engine-api.js
+│   │   │   │   │   ├── editor/
+│   │   │   │   │   │   ├── game-system-engine-origin.js
+│   │   │   │   │   │   ├── game-system-rules-editor.js
+│   │   │   │   │   │   └── rule-engine-manager.js
+│   │   │   │   │   ├── pages/
+│   │   │   │   │   │   ├── catalog-page.js
+│   │   │   │   │   │   ├── editor-page.js
+│   │   │   │   │   │   └── page-controller.js
+│   │   │   │   │   └── view/
+│   │   │   │   │       └── game-system-rules-view.js
+│   │   │   │   ├── games/
+│   │   │   │   │   ├── sessions/
+│   │   │   │   │   │   ├── session-combat.js
+│   │   │   │   │   │   ├── session-dice.js
+│   │   │   │   │   │   ├── session-management.js
+│   │   │   │   │   │   ├── session-token-events.js
+│   │   │   │   │   │   └── session-tokens.js
+│   │   │   │   │   ├── combat-values.js
+│   │   │   │   │   ├── game-delete.js
+│   │   │   │   │   ├── game-details.js
+│   │   │   │   │   ├── game-http.js
+│   │   │   │   │   ├── game-state-api.js
+│   │   │   │   │   ├── lobby-view.js
+│   │   │   │   │   ├── lobby.js
+│   │   │   │   │   ├── token-create-values.js
+│   │   │   │   │   └── token-map-fields.js
+│   │   │   │   ├── legal/
+│   │   │   │   │   └── cookie-banner.js
+│   │   │   │   ├── maps/
+│   │   │   │   │   ├── games/
+│   │   │   │   │   │   ├── game-map-controller.js
+│   │   │   │   │   │   ├── game-map-data.js
+│   │   │   │   │   │   ├── game-map-drag.js
+│   │   │   │   │   │   ├── game-map-placement.js
+│   │   │   │   │   │   └── game-map-token-data.js
+│   │   │   │   │   ├── map-delete.js
+│   │   │   │   │   ├── map-edit.js
+│   │   │   │   │   ├── map-http.js
+│   │   │   │   │   ├── map-management.js
+│   │   │   │   │   ├── map-operation-state.js
+│   │   │   │   │   ├── map-sandbox.js
+│   │   │   │   │   ├── map-view.js
+│   │   │   │   │   ├── map.js
+│   │   │   │   │   ├── maps.js
+│   │   │   │   │   └── stored-game-map.js
+│   │   │   │   └── users/
+│   │   │   │       ├── avatar-preview.js
+│   │   │   │       ├── delete-account.js
+│   │   │   │       ├── profile-actions.js
+│   │   │   │       └── profile.js
+│   │   │   ├── shared/
+│   │   │   │   ├── http/
+│   │   │   │   │   ├── network-error-handler.js
+│   │   │   │   │   └── session-client.js
+│   │   │   │   ├── pixi/
+│   │   │   │   │   ├── DisplayObjectPool.js
+│   │   │   │   │   └── TokenFactory.js
+│   │   │   │   └── ui/
+│   │   │   │       ├── notifications.js
+│   │   │   │       ├── sticky-navigation.js
+│   │   │   │       ├── theme-switcher.js
+│   │   │   │       └── ui.js
+│   │   │   ├── main.js
+│   │   │   └── main.min.js
+│   │   └── styles/
+│   │       ├── base/
+│   │       │   ├── _reset.scss
+│   │       │   ├── _responsive.scss
+│   │       │   ├── _typography.scss
+│   │       │   └── _variables.scss
+│   │       ├── components/
+│   │       │   ├── _buttons.scss
+│   │       │   ├── _cookie-banner.scss
+│   │       │   ├── _delete-modal.scss
+│   │       │   ├── _inputs.scss
+│   │       │   └── _toast.scss
+│   │       ├── layout/
+│   │       │   ├── _container.scss
+│   │       │   └── _navbar.scss
+│   │       ├── pages/
+│   │       │   ├── _admin.scss
+│   │       │   ├── _auth.scss
+│   │       │   ├── _game-map.scss
+│   │       │   ├── _game-system-editor.scss
+│   │       │   ├── _landing.scss
+│   │       │   ├── _legal.scss
+│   │       │   ├── _lobby.scss
+│   │       │   ├── _profile.scss
+│   │       │   └── _session-dice.scss
+│   │       ├── style.min.css
+│   │       └── style.scss
+│   ├── templates/
+│   │   ├── admin/
+│   │   │   ├── audit.html
+│   │   │   ├── dashboard.html
+│   │   │   ├── reports.html
+│   │   │   └── users.html
+│   │   ├── auth/
+│   │   │   ├── forgot_password.html
+│   │   │   ├── login.html
+│   │   │   ├── register.html
+│   │   │   └── reset_password.html
+│   │   ├── emails/
+│   │   │   ├── password_reset.html
+│   │   │   └── verification_email.html
+│   │   ├── errors/
+│   │   │   └── not_found.html
+│   │   ├── game_systems/
+│   │   │   └── game_systems.html
+│   │   ├── games/
+│   │   │   ├── partials/
+│   │   │   │   ├── game_map.html
+│   │   │   │   ├── session_combat.html
+│   │   │   │   ├── session_dice.html
+│   │   │   │   ├── session_management.html
+│   │   │   │   ├── session_tokens.html
+│   │   │   │   ├── token_create.html
+│   │   │   │   └── token_map_select.html
+│   │   │   ├── game_details.html
+│   │   │   ├── game_play.html
+│   │   │   └── games.html
+│   │   ├── home/
+│   │   │   └── index.html
+│   │   ├── legal/
+│   │   │   └── document.html
+│   │   ├── maps/
+│   │   │   ├── map_create.html
+│   │   │   ├── map_edit.html
+│   │   │   ├── map_management.html
+│   │   │   ├── map_sandbox.html
+│   │   │   ├── map_view.html
+│   │   │   └── maps.html
+│   │   ├── shared/
+│   │   │   └── menu.html
+│   │   ├── users/
+│   │   │   └── profile.html
+│   │   └── base.html
+│   └── uploads/
+│       ├── avatars/
+│       └── private/
+│           └── maps/
+├── logs/
+├── staging/
+├── tests/
+│   ├── js/
+│   └── python/
+├── tools/
+│   ├── commands_tools.md
+│   ├── context_pack.py
+│   ├── delete_empty_files.py
+│   └── project_tree.py
+├── .env.example
+├── .gitignore
+├── alembic.ini
+├── amvera.yml
+├── context_files_example.txt
+├── eslint.config.mjs
+├── LICENSE
+├── main.py
+├── package-lock.json
+├── package.json
+├── README.md
+├── rename-script.js
+├── requirements.txt
+├── structure_ignore_example.txt
+├── vite.config.js
+└── vite_command.txt

@@ -1,0 +1,11 @@
+/* frontend/src/styles/pages/_auth.scss */
+
+/* Ссылки-переключатели между формами */
+.auth-container p a {
+  color: var(--accent-magic);
+  text-decoration: none;
+  font-size: 14px;
+}
+.auth-container p a:hover {
+  text-decoration: underline;
+}

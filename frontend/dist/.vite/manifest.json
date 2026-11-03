@@ -1,0 +1,165 @@
+{
+  "../node_modules/pixi.js/lib/environment-browser/browserAll.mjs": {
+    "file": "assets/js/browserAll-BhY6cpjc.js",
+    "name": "browserAll",
+    "src": "../node_modules/pixi.js/lib/environment-browser/browserAll.mjs",
+    "isDynamicEntry": true,
+    "imports": [
+      "_index-Cca20Rbg.js",
+      "../node_modules/pixi.js/lib/environment-webworker/webworkerAll.mjs",
+      "src/js/main.js",
+      "_getPo2TextureFromSource-CCT1yS6i.js",
+      "_Filter-DrgWSYkA.js"
+    ]
+  },
+  "../node_modules/pixi.js/lib/environment-webworker/webworkerAll.mjs": {
+    "file": "assets/js/webworkerAll-BVaJ3s8X.js",
+    "name": "webworkerAll",
+    "src": "../node_modules/pixi.js/lib/environment-webworker/webworkerAll.mjs",
+    "isDynamicEntry": true,
+    "imports": [
+      "_index-Cca20Rbg.js",
+      "_getPo2TextureFromSource-CCT1yS6i.js",
+      "_Filter-DrgWSYkA.js",
+      "src/js/main.js"
+    ]
+  },
+  "../node_modules/pixi.js/lib/rendering/renderers/canvas/CanvasRenderer.mjs": {
+    "file": "assets/js/CanvasRenderer-Dt2LgWrP.js",
+    "name": "CanvasRenderer",
+    "src": "../node_modules/pixi.js/lib/rendering/renderers/canvas/CanvasRenderer.mjs",
+    "isDynamicEntry": true,
+    "imports": [
+      "_index-Cca20Rbg.js",
+      "_RenderTargetSystem-DEFnEO2_.js",
+      "_getPo2TextureFromSource-CCT1yS6i.js",
+      "_stored-game-map-CzZPPkj1.js",
+      "src/js/main.js",
+      "_Filter-DrgWSYkA.js"
+    ]
+  },
+  "../node_modules/pixi.js/lib/rendering/renderers/gl/WebGLRenderer.mjs": {
+    "file": "assets/js/WebGLRenderer-3waj_OdU.js",
+    "name": "WebGLRenderer",
+    "src": "../node_modules/pixi.js/lib/rendering/renderers/gl/WebGLRenderer.mjs",
+    "isDynamicEntry": true,
+    "imports": [
+      "_index-Cca20Rbg.js",
+      "_getTexelRangeRects-0TTW1Yxi.js",
+      "_stored-game-map-CzZPPkj1.js",
+      "_RenderTargetSystem-DEFnEO2_.js",
+      "src/js/main.js",
+      "_getPo2TextureFromSource-CCT1yS6i.js",
+      "_Filter-DrgWSYkA.js"
+    ]
+  },
+  "../node_modules/pixi.js/lib/rendering/renderers/gpu/WebGPURenderer.mjs": {
+    "file": "assets/js/WebGPURenderer-BHfn4nCr.js",
+    "name": "WebGPURenderer",
+    "src": "../node_modules/pixi.js/lib/rendering/renderers/gpu/WebGPURenderer.mjs",
+    "isDynamicEntry": true,
+    "imports": [
+      "_index-Cca20Rbg.js",
+      "_getTexelRangeRects-0TTW1Yxi.js",
+      "_stored-game-map-CzZPPkj1.js",
+      "_RenderTargetSystem-DEFnEO2_.js",
+      "_getPo2TextureFromSource-CCT1yS6i.js",
+      "src/js/main.js",
+      "_Filter-DrgWSYkA.js"
+    ]
+  },
+  "_Filter-DrgWSYkA.js": {
+    "file": "assets/js/Filter-DrgWSYkA.js",
+    "name": "Filter",
+    "imports": [
+      "_index-Cca20Rbg.js"
+    ]
+  },
+  "_RenderTargetSystem-DEFnEO2_.js": {
+    "file": "assets/js/RenderTargetSystem-DEFnEO2_.js",
+    "name": "RenderTargetSystem",
+    "imports": [
+      "_index-Cca20Rbg.js",
+      "_stored-game-map-CzZPPkj1.js",
+      "_Filter-DrgWSYkA.js",
+      "_getPo2TextureFromSource-CCT1yS6i.js"
+    ]
+  },
+  "_getPo2TextureFromSource-CCT1yS6i.js": {
+    "file": "assets/js/getPo2TextureFromSource-CCT1yS6i.js",
+    "name": "getPo2TextureFromSource",
+    "imports": [
+      "_index-Cca20Rbg.js"
+    ]
+  },
+  "_getTexelRangeRects-0TTW1Yxi.js": {
+    "file": "assets/js/getTexelRangeRects-0TTW1Yxi.js",
+    "name": "getTexelRangeRects",
+    "imports": [
+      "_index-Cca20Rbg.js",
+      "_stored-game-map-CzZPPkj1.js"
+    ]
+  },
+  "_index-Cca20Rbg.js": {
+    "file": "assets/js/index-Cca20Rbg.js",
+    "name": "index",
+    "imports": [
+      "src/js/main.js"
+    ],
+    "dynamicImports": [
+      "../node_modules/pixi.js/lib/environment-browser/browserAll.mjs",
+      "../node_modules/pixi.js/lib/environment-webworker/webworkerAll.mjs"
+    ]
+  },
+  "_stored-game-map-CzZPPkj1.js": {
+    "file": "assets/js/stored-game-map-CzZPPkj1.js",
+    "name": "stored-game-map",
+    "isDynamicEntry": true,
+    "imports": [
+      "_index-Cca20Rbg.js",
+      "src/js/main.js",
+      "_getPo2TextureFromSource-CCT1yS6i.js"
+    ],
+    "dynamicImports": [
+      "../node_modules/pixi.js/lib/rendering/renderers/gpu/WebGPURenderer.mjs",
+      "../node_modules/pixi.js/lib/rendering/renderers/gl/WebGLRenderer.mjs",
+      "../node_modules/pixi.js/lib/rendering/renderers/canvas/CanvasRenderer.mjs"
+    ]
+  },
+  "src/js/features/maps/games/game-map-placement.js": {
+    "file": "assets/js/game-map-placement-C6d8fzcT.js",
+    "name": "game-map-placement",
+    "src": "src/js/features/maps/games/game-map-placement.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_index-Cca20Rbg.js",
+      "src/js/main.js"
+    ]
+  },
+  "src/js/features/maps/rendering/stored-map-fog.js": {
+    "file": "assets/js/stored-map-fog-MJ_oBsGv.js",
+    "name": "stored-map-fog",
+    "src": "src/js/features/maps/rendering/stored-map-fog.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "_index-Cca20Rbg.js",
+      "src/js/main.js"
+    ]
+  },
+  "src/js/main.js": {
+    "file": "assets/js/main.min.js",
+    "name": "main",
+    "src": "src/js/main.js",
+    "isEntry": true,
+    "dynamicImports": [
+      "_stored-game-map-CzZPPkj1.js",
+      "src/js/features/maps/games/game-map-placement.js",
+      "src/js/features/maps/rendering/stored-map-fog.js"
+    ]
+  },
+  "src/styles/style.scss": {
+    "file": "assets/css/style.min.css",
+    "src": "src/styles/style.scss",
+    "isEntry": true
+  }
+}

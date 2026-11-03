@@ -9,8 +9,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const jsDistPath = path.resolve(__dirname, 'dist', 'js');
-const cssDistPath = path.resolve(__dirname, 'dist', 'css');
+const jsDistPath = path.resolve(__dirname, 'frontend/dist/assets', 'js');
+const cssDistPath = path.resolve(__dirname, 'frontend/dist/assets', 'css');
 
 console.log('[RENAME-SCRIPT] Запущен поиск файлов...');
 
@@ -49,7 +49,7 @@ try {
   renameFile(jsDistPath, 'main-', 'main.min.js');
 
   // 2. Переименовываем CSS-файл
-  renameFile(cssDistPath, 'app-', 'style.min.css');
+  renameFile(cssDistPath, 'styles-', 'style.min.css');
 
   console.log('[RENAME-SCRIPT] Работа завершена.');
 } catch (e) {

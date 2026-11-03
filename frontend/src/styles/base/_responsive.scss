@@ -1,0 +1,121 @@
+/* frontend/src/styles/base/_responsive.scss */
+
+// Адаптивность под мобильные устройства (Mobile First + Breakpoints)
+// Подключается в style.scss через @import "modules/responsive";
+
+// Переменные брейкпоинтов (согласно конвенции именования Раздел 9.3)
+$breakpoint-mobile: 768px;
+$breakpoint-tablet: 1024px;
+
+/* ==========================================
+   ОБЩИЕ НАСТРОЙКИ И АДАПТАЦИЯ ШРИФТОВ
+   ========================================== */
+html {
+    // Включаем адекватное масштабирование шрифтов на iOS/Android
+    -webkit-text-size-adjust: 100%;
+}
+
+body.auth-body {
+    padding: var(--space-sm);
+
+    .page-content {
+        // Убираем боковые отступы у основного контейнера на мобилках,
+        // чтобы формы растягивались на всю ширину
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+/* ==========================================
+   МОДУЛЬ AUTH (ВХОД / РЕГИСТРАЦИЯ)
+   ========================================== */
+@media (max-width: $breakpoint-mobile) {
+    .auth-container {
+        // На узких экранах форма занимает почти весь экран
+        width: 100%;
+        max-width: 100%;
+        border-radius: 0; // Делаем форму бесшовной со страницей
+        box-shadow: none;
+
+        h2 {
+            text-align: center;
+            margin-bottom: var(--space-lg);
+        }
+    }
+
+    /* Форма входа и регистрации */
+    form {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-md);
+
+        input {
+            // Увеличение высоты инпутов для удобства попадания пальцем
+            min-height: 52px;
+            font-size: 1rem;
+            padding: 0 var(--space-md);
+        }
+
+        button[type="submit"] {
+            // Большая кнопка действия
+            min-height: 56px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+    }
+
+    /* Ссылки переключения (внизу форм) */
+    p {
+        text-align: center;
+        margin-top: var(--space-xl);
+
+        a {
+            display: inline-block;
+            padding: var(--space-sm) var(--space-md);
+            // Оборачиваем ссылку в блочный элемент для увеличения зоны нажатия
+        }
+    }
+}
+
+/* ==========================================
+   МОДУЛЬ PROFILE (ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ)
+   ========================================== */
+@media (max-width: $breakpoint-mobile) {
+    .profile-container {
+        margin: 1rem auto;
+        padding: 0 0.75rem;
+    }
+
+    .profile-section {
+        padding: 1rem;
+    }
+
+    .profile-avatar-row {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .profile-avatar-wrap {
+        margin-bottom: 0;
+    }
+
+    .profile-fields-grid {
+        width: 100%;
+    }
+
+    .profile-actions {
+        justify-content: center;
+    }
+}
+
+/* ==========================================
+   ГЛОБАЛЬНЫЕ МЕДИА-ЗАПРОСЫ ДЛЯ СЕТКИ
+   ========================================== */
+.grid {
+    @media (max-width: $breakpoint-mobile) {
+        // Одноколоночная сетка везде, где явно не указано иное
+        grid-template-columns: 1fr !important;
+    }
+}

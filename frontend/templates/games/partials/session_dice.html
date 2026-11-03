@@ -1,0 +1,52 @@
+<!-- frontend/templates/games/partials/session_dice.html -->
+
+<section class="session-dice" data-session-dice data-session-id="{{ selected_session.id }}"
+         data-session-active="{{ 'true' if selected_session.is_active else 'false' }}" aria-label="Кубики игровой сессии" aria-busy="false">
+	<header class="session-dice__header">
+		<h3>Кубики и журнал</h3>
+		<button type="button" class="btn btn-outline-primary" data-session-dice-refresh>Обновить журнал</button>
+	</header>
+	
+	{% if not selected_session.is_active %}
+	<p>Сессия завершена. Новые броски недоступны, журнал можно просматривать.</p>
+	{% endif %}
+	
+	<form data-session-dice-form>
+		<fieldset class="session-dice__fields" {% if not selected_session.is_active %}disabled{% endif %}>
+			<legend>Новый бросок</legend>
+			
+			<label class="session-dice__field">
+				Формула
+				<input type="text" name="formula" value="1d20" placeholder="Например, 2d6+3"
+				       maxlength="100" autocomplete="off" spellcheck="false" required>
+				<small class="session-dice__hint">
+					Примеры: 1d20, 2d6+3, 1d20-2. В обычном режиме также доступны группы костей
+					и выбор результатов, например 2d6+1d4+3 или 3d8kh2.
+				</small>
+			</label>
+			
+			<label class="session-dice__field">
+				Режим
+				<select name="advantage">
+					<option value="">Обычный бросок</option>
+					<option value="advantage">Преимущество</option>
+					<option value="disadvantage">Помеха</option>
+				</select>
+				<small class="session-dice__hint">
+					Для преимущества и помехи укажите 1d20 с необязательным модификатором.
+					Сервер бросит две кости и выберет большую или меньшую.
+				</small>
+			</label>
+			
+			<button type="submit" class="btn btn-primary">Бросить</button>
+		</fieldset>
+	</form>
+	
+	<p data-session-dice-message role="status" aria-live="polite"></p>
+	<p class="session-dice__hint">
+		Показаны последние 100 доступных вам бросков. Выпавшие значения включают отброшенные кости;
+		итог учитывает выбор результатов и модификаторы.
+	</p>
+	<p data-session-dice-empty hidden>В этой сессии пока нет доступных вам бросков.</p>
+	<ol class="session-dice__list" data-session-dice-list aria-label="Журнал бросков"></ol>
+</section>

@@ -1,0 +1,2 @@
+main.py
+frontend/public/js/theme-init.js

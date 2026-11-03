@@ -1,0 +1,10 @@
+<!-- frontend/templates/legal/document.html -->
+
+{% extends "base.html" %}
+{% block title %}{{ legal_title }} — {{ project_name }}{% endblock %}
+
+{% block content %}
+<section class="legal-page">
+	{{ legal_content | safe }}
+</section>
+{% endblock %}

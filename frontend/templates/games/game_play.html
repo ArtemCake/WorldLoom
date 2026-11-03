@@ -8,12 +8,10 @@
 <section class="lobby-page">
 	<header class="lobby-page__header">
 		<h1>Игровая сессия</h1>
-		<a
-				href="{{ request.url_for('games_page_get') }}"
-				class="btn btn-outline-primary"
-		>
-			К списку игр
-		</a>
+		<div class="lobby-card__actions">
+			<a href="{{ request.url_for('games_page_get') }}" class="btn btn-outline-primary">К списку игр</a>
+			<a href="{{ request.url_for('game_details_page_get', game_id=game_id) }}" class="btn btn-outline-primary">Об игре</a>
+		</div>
 	</header>
 	
 	<section aria-labelledby="game-sessions-title">
@@ -23,17 +21,11 @@
 		<ul>
 			{% for item in game_sessions %}
 			<li>
-				<a
-						href="{{ request.url_for('game_play_page_get', game_id=game_id) }}?session_id={{ item.id }}"
-						{% if selected_session and selected_session.id == item.id %}
-						aria-current="page"
-						{% endif %}
-				>
+				<a href="{{ request.url_for('game_play_page_get', game_id=game_id) }}?session_id={{ item.id }}"
+				   {% if selected_session and selected_session.id == item.id %}aria-current="page"{% endif %}>
 					{{ item.title or "Без названия" }}
 				</a>
-				<span>
-					— {{ "активна" if item.is_active else "завершена" }}
-				</span>
+				<span>— {{ "активна" if item.is_active else "завершена" }}</span>
 			</li>
 			{% endfor %}
 		</ul>
@@ -41,54 +33,42 @@
 		<p>В этой игре пока нет сессий.</p>
 		{% endif %}
 	</section>
-	
+	{% include "games/partials/session_management.html" %}
 	{% if selected_session %}
 	<section aria-labelledby="selected-session-title">
-		<h2 id="selected-session-title">
-			{{ selected_session.title or "Сессия без названия" }}
-		</h2>
+		<h2 id="selected-session-title">{{ selected_session.title or "Сессия без названия" }}</h2>
+		
+		<p>
+			Начало:
+			<time datetime="{{ selected_session.start_time.isoformat() }}">{{ selected_session.start_time.isoformat() }}</time>
+		</p>
+		
+		{% if selected_session.end_time %}
+		<p>
+			Завершение:
+			<time datetime="{{ selected_session.end_time.isoformat() }}">{{ selected_session.end_time.isoformat() }}</time>
+		</p>
+		{% endif %}
 		
 		{% if selected_session.summary_log %}
 		<h3>Итоги сессии</h3>
-		<p>{{ selected_session.summary_log }}</p>
+		{% for paragraph in selected_session.summary_log.splitlines() %}
+		<p>{{ paragraph }}</p>
+		{% endfor %}
 		{% endif %}
 		
-		{% if selected_session.is_active %}
-		{% include "partials/session_dice.html" %}
-		{% else %}
-		<p>Эта сессия завершена. Новые броски здесь недоступны.</p>
-		{% endif %}
-	</section>
-	<section
-			data-session-combat
-			data-session-id="{{ selected_session.id }}"
-			aria-labelledby="session-combat-title"
-			aria-busy="false"
-	>
-		<h3 id="session-combat-title">Очередь боя</h3>
-		
-		<button
-				type="button"
-				class="btn btn-outline-primary"
-				data-combat-refresh
-		>
-			Обновить очередь
-		</button>
-		
-		<p
-				data-combat-status
-				role="status"
-				aria-live="polite"
-		>
-			Состояние боя ещё не загружено.
-		</p>
-		
-		<p data-combat-round hidden></p>
-		<ol data-combat-order aria-label="Участники боя"></ol>
+		{% include "games/partials/session_dice.html" %}
 	</section>
 	
+	{% include "games/partials/session_combat.html" %}
 	{% elif game_sessions %}
 	<p>Активной сессии нет. Выберите завершённую из списка.</p>
 	{% endif %}
+	
+	<noscript>
+		<p>Для бросков кубиков, загрузки журнала и очереди боя нужен JavaScript.</p>
+	</noscript>
 </section>
+{% include "games/partials/session_tokens.html" %}
+{% include "games/partials/game_map.html" %}
 {% endblock %}

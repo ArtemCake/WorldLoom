@@ -1,40 +1,59 @@
 <!-- frontend/templates/admin/dashboard.html -->
 
 {% extends "base.html" %}
+{% block title %}Панель администратора — {{ project_name }}{% endblock %}
+
 {% block content %}
 <div class="admin-page">
 	<h2 class="profile-heading">Панель администратора</h2>
-	<p class="profile-note">Видны только те разделы, на которые у вас есть право. Остальные открывает администратор с полным доступом.</p>
+	<p class="profile-note">
+		Видны только разделы, на которые выдано право доступа.
+		Наличие роли администратора само по себе не открывает все разделы.
+	</p>
 	
+	{% set permissions = user.admin_permissions or [] %}
 	<div class="admin-sections">
-		{% if 'users' in user.admin_permissions %}
-		<a class="admin-card" href="/admin/users" hx-get="/admin/users" hx-target="body" hx-push-url="true">
-			<strong>Пользователи</strong><p>Роли, права разделов, деактивация и удаление аккаунтов.</p>
+		{% if 'users' in permissions %}
+		<a class="admin-card" href="/admin/users">
+			<strong>Пользователи</strong>
+			<p>Роли, права разделов, деактивация и удаление аккаунтов.</p>
 		</a>
 		{% endif %}
-		{% if 'reports' in user.admin_permissions %}
-		<a class="admin-card" href="/admin/reports" hx-get="/admin/reports" hx-target="body" hx-push-url="true">
-			<strong>Жалобы</strong><p>Обращения на контент и профили пользователей.</p>
+		
+		{% if 'reports' in permissions %}
+		<a class="admin-card" href="/admin/reports">
+			<strong>Жалобы</strong>
+			<p>Обращения на контент и профили пользователей.</p>
 		</a>
 		{% endif %}
-		{% if 'audit' in user.admin_permissions %}
-		<a class="admin-card" href="/admin/audit" hx-get="/admin/audit" hx-target="body" hx-push-url="true">
-			<strong>Аудит-лог</strong><p>Журнал критических действий в системе.</p>
+		
+		{% if 'audit' in permissions %}
+		<a class="admin-card" href="/admin/audit">
+			<strong>Аудит-лог</strong>
+			<p>Просмотр записей журнала действий.</p>
 		</a>
 		{% endif %}
-		{% if 'content' in user.admin_permissions %}
-		<a class="admin-card" href="/admin/game-systems">
+		
+		{% if 'content' in permissions %}
+		<a class="admin-card" href="/game-systems/catalog">
 			<strong>Контент</strong>
 			<p>Игровые системы: создание, редактирование и управление доступностью.</p>
 		</a>
 		{% endif %}
-		{% if 'system' in user.admin_permissions %}
-		<div class="admin-card admin-card--disabled"><strong>Система</strong><p>Системные события — раздел в разработке.</p></div>
+		
+		{% if 'system' in permissions %}
+		<div class="admin-card admin-card--disabled" aria-disabled="true">
+			<strong>Система</strong>
+			<p>Системные события — раздел в разработке.</p>
+		</div>
 		{% endif %}
 	</div>
 	
-	{% if not user.admin_permissions %}
-	<p class="profile-warning-text">У вас роль администратора, но пока не выдано ни одного права. Обратитесь к администратору с полным доступом.</p>
+	{% if not permissions %}
+	<p class="profile-warning-text">
+		У вас роль администратора, но пока не выдано ни одного права.
+		Обратитесь к администратору с полным доступом.
+	</p>
 	{% endif %}
 </div>
 {% endblock %}

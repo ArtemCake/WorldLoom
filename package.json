@@ -1,22 +1,28 @@
 {
-  "name": "WorldLoom",
+  "name": "worldloom",
   "version": "1.0.0",
-  "type": "module",
+  "description": "",
+  "main": "rename-script.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build && node rename-script.js",
-    "preview": "vite preview",
-    "lint": "eslint \"frontend/static/js/**/*.js\" --fix"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite build --watch",
+    "build": "vite build && node rename-script.js"
+  },
+  "keywords": [],
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "autoprefixer": "^10.6.2",
+    "postcss": "^8.5.32",
+    "sass": "^1.107.1",
+    "sass-embedded": "^1.107.1",
+    "vite": "^6.4.5"
   },
   "dependencies": {
-    "alpinejs": "^3.14.3",
-    "htmx.org": "^2.0.4"
-  },
-  "devDependencies": {
-    "autoprefixer": "^10.4.20",
-    "pixi.js": "^8.20.1",
-    "postcss": "^8.4.35",
-    "sass-embedded": "^1.104.0",
-    "vite": "^6.0.0"
+    "pixi.js": "^8.22.0"
   }
 }

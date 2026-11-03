@@ -1,0 +1,117 @@
+/* frontend/src/styles/components/_inputs.scss */
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+input, select  {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--color-bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--color-border-accent);
+  box-shadow: 0 0 0 3px var(--heading-glow);
+}
+
+.auth-container input:focus {
+  border-color: var(--accent-magic);
+  box-shadow: 0 0 0 3px var(--glow-color-2);
+}
+
+.message-box {
+  margin-top: 1rem;
+  min-height: 24px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.message-box .error {
+  color: var(--color-text-error);
+}
+
+.message-box .success {
+  color: var(--color-text-success);
+}
+
+.form-error-message {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+
+    color: var(--color-text-error);
+    background-color: var(--color-panel-glass-alt);
+    border-left: 4px solid var(--color-text-error);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-md);
+
+}
+
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  input {
+    padding-right: 44px; // место под кнопку, чтобы текст пароля не залезал под неё
+  }
+}
+
+.password-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  color: var(--text-secondary, #a0a0b0);
+}
+
+.password-toggle:hover {
+  color: var(--accent-magic);
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid var(--accent-magic);
+  outline-offset: 2px;
+}
+
+.form-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0.75rem 0;
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+
+  input[type="checkbox"] {
+    margin-top: 0.2rem;
+    width: auto;
+    accent-color: var(--accent-magic);
+  }
+
+  a {
+    color: var(--accent-magic);
+    text-decoration: underline;
+  }
+}

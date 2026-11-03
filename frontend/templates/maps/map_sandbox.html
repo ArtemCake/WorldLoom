@@ -1,10 +1,12 @@
 <!-- frontend/templates/maps/map_sandbox.html -->
 
-<section
-		data-map-sandbox
-		data-game-id="{{ campaign_map.game_id if sandbox_saved else selected_game.id }}"
-		data-map-id="{{ campaign_map.id if sandbox_saved else '' }}"
->
+<section data-map-sandbox
+         data-game-id="{{ campaign_map.game_id if sandbox_saved else selected_game.id }}"
+         data-map-id="{{ campaign_map.id if sandbox_saved else '' }}"
+         data-preview-url="{{ request.url_for('preview_map_visibility') }}"
+         {% if sandbox_saved %}
+         data-generate-url="{{ request.url_for('generate_hex_grid', map_id=campaign_map.id) }}"
+         {% endif %}>
 	<h2>Карта, сетка и туман войны</h2>
 	
 	<p>
@@ -14,13 +16,8 @@
 		</label>
 		
 		<label>
-			<input
-					type="checkbox"
-					name="fog_of_war_enabled"
-					{% if not sandbox_saved or campaign_map.fog_of_war_enabled %}
-					checked
-					{% endif %}
-			>
+			<input type="checkbox" name="fog_of_war_enabled"
+			       {% if not sandbox_saved or campaign_map.fog_of_war_enabled %}checked{% endif %}>
 			Туман войны
 		</label>
 	</p>
@@ -28,14 +25,12 @@
 	<p>
 		<label>
 			Строки
-			<input type="number" name="rows"
-			       value="20" min="1" max="200" required>
+			<input type="number" name="rows" value="20" min="1" max="200" required>
 		</label>
 		
 		<label>
 			Столбцы
-			<input type="number" name="cols"
-			       value="20" min="1" max="200" required>
+			<input type="number" name="cols" value="20" min="1" max="200" required>
 		</label>
 	</p>
 	
@@ -50,8 +45,7 @@
 		
 		<label>
 			Тестовый радиус зрения, гексы
-			<input type="number" data-preview-radius
-			       value="6" min="0" max="50" required>
+			<input type="number" data-preview-radius value="6" min="0" max="50" required>
 		</label>
 		
 		<label>
@@ -61,12 +55,10 @@
 	</p>
 	
 	<p>
-		<button type="button" data-preview-reset>
-			Сбросить тестовую прогулку
-		</button>
+		<button type="button" class="btn btn-outline-primary" data-preview-reset>Сбросить тестовую прогулку</button>
 		
 		{% if sandbox_saved %}
-		<button type="button" data-preview-generate hidden>
+		<button type="button" class="btn btn-outline-primary" data-preview-generate hidden>
 			Создать сетку на этой карте
 		</button>
 		{% endif %}
@@ -74,26 +66,30 @@
 	
 	<p>
 		Нажмите на карту, чтобы поставить тестовую фишку.
-		Перетаскивайте её для проверки обзора.
-		С фокусом на карте можно использовать стрелки.
+		Перетаскивайте её для проверки обзора. С фокусом на карте можно использовать стрелки.
 	</p>
 	
-	<div style="max-width: 100%; overflow: auto;">
-		<canvas
-				data-preview-canvas
-				tabindex="0"
-				width="1200"
-				height="800"
-				aria-label="Предпросмотр карты с тестовой фишкой"
-				style="display: block; max-width: 100%; height: auto;
-					   background: #ddd; touch-action: none;"
-		></canvas>
+	<div class="game-map__viewport">
+		<canvas id="game-canvas-root" class="game-map__canvas" data-game-map-canvas role="img"
+		        aria-label="Карта не отображается"></canvas>
 	</div>
 	
 	<p data-preview-message role="status" aria-live="polite"></p>
 	
 	<p>
-		Тестовая фишка и исследование не сохраняются.
-		Чёрное — неизвестная область, затемнённое — исследованная.
+		Выбор карты здесь не активирует её и не изменяет привязку к сессии.
+		Токены показаны маркерами с названиями, пока без портретов.
+		Сначала выберите токен щелчком по его клетке или через список.
+		Затем потяните выбранный маркер на гекс назначения:
+		жёлтая подсветка показывает предполагаемое размещение.
+		Сам маркер остаётся на сохранённой позиции до подтверждения.
+		Для отмены незавершённого жеста нажмите Escape.
+		Также можно выбрать назначение отдельным щелчком или ввести X/Y.
+		Координаты отсчитываются с нуля.
+		Запись выполняется только кнопкой «Сохранить размещение».
+		После изменений в отдельной панели токенов поле обновляется автоматически,
+		если нет несохранённого назначения; иначе появляется предупреждение.
+		Объекты карты и туман войны пока не отображаются.
 	</p>
+
 </section>

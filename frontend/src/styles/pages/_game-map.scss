@@ -1,0 +1,13 @@
+// frontend/src/styles/pages/_game-map.scss
+
+.game-map__viewport {
+    position: relative;
+    width: 100%;
+    height: 480px;
+    overflow: hidden;
+}
+
+.game-map__canvas {
+    display: block;
+    touch-action: none;
+}

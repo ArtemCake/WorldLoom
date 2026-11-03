@@ -1,11 +1,23 @@
 <!-- frontend/templates/admin/audit.html -->
 
 {% extends "base.html" %}
+{% block title %}Аудит-лог — {{ project_name }}{% endblock %}
+
 {% block content %}
-<div class="admin-page">
+<section class="admin-page" hx-history="false">
 	<h2 class="profile-heading">Аудит-лог</h2>
+	<p><a href="/admin/">Панель администратора</a></p>
+	
 	<table class="admin-table">
-		<thead><tr><th>Действие</th><th>Таблица</th><th>Уровень</th><th>IP</th><th>Когда</th></tr></thead>
+		<thead>
+		<tr>
+			<th scope="col">Действие</th>
+			<th scope="col">Таблица</th>
+			<th scope="col">Уровень</th>
+			<th scope="col">IP</th>
+			<th scope="col">Когда</th>
+		</tr>
+		</thead>
 		<tbody>
 		{% for log in logs %}
 		<tr>
@@ -16,10 +28,22 @@
 			<td>{{ log.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
 		</tr>
 		{% else %}
-		<tr><td colspan="5" class="profile-note">Записей пока нет — ни один из текущих обработчиков ещё не пишет в аудит-лог.</td></tr>
+		<tr>
+			<td colspan="5" class="profile-note">На этой странице записей нет.</td>
+		</tr>
 		{% endfor %}
 		</tbody>
 	</table>
-	<p class="profile-note">Всего: {{ total }}</p>
-</div>
+	
+	<p class="profile-note">Всего: {{ total }}. Страница: {{ page }}.</p>
+	
+	<nav aria-label="Страницы журнала аудита">
+		{% if page > 1 %}
+		<a href="{{ request.url.include_query_params(page=page - 1) }}">Предыдущая</a>
+		{% endif %}
+		{% if page * page_size < total %}
+		<a href="{{ request.url.include_query_params(page=page + 1) }}">Следующая</a>
+		{% endif %}
+	</nav>
+</section>
 {% endblock %}

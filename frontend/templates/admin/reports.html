@@ -1,12 +1,17 @@
 <!-- frontend/templates/admin/reports.html -->
 
 {% extends "base.html" %}
+{% block title %}Жалобы — {{ project_name }}{% endblock %}
+
 {% block content %}
-<div class="admin-page">
+<section class="admin-page" data-admin-root hx-history="false">
 	<h2 class="profile-heading">Жалобы на контент</h2>
+	<p><a href="/admin/">Панель администратора</a></p>
+	<p><a href="{{ request.url }}">Обновить данные страницы</a></p>
 	
-	<form class="admin-search" method="get" hx-get="/admin/reports" hx-target="body" hx-push-url="true">
-		<select name="status_filter">
+	<form class="admin-search" method="get" action="/admin/reports">
+		<label for="admin-report-status">Статус жалобы</label>
+		<select id="admin-report-status" name="status_filter">
 			<option value="" {% if not status_filter %}selected{% endif %}>Все статусы</option>
 			<option value="new" {% if status_filter == 'new' %}selected{% endif %}>Новые</option>
 			<option value="in_review" {% if status_filter == 'in_review' %}selected{% endif %}>На рассмотрении</option>
@@ -16,25 +21,53 @@
 		<button type="submit" class="btn btn-outline-primary btn-sm">Фильтровать</button>
 	</form>
 	
+	<div id="message-box-admin-page" aria-live="polite"></div>
+	
 	<table class="admin-table">
-		<thead><tr><th>Таблица</th><th>Причина</th><th>Статус</th><th>Создано</th><th></th></tr></thead>
-		<tbody>
-		{% for r in reports %}
+		<thead>
 		<tr>
-			<td>{{ r.target_table }}</td>
-			<td>{{ r.reason }}{% if r.description %} — {{ r.description }}{% endif %}</td>
-			<td>{{ r.status }}</td>
-			<td>{{ r.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+			<th scope="col">Таблица</th>
+			<th scope="col">Причина</th>
+			<th scope="col">Статус</th>
+			<th scope="col">Создано</th>
+			<th scope="col">Действия</th>
+		</tr>
+		</thead>
+		<tbody>
+		{% for report in reports %}
+		<tr>
+			<td>{{ report.target_table }}</td>
+			<td>{{ report.reason }}{% if report.description %} — {{ report.description }}{% endif %}</td>
+			<td>{{ report.status }}</td>
+			<td>{{ report.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
 			<td>
-				<button type="button" class="btn btn-secondary btn-sm" data-report-action="resolve" data-report-id="{{ r.id }}">Решено</button>
-				<button type="button" class="btn btn-outline-primary btn-sm" data-report-action="dismiss" data-report-id="{{ r.id }}">Отклонить</button>
+				<button type="button" class="btn btn-secondary btn-sm" data-report-action="resolve"
+				        data-report-id="{{ report.id }}" data-admin-mutation>
+					Решено
+				</button>
+				<button type="button" class="btn btn-outline-primary btn-sm" data-report-action="dismiss"
+				        data-report-id="{{ report.id }}" data-admin-mutation>
+					Отклонить
+				</button>
 			</td>
 		</tr>
 		{% else %}
-		<tr><td colspan="5" class="profile-note">Жалоб пока нет.</td></tr>
+		<tr>
+			<td colspan="5" class="profile-note">По выбранному фильтру жалоб нет.</td>
+		</tr>
 		{% endfor %}
 		</tbody>
 	</table>
-	<p class="profile-note">Всего: {{ total }}</p>
-</div>
+	
+	<p class="profile-note">Всего: {{ total }}. Страница: {{ page }}.</p>
+	
+	<nav aria-label="Страницы списка жалоб">
+		{% if page > 1 %}
+		<a href="{{ request.url.include_query_params(page=page - 1) }}">Предыдущая</a>
+		{% endif %}
+		{% if page * page_size < total %}
+		<a href="{{ request.url.include_query_params(page=page + 1) }}">Следующая</a>
+		{% endif %}
+	</nav>
+</section>
 {% endblock %}

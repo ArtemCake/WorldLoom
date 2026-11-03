@@ -26,3 +26,6 @@ agent_rules_backup*
 tools
 context_files.txt
 context_exports
+vite.config.js
+rename-script.js
+eslint.config.mjs

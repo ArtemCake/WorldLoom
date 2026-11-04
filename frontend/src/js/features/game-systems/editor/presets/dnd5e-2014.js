@@ -59,18 +59,25 @@ function statReference(code) {
 	return `stat.${code}`;
 }
 
-function addAttribute(
-profile,
-code,
-label,
-minimum,
-maximum,
-initial
-) {
+function addAttribute(profile, code, label, minimum, maximum, initial) {
 	profile.calculations.attributes[code] = {
 		label,
 		min_value: minimum,
 		max_value: maximum
+	};
+
+	profile.initial_attributes[code] = initial;
+}
+
+function addChoiceAttribute(profile, code, label, choices, initial) {
+	const values = choices.map((item) => item.value);
+
+	profile.calculations.attributes[code] = {
+		label,
+		field_type: 'choice',
+		choices: choices.map((item) => ({ ...item })),
+		min_value: Math.min(...values),
+		max_value: Math.max(...values)
 	};
 
 	profile.initial_attributes[code] = initial;
@@ -175,12 +182,14 @@ export function createDnd5e2014NumericProfile() {
 	for (const [abilityCode, label] of ABILITIES) {
 		const proficiencyCode = `save_${abilityCode}_trained`;
 
-		addAttribute(
+		addChoiceAttribute(
 			profile,
 			proficiencyCode,
-			`Владение спасброском «${label}»: 0 — нет, 1 — да`,
-			0,
-			1,
+			`Владение спасброском: ${label}`,
+			[
+				{ value: 0, label: 'Нет владения' },
+				{ value: 1, label: 'Владение' }
+			],
 			0
 		);
 
@@ -214,19 +223,22 @@ export function createDnd5e2014NumericProfile() {
 		const rankCode = `skill_${skillCode}_rank`;
 		const totalCode = `skill_${skillCode}`;
 
-		addAttribute(
+		addChoiceAttribute(
 			profile,
 			rankCode,
-			`${label}: 0 — нет, 1 — владение, 2 — компетентность`,
-			0,
-			2,
+			`Владение: ${label}`,
+			[
+				{ value: 0, label: 'Нет владения' },
+				{ value: 1, label: 'Владение' },
+				{ value: 2, label: 'Компетентность' }
+			],
 			0
 		);
 
 		addDerived(
 			profile,
 			totalCode,
-			`Навык: ${label}`,
+			`Бонус: ${label}`,
 			operation(
 				'sum',
 				statReference(`${abilityCode}_modifier`),

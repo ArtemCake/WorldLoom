@@ -67,12 +67,12 @@ class RulesProfile(RulesModel):
 		for code, definition in definitions.items():
 			value = self.initial_attributes[code]
 
-			if not definition.min_value <= value <= definition.max_value:
+			try:
+				definition.validate_value(value)
+			except ValueError as error:
 				raise ValueError(
-					f"Начальное значение {code}: "
-					f"допустимый диапазон от {definition.min_value} "
-					f"до {definition.max_value}"
-				)
+					f"Начальное значение {code}: {error}"
+				) from error
 
 		return self
 

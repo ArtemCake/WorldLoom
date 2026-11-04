@@ -7,6 +7,7 @@ import {element as createElement, inputField} from './shared/editor-dom.js';
 import {validateDependencyGraph, validateFormulaTree} from './shared/formula-validation.js';
 import {createFormulaInput} from './shared/formula-input.js';
 import {createIndicatorCodeController} from './shared/indicator-code.js';
+import {createAttributeValueEditor} from './shared/attribute-value-editor.js';
 
 /**
  * Используем общий DOM-помощник, а CSS-класс назначаем явно.
@@ -302,6 +303,7 @@ export function createEngineRulesEditor(host, {
 	basis.replaceChildren(presetControls);
 
 	// Единственный обработчик загрузки выбранной основы.
+	// Единственный обработчик загрузки выбранной основы.
 	applyPreset.addEventListener('click', () => {
 		if (busy || parentBusy) {
 			return;
@@ -317,13 +319,41 @@ export function createEngineRulesEditor(host, {
 				'Сначала выберите стартовую основу.';
 
 				presetGrid
-					.querySelector('input[type="radio"]:not(:disabled)')
+					.querySelector(
+					'input[type="radio"]:not(:disabled)'
+				)
 					?.focus();
 
 				return;
 			}
 
 			const nextProfile = createEnginePreset(selected.code);
+
+			const attributeCount = Object.keys(
+				nextProfile.calculations.attributes
+			).length;
+
+			const derivedCount = Object.keys(
+				nextProfile.calculations.derived
+			).length;
+
+			/*
+			 * Пустой профиль допустим для собственных правил.
+			 * Готовая основа не должна молча загружаться пустой.
+			 *
+			 * Это проверка наличия числового наполнения,
+			 * а не полноты реализации игровой системы.
+			 */
+			if (
+			selected.code !== 'custom' &&
+			attributeCount === 0 &&
+			derivedCount === 0
+			) {
+				throw new Error(
+					'Выбранная основа не содержит показателей. ' +
+					'Текущие правила не заменены.'
+				);
+			}
 
 			const hasCurrentRules =
 			attributes.length > 0 ||
@@ -341,12 +371,23 @@ export function createEngineRulesEditor(host, {
 				return;
 			}
 
-			display(createEnginePreset('custom'));
+			/*
+			 * Отображаем именно выбранный профиль.
+			 * Основа ещё не сохранена: её коды доступны
+			 * для редактирования.
+			 */
+			display(nextProfile, {
+				lockCodes: false
+			});
+
 			changed();
 
 			message.textContent =
 			`Загружена основа «${selected.name}». ` +
-			'Настройте правила и сохраните черновик.';
+			`Исходных показателей: ${attributeCount}. ` +
+			`Вычисляемых показателей: ${derivedCount}. ` +
+			'Настройки и формулы можно изменить. ' +
+			'Изменения ещё не сохранены.';
 		} catch (error) {
 			message.textContent =
 			error.message ||
@@ -529,32 +570,14 @@ export function createEngineRulesEditor(host, {
 		card.append(identity);
 
 		if (isAttribute) {
-			const values = node('div');
-			values.className = 'engine-rule-card__values';
-
-			row.minimum = inputField(
-				values,
-				'Минимум',
-				definition.min_value ?? -LIMIT,
-				{ numeric: true }
-			);
-
-			row.maximum = inputField(
-				values,
-				'Максимум',
-				definition.max_value ?? LIMIT,
-				{ numeric: true }
-			);
-
-			row.initial = inputField(
-				values,
-				'Начальное',
+			row.valueEditor = createAttributeValueEditor({
+				definition,
 				initial,
-				{ numeric: true }
-			);
-
-			card.append(values);
+				onChange: changed
+			});
+			card.append(row.valueEditor.element);
 		} else {
+
 			const formulaDetails = node('details');
 			formulaDetails.className = 'engine-rule-card__formula';
 
@@ -677,27 +700,14 @@ export function createEngineRulesEditor(host, {
 				}
 
 				if (isAttribute) {
-					const min = integer(row.minimum, `Минимум ${code}`);
-					const max = integer(row.maximum, `Максимум ${code}`);
-					const value = integer(
-						row.initial,
-						`Начальное значение ${code}`
-					);
-
-					if (min > max || value < min || value > max) {
-						throw new Error(
-							'Проверьте диапазон и начальное ' +
-							`значение «${code}».`
-						);
-					}
+					const valueSettings = row.valueEditor.collect(label);
 
 					destination[code] = {
 						label,
-						min_value: min,
-						max_value: max
+						...valueSettings.definition
 					};
 
-					initial[code] = value;
+					initial[code] = valueSettings.initial;
 				} else {
 					destination[code] = {
 						label,

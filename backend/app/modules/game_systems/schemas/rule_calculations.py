@@ -150,24 +150,101 @@ class StatFormula(CalculationModel):
 			else:
 				yield argument
 
-class AttributeDefinition(CalculationModel):
-	"""Пользовательский исходный числовой показатель."""
+class AttributeChoice(CalculationModel):
+	"""Подписанный целочисленный вариант исходного показателя."""
+
+	value: CalculationValue
 
 	label: str = Field(
 		min_length=1,
 		max_length=100,
 		pattern=r"\S",
 	)
+
+class AttributeDefinition(CalculationModel):
+	"""Исходное целое число или выбор из подписанных значений.
+
+    Значение остаётся числом для использования в формулах.
+    choices ограничивает допустимые значения, а не только
+    определяет оформление поля.
+    """
+
+	label: str = Field(
+		min_length=1,
+		max_length=100,
+		pattern=r"\S",
+	)
+
+	field_type: Literal["integer", "choice"] = "integer"
+
 	min_value: CalculationValue = -VALUE_LIMIT
 	max_value: CalculationValue = VALUE_LIMIT
 
+	choices: list[AttributeChoice] = Field(
+		default_factory=list,
+		max_length=128,
+	)
+
 	@model_validator(mode="after")
-	def validate_range(self):
+	def validate_definition(self):
 		if self.min_value > self.max_value:
 			raise ValueError(
 				"Минимальное значение превышает максимальное"
 			)
+
+		if self.field_type == "integer":
+			if self.choices:
+				raise ValueError(
+					"Для числового поля варианты не задаются"
+				)
+			return self
+
+		if not self.choices:
+			raise ValueError(
+				"Для поля выбора нужен хотя бы один вариант"
+			)
+
+		values = [item.value for item in self.choices]
+
+		if len(values) != len(set(values)):
+			raise ValueError(
+				"Числовые значения вариантов не должны повторяться"
+			)
+
+		# Границы сохраняются для совместимости числового
+		# исполнителя, но не заменяют проверку принадлежности.
+		if (
+				self.min_value != min(values)
+				or self.max_value != max(values)
+		):
+			raise ValueError(
+				"Границы поля выбора должны совпадать "
+				"с минимальным и максимальным значениями вариантов"
+			)
+
 		return self
+
+	def validate_value(self, value: int) -> int:
+		"""Проверить конкретное значение относительно определения."""
+
+		if type(value) is not int:
+			raise ValueError("Требуется целое число")
+
+		if not self.min_value <= value <= self.max_value:
+			raise ValueError(
+				f"Допустимый диапазон: "
+				f"от {self.min_value} до {self.max_value}"
+			)
+
+		if self.field_type == "choice":
+			allowed = {item.value for item in self.choices}
+
+			if value not in allowed:
+				raise ValueError(
+					"Значение отсутствует среди разрешённых вариантов"
+				)
+
+		return value
 
 class DerivedStat(CalculationModel):
 	"""Показатель, который вычисляется, а не принимается от клиента."""
@@ -258,10 +335,32 @@ class CalculationStep(CalculationModel):
 
 class AttributePreviewInput(CalculationModel):
 	calculations: AttributeCalculations
+
 	attributes: dict[Code, CalculationValue] = Field(
 		default_factory=dict,
 		max_length=MAX_ATTRIBUTES,
 	)
+
+	@model_validator(mode="after")
+	def validate_attribute_values(self):
+		definitions = self.calculations.attributes
+
+		for code, value in self.attributes.items():
+			definition = definitions.get(code)
+
+			if definition is None:
+				raise ValueError(
+					f"Неизвестный исходный показатель: {code}"
+				)
+
+			try:
+				definition.validate_value(value)
+			except ValueError as error:
+				raise ValueError(
+					f"Показатель {code}: {error}"
+				) from error
+
+		return self
 
 class AttributePreviewResult(CalculationModel):
 	attributes: dict[Code, CalculationValue]

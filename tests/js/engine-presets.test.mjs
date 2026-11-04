@@ -102,3 +102,77 @@ test('Remaster не получает оценки характеристик и 
 test('неизвестный шаблон отклоняется', () => {
     assert.throws(() => createEnginePreset('missing'));
 });
+test('D&D 2014 содержит исходные и вычисляемые показатели', () => {
+    const profile = createEnginePreset('dnd5e_2014_srd51');
+
+    const attributes = profile.calculations.attributes;
+    const derived = profile.calculations.derived;
+
+    assert.equal(Object.keys(attributes).length, 31);
+    assert.equal(Object.keys(derived).length, 51);
+
+    const abilities = [
+        'strength',
+        'dexterity',
+        'constitution',
+        'intelligence',
+        'wisdom',
+        'charisma'
+    ];
+
+    for (const code of abilities) {
+        assert.ok(Object.hasOwn(attributes, code));
+        assert.ok(Object.hasOwn(derived, `${code}_modifier`));
+
+        assert.ok(
+            Object.hasOwn(attributes, `save_${code}_trained`)
+        );
+
+        assert.ok(
+            Object.hasOwn(derived, `save_${code}`)
+        );
+    }
+
+    const skills = [
+        'acrobatics',
+        'animal_handling',
+        'arcana',
+        'athletics',
+        'deception',
+        'history',
+        'insight',
+        'intimidation',
+        'investigation',
+        'medicine',
+        'nature',
+        'perception',
+        'performance',
+        'persuasion',
+        'religion',
+        'sleight_of_hand',
+        'stealth',
+        'survival'
+    ];
+
+    for (const code of skills) {
+        assert.ok(
+            Object.hasOwn(attributes, `skill_${code}_rank`)
+        );
+
+        assert.ok(
+            Object.hasOwn(derived, `skill_${code}`)
+        );
+
+        assert.ok(
+            Object.hasOwn(derived, `passive_${code}_base`)
+        );
+    }
+
+    assert.ok(Object.hasOwn(attributes, 'level'));
+    assert.ok(Object.hasOwn(derived, 'proficiency_bonus'));
+    assert.ok(Object.hasOwn(derived, 'initiative_base'));
+
+    assert.ok(
+        Object.hasOwn(derived, 'armor_class_unarmored_base')
+    );
+});

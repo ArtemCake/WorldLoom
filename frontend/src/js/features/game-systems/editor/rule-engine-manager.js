@@ -1,17 +1,9 @@
 // frontend/src/js/features/game-systems/editor/rule-engine-manager.js
 
-import {
-createEngineRulesEditor
-} from './engine-rules-editor.js';
-
-import {
-blocksEngineMutation,
-createRuleEngineApi
-} from '../api/rule-engine-api.js';
-
-import {
-element as node
-} from './shared/editor-dom.js';
+import {createEngineRulesEditor} from './engine-rules-editor.js';
+import {mountEngineEditorLayout} from './engine-editor-layout.js';
+import {blocksEngineMutation, createRuleEngineApi} from '../api/rule-engine-api.js';
+import {element as node} from './shared/editor-dom.js';
 
 export function mountRuleEngineManager(host, { request, isAllowed }) {
     if (!host) {
@@ -61,7 +53,7 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
     let versions = [];
     let editor = null;
     let form = null;
-
+    let layout = null;
     let busy = false;
     let editorBusy = false;
     let loaded = false;
@@ -135,6 +127,13 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
         disabled || !loaded || blocked || !engine;
 
         editor?.setParentBusy(disabled || !loaded);
+        layout?.sync({
+            disabled: disabled || !loaded,
+            busy: working(),
+            dirty: unsaved(),
+            blocked,
+            existing: Boolean(engine)
+        });
     }
 
     async function run(action, mutation = false, editing = true) {
@@ -291,6 +290,7 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
         loaded = false;
         metadataDirty = false;
         editor = null;
+        layout = null;
 
         area.innerHTML = `
             <form class="system-editor" novalidate>
@@ -428,6 +428,30 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
                 }
             }
         );
+
+        layout = mountEngineEditorLayout(form, {
+            onClose() {
+                if (working() || !canDiscard()) {
+                    return;
+                }
+
+                engine = null;
+                draft = null;
+                versions = [];
+                editor = null;
+                layout = null;
+                form = null;
+                loaded = false;
+                metadataDirty = false;
+
+                area.replaceChildren();
+
+                status.textContent =
+                'Редактор закрыт. Сохранённые данные не изменены.';
+
+                sync();
+            }
+        });
 
         form.addEventListener('input', (event) => {
             if (!(event.target instanceof HTMLElement)) {
@@ -643,6 +667,7 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
             versions = [];
             editor = null;
             form = null;
+            layout = null;
             loaded = false;
             metadataDirty = false;
             area.replaceChildren();

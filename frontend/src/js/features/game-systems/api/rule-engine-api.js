@@ -1,5 +1,7 @@
 // frontend/src/js/features/game-systems/api/rule-engine-api.js
 
+import {readProfileResources} from '../editor/shared/resource-contract.js';
+
 function ensure(condition, message) {
     if (!condition) throw new Error(message);
 }
@@ -41,10 +43,10 @@ function engineDraft(value, engineId) {
         typeof value.id === 'string' &&
         value.id.length > 0 &&
         typeof value.rules_engine_version === 'string' &&
-        value.rules_json?.schema_version === 3,
+        [3, 4].includes(value.rules_json?.schema_version),
         'Сервер вернул неподдерживаемый черновик движка.'
     );
-
+    readProfileResources(value.rules_json);
     revision(value.revision);
     return value;
 }
@@ -57,10 +59,10 @@ function publication(value, engineId, expectedRevision) {
         Number.isSafeInteger(value.version_number) &&
         value.version_number >= 1 &&
         value.source_draft_revision === expectedRevision &&
-        value.rules_json?.schema_version === 3,
+        [3, 4].includes(value.rules_json?.schema_version),
         'Ответ публикации не удалось проверить.'
     );
-
+    readProfileResources(value.rules_json);
     return value;
 }
 

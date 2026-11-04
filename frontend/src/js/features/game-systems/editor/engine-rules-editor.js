@@ -8,6 +8,8 @@ import {validateDependencyGraph, validateFormulaTree} from './shared/formula-val
 import {createFormulaInput} from './shared/formula-input.js';
 import {createIndicatorCodeController} from './shared/indicator-code.js';
 import {createAttributeValueEditor} from './shared/attribute-value-editor.js';
+import {createResourceEditor} from './shared/resource-editor.js';
+import {readProfileResources, validateResourcePreview} from './shared/resource-contract.js';
 
 /**
  * Используем общий DOM-помощник, а CSS-класс назначаем явно.
@@ -39,12 +41,8 @@ function integer(input, title) {
 	return value;
 }
 
-export function createEngineRulesEditor(host, {
-	request,
-	getExecutorVersion,
-	onBusy = () => {},
-	onChange = () => {}
-}) {
+export function createEngineRulesEditor(host, {request, getExecutorVersion, onBusy = () => {}, onChange = () => {}}) {
+
 	const controls = host.querySelector('[data-rules-controls]');
 	const body = host.querySelector('[data-rules-body]');
 	const message = host.querySelector('[data-rules-message]');
@@ -59,6 +57,7 @@ export function createEngineRulesEditor(host, {
 	let dirty = false;
 	let busy = false;
 	let parentBusy = false;
+	let profileVersion = 3;
 
 	const indicatorCodes = createIndicatorCodeController({
 		getGroups: () => [attributes, derived]
@@ -328,6 +327,8 @@ export function createEngineRulesEditor(host, {
 			}
 
 			const nextProfile = createEnginePreset(selected.code);
+			const nextResources = readProfileResources(nextProfile);
+			const resourceCount = Object.keys(nextResources).length;
 
 			const attributeCount = Object.keys(
 				nextProfile.calculations.attributes
@@ -355,19 +356,12 @@ export function createEngineRulesEditor(host, {
 				);
 			}
 
-			const hasCurrentRules =
-			attributes.length > 0 ||
-			derived.length > 0 ||
-			dirty;
+			const hasCurrentRules = attributes.length > 0 || derived.length > 0 || resourceEditor.hasResources() || dirty;
 
-			if (
-			hasCurrentRules &&
-			!window.confirm(
-				'Заменить текущие числовые правила выбранной основой? ' +
-				'Показатели и формулы в форме будут заменены. ' +
-				'Сохранённый черновик и публикации сейчас не изменятся.'
-			)
-			) {
+			const replacementMessage = 'Заменить показатели, формулы и ресурсы выбранной основой? ' +
+			'Ресурсы, которых нет в основе, будут удалены из формы. Сохранённые данные сейчас не изменятся.';
+
+			if (hasCurrentRules && !window.confirm(replacementMessage)) {
 				return;
 			}
 
@@ -386,6 +380,9 @@ export function createEngineRulesEditor(host, {
 			`Загружена основа «${selected.name}». ` +
 			`Исходных показателей: ${attributeCount}. ` +
 			`Вычисляемых показателей: ${derivedCount}. ` +
+			'Загрузка основы заменяет показатели, формулы и ресурсы в форме. ' +
+			'Название, код и видимость движка не меняются. ' +
+			'До сохранения на сервер ничего не записывается.'+
 			'Настройки и формулы можно изменить. ' +
 			'Изменения ещё не сохранены.';
 		} catch (error) {
@@ -463,11 +460,14 @@ export function createEngineRulesEditor(host, {
 		output
 	);
 
-	body.replaceChildren(
-		attributesPanel,
-		derivedPanel,
-		previewPanel
-	);
+	const resourceEditor = createResourceEditor({
+		getSources: () => formulaSources(),
+		onChange: changed,
+		onError: (text) => { message.textContent = text; },
+		isBusy: () => busy || parentBusy
+	});
+
+	body.replaceChildren(attributesPanel, derivedPanel, resourceEditor.element, previewPanel);
 
 	function sync() {
 		const disabled = busy || parentBusy;
@@ -523,6 +523,7 @@ export function createEngineRulesEditor(host, {
 		for (const row of derived) {
 			row.formula.refreshSources();
 		}
+		resourceEditor.refreshSources();
 	}
 
 	function appendRow(kind, code = '', definition = {}, initial = 0, { lockCode = false } = {}) {
@@ -740,76 +741,45 @@ export function createEngineRulesEditor(host, {
 
 		validateDependencyGraph(dependencies, calculated);
 
-		return {
-			schema_version: 3,
-			calculations: {
-				attributes: definitions,
-				derived: calculated
-			},
+		const calculations = {attributes: definitions, derived: calculated};
+		const resources = resourceEditor.collect(calculations);
+		const version = profileVersion === 4 || Object.keys(resources).length > 0 ? 4 : 3;
+
+		const profile = {
+			schema_version: version,
+			calculations,
 			initial_attributes: initial
 		};
+
+		if (version === 4) {
+			profile.resources = resources;
+		}
+
+		return profile;
 	}
 
 	function display(profile, { lockCodes = false } = {}) {
-		if (
-		profile?.schema_version !== 3 ||
-		!profile.calculations ||
-		!profile.calculations.attributes ||
-		!profile.calculations.derived ||
-		!profile.initial_attributes
-		) {
-			throw new Error(
-				'Этот редактор поддерживает только числовой формат ' +
-				'правил 3. Старые профили автоматически не преобразуются.'
-			);
+		const resources = readProfileResources(profile);
+
+		// Версию уже открытого профиля не понижаем даже при загрузке старого пресета.
+		profileVersion = Math.max(profileVersion, profile.schema_version);
+
+		function handleBodyChange(event) {
+			if (event.target.closest('[data-resource-editor]')) {
+				return;
+			}
+
+			if (event.target.closest('[data-formula-input]')) {
+				return;
+			}
+
+			changed();
+			refreshFormulaSources();
 		}
 
-		attributes = [];
-		derived = [];
+		body.addEventListener('input', handleBodyChange);
+		body.addEventListener('change', handleBodyChange);
 
-		attributesHost.replaceChildren();
-		derivedHost.replaceChildren();
-		output.replaceChildren();
-
-		for (const [code, definition] of Object.entries(
-			profile.calculations.attributes
-		)) {
-			appendRow(
-				'attribute',
-				code,
-				definition,
-				profile.initial_attributes[code],
-				{ lockCode: lockCodes }
-			);
-		}
-
-		for (const [code, definition] of Object.entries(
-			profile.calculations.derived
-		)) {
-			appendRow(
-				'derived',
-				code,
-				definition,
-				0,
-				{ lockCode: lockCodes }
-			);
-		}
-
-		refreshFormulaSources();
-
-		dirty = false;
-		message.textContent = 'Числовые правила загружены.';
-		sync();
-	}
-
-	body.addEventListener('input', (event) => {
-		if (event.target.closest('[data-formula-input]')) {
-			return;
-		}
-
-		changed();
-		refreshFormulaSources();
-	});
 
 	for (const [button, kind] of [
 		[addAttribute, 'attribute'],
@@ -843,7 +813,7 @@ export function createEngineRulesEditor(host, {
 			output.replaceChildren();
 
 			const result = await request(
-				'/admin/game-systems/rules/preview',
+				'/admin/game-systems/rules/resources/preview',
 				'POST',
 				{
 					rules,
@@ -853,6 +823,7 @@ export function createEngineRulesEditor(host, {
 					}
 				}
 			);
+			const resourceResults = validateResourcePreview(rules.resources || {}, result);
 
 			if (
 			!result ||
@@ -887,6 +858,15 @@ export function createEngineRulesEditor(host, {
 					`${step.code}: ${step.operation}` +
 					`(${step.resolved_arguments.join(', ')}) → ${step.value}`
 				));
+			}
+			output.append(node('h4', 'Ресурсы: начальное состояние'));
+
+			if (resourceResults.length === 0) {
+				output.append(node('p', 'Ресурсы пока не добавлены.'));
+			}
+
+			for (const item of resourceResults) {
+				output.append(node('p', `${item.label}: ${item.initial} / ${item.maximum}`));
 			}
 
 			message.textContent =

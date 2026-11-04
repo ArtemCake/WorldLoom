@@ -46,6 +46,15 @@ const PAGES = [
 		'Циклические зависимости не допускаются.'
 	},
 	{
+		code: 'resources',
+		title: 'Ресурсы',
+		helpTitle: 'Что можно расходовать?',
+		helpText:
+		'Задайте максимум, начальное заполнение и восстановление ресурса. ' +
+		'Максимум можно связать с показателем. Текущие остатки персонажа ' +
+		'хранятся отдельно. События восстановления задаются устойчивыми кодами.'
+	},
+	{
 		code: 'preview',
 		title: 'Проверка',
 		helpTitle: 'Проверка перед сохранением',
@@ -91,7 +100,7 @@ export function mountEngineEditorLayout(form, { onClose }) {
 		);
 	}
 
-	for (const code of ['attributes', 'derived', 'preview']) {
+	for (const code of ['attributes', 'derived', 'resources', 'preview']) {
 		if (!rulesRoot.querySelector(
 			`[data-engine-rules-panel="${code}"]`
 		)) {

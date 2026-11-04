@@ -331,7 +331,9 @@ WorldLoom/
 │   │   │   │   │   │   │   ├── formula-editor.js
 │   │   │   │   │   │   │   ├── formula-input.js
 │   │   │   │   │   │   │   ├── formula-validation.js
-│   │   │   │   │   │   │   └── indicator-code.js
+│   │   │   │   │   │   │   ├── indicator-code.js
+│   │   │   │   │   │   │   ├── resource-contract.js
+│   │   │   │   │   │   │   └── resource-editor.js
 │   │   │   │   │   │   ├── engine-editor-layout.js
 │   │   │   │   │   │   ├── engine-formula-text.js
 │   │   │   │   │   │   ├── engine-presets.js
@@ -482,13 +484,15 @@ WorldLoom/
 ├── logs/
 │   ├── worldloom.log
 │   ├── worldloom.log.2026-11-03
+│   ├── worldloom.log.2026-11-04
 │   ├── worldloom_error.log
 │   └── worldloom_error.log.2026-11-03
 ├── staging/
 ├── tests/
 │   ├── js/
 │   │   ├── engine-formula-text.test.mjs
-│   │   └── engine-presets.test.mjs
+│   │   ├── engine-presets.test.mjs
+│   │   └── resource-contract.test.mjs
 │   ├── python/
 │   │   ├── test_attribute_choices.py
 │   │   ├── test_dnd5e_2014_preset.py
@@ -497,7 +501,7 @@ WorldLoom/
 │   │   ├── test_profile_resources.py
 │   │   ├── test_resource_engine.py
 │   │   └── test_web_assets.py
-│   └── TEST_cOMMANDS.md
+│   └── Test_Commands.md
 ├── tools/
 │   ├── commands_tools.md
 │   ├── context_pack.py

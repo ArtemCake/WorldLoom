@@ -7,8 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from backend.app.modules.admin.dependencies import require_content_manager
 from backend.app.modules.game_systems.rules.attribute_engine import evaluate_attributes
 from backend.app.modules.game_systems.rules.rules_engine import evaluate_sheet_state
-from backend.app.modules.game_systems.schemas.rule_calculations import AttributePreviewInput, AttributePreviewResult
-from backend.app.modules.game_systems.schemas.rule_previews import RulesPreviewInput
+from backend.app.modules.game_systems.schemas.rules.rule_calculations import AttributePreviewInput, AttributePreviewResult
+from backend.app.modules.game_systems.schemas.rules.rule_previews import RulesPreviewInput
 from backend.app.web.csrf import enforce_csrf
 
 

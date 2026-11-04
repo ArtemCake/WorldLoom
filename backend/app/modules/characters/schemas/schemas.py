@@ -5,7 +5,7 @@
 from __future__ import annotations
 from pydantic import Field
 from backend.app.modules.game_systems.schemas.game_rules import RulesModel, SheetState, SheetStateChanges, TransportUUID
-from backend.app.modules.game_systems.schemas.rule_calculations import CalculationValue, Code
+from backend.app.modules.game_systems.schemas.rules.rule_calculations import CalculationValue, Code
 
 class CharacterStateUpdate(RulesModel):
 	"""Замена части исходных значений без смены правил."""

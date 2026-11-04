@@ -1,4 +1,4 @@
-# backend/app/modules/game_systems/schemas/rule_engine_lifecycle.py
+# backend/app/modules/game_systems/schemas/rules/rule_engine_lifecycle.py
 
 """Контракт предварительного анализа известных зависимостей основы.
 

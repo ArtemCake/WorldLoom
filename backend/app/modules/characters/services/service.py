@@ -23,7 +23,7 @@ from backend.app.modules.characters.schemas.schemas import (CharacterCreate, Cha
 from backend.app.modules.game_systems.models.game_systems import (GameSystemRulesVersion, GameSystem)
 from backend.app.modules.game_systems.rules.rules_engine import (apply_sheet_changes, create_sheet_state, evaluate_sheet_state, validate_rules_profile)
 from backend.app.modules.game_systems.schemas.game_rules import (RulesProfile, SheetState)
-from backend.app.modules.game_systems.schemas.rule_calculations import (AttributePreviewResult)
+from backend.app.modules.game_systems.schemas.rules.rule_calculations import (AttributePreviewResult)
 from backend.app.modules.games.models.lobby import Game, Party
 
 

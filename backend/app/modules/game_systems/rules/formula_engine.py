@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 from collections.abc import Mapping
-from backend.app.modules.game_systems.schemas.rule_calculations import (CalculationStep, MAX_FORMULA_ARGUMENTS, StatFormula, VALUE_LIMIT)
+from backend.app.modules.game_systems.schemas.rules.rule_calculations import (CalculationStep, MAX_FORMULA_ARGUMENTS, StatFormula, VALUE_LIMIT)
 
 
 def bounded(value: int) -> int:

@@ -24,7 +24,7 @@ from sqlalchemy.sql.selectable import FromClause, Select
 from backend.app.modules.game_systems.errors import GameSystemNotFound, GameSystemRulesStorageError, InvalidGameSystemRules
 from backend.app.modules.game_systems.models.game_systems import GameSystem, GameSystemRulesDraft, GameSystemRulesVersion
 from backend.app.modules.game_systems.models.rule_engines import RuleEngine, RuleEngineVersion
-from backend.app.modules.game_systems.schemas.rule_engine_lifecycle import RuleEngineRemovalPreview
+from backend.app.modules.game_systems.schemas.rules.rule_engine_lifecycle import RuleEngineRemovalPreview
 from backend.app.modules.games.models.lobby import Game, Session as GameSession
 
 

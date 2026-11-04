@@ -11,7 +11,9 @@ from datetime import datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID
 from pydantic import ConfigDict, Field, model_validator
-from backend.app.modules.game_systems.schemas.rule_calculations import (AttributeCalculations, CalculationModel, CalculationValue, Code, MAX_ATTRIBUTES)
+from backend.app.modules.game_systems.schemas.rules.rule_calculations import AttributeCalculations, CalculationModel
+from backend.app.modules.game_systems.schemas.rules.rule_calculations import CalculationValue, Code, MAX_ATTRIBUTES
+from backend.app.modules.game_systems.schemas.rules.rule_resources import MAX_RESOURCES, ResourceDefinition
 
 
 # UUID в HTTP-запросах передаётся строкой.
@@ -23,19 +25,45 @@ class RulesModel(CalculationModel):
 	"""Общие настройки контрактов правил."""
 
 class RulesProfile(RulesModel):
-	"""Числовые определения и начальные значения листа.
+	"""Определения правил и начальных значений.
 
-	Версии 1 и 2 относились к прежнему системно-зависимому
-	контракту. Их нельзя интерпретировать как новый профиль.
-	"""
+    Версия 3: числовой профиль без ресурсов.
+    Версия 4: числовой профиль с явно переданным разделом ресурсов.
 
-	schema_version: Literal[3]
+    Текущие запасы конкретного листа сюда не входят.
+    """
+
+	schema_version: Literal[3, 4]
 
 	calculations: AttributeCalculations
 
-	initial_attributes: dict[Code, CalculationValue] = Field(
-		max_length=MAX_ATTRIBUTES,
-	)
+	initial_attributes: dict[Code, CalculationValue] = Field(max_length=MAX_ATTRIBUTES)
+
+	resources: dict[Code, ResourceDefinition] = Field(default_factory=dict, max_length=MAX_RESOURCES)
+
+	@model_validator(mode="after")
+	def validate_resource_contract(self):
+		if self.schema_version == 3 and self.resources:
+			raise ValueError("Ресурсы поддерживаются начиная с версии профиля 4")
+
+		if self.schema_version == 4 and "resources" not in self.model_fields_set:
+			raise ValueError("Для версии профиля 4 раздел resources нужно передать явно")
+
+		namespaces = {
+			"attribute": self.calculations.attributes,
+			"stat": self.calculations.derived,
+		}
+
+		for code, definition in self.resources.items():
+			if type(definition.maximum) is int:
+				continue
+
+			namespace, target = definition.maximum.split(".", 1)
+
+			if target not in namespaces[namespace]:
+				raise ValueError(f"Ресурс {code}: неизвестная ссылка максимума {definition.maximum}")
+
+		return self
 
 	@model_validator(mode="after")
 	def validate_initial_attributes(self):
@@ -50,16 +78,10 @@ class RulesProfile(RulesModel):
 		problems: list[str] = []
 
 		if missing:
-			problems.append(
-				"не заданы начальные значения: "
-				+ ", ".join(missing)
-			)
+			problems.append("не заданы начальные значения: " + ", ".join(missing))
 
 		if unknown:
-			problems.append(
-				"неизвестные начальные показатели: "
-				+ ", ".join(unknown)
-			)
+			problems.append("неизвестные начальные показатели: " + ", ".join(unknown))
 
 		if problems:
 			raise ValueError("; ".join(problems))
@@ -70,9 +92,7 @@ class RulesProfile(RulesModel):
 			try:
 				definition.validate_value(value)
 			except ValueError as error:
-				raise ValueError(
-					f"Начальное значение {code}: {error}"
-				) from error
+				raise ValueError(f"Начальное значение {code}: {error}") from error
 
 		return self
 

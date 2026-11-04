@@ -1,4 +1,4 @@
-# backend/app/modules/game_systems/schemas/rule_engines.py
+# backend/app/modules/game_systems/schemas/rules/rule_engines.py
 
 """Контракты переиспользуемых основ, черновиков и публикаций."""
 

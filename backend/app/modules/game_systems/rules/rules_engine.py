@@ -9,7 +9,9 @@
 from __future__ import annotations
 from backend.app.modules.game_systems.rules.attribute_engine import (evaluate_attributes)
 from backend.app.modules.game_systems.schemas.game_rules import (RulesProfile, SheetState, SheetStateChanges)
-from backend.app.modules.game_systems.schemas.rule_calculations import (AttributePreviewInput, AttributePreviewResult)
+from backend.app.modules.game_systems.schemas.rules.rule_calculations import (AttributePreviewInput, AttributePreviewResult)
+from backend.app.modules.game_systems.rules.resource_validation import initial_resource_values, resolve_resource_maxima
+from backend.app.modules.game_systems.schemas.rules.rule_resources import ResourceDefinitions
 
 
 def _evaluate(profile: RulesProfile, state: SheetState) -> AttributePreviewResult:
@@ -22,17 +24,23 @@ def _evaluate(profile: RulesProfile, state: SheetState) -> AttributePreviewResul
 	return evaluate_attributes(data)
 
 def validate_rules_profile(profile: RulesProfile) -> RulesProfile:
-	"""Проверить структуру и вычислимость начального состояния.
+	"""Проверить структуру и вычислимость начального профиля.
 
-	Успешная проверка не доказывает вычислимость формул
-	для каждого возможного будущего состояния.
-	"""
+    Проверяются начальные числовые значения, максимумы ресурсов
+    и допустимость их начального заполнения.
+
+    Это не доказательство вычислимости для всех будущих состояний.
+    """
+
 	profile = RulesProfile.model_validate(profile)
 
-	initial_state = SheetState(
-		attributes=dict(profile.initial_attributes),
-	)
-	_evaluate(profile, initial_state)
+	initial_state = SheetState(attributes=dict(profile.initial_attributes))
+	result = _evaluate(profile, initial_state)
+
+	definitions = ResourceDefinitions(resources=profile.resources)
+	limits = resolve_resource_maxima(definitions, result)
+
+	initial_resource_values(definitions, limits)
 
 	return profile
 

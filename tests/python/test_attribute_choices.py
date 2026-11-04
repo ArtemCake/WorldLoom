@@ -14,7 +14,7 @@ from backend.app.modules.game_systems.schemas.game_rules import (
     SheetState,
     SheetStateChanges,
 )
-from backend.app.modules.game_systems.schemas.rule_calculations import (
+from backend.app.modules.game_systems.schemas.rules.rule_calculations import (
     AttributeDefinition,
     AttributePreviewInput,
 )

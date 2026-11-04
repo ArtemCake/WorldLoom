@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 from backend.app.modules.game_systems.rules.formula_engine import (evaluate_formula)
-from backend.app.modules.game_systems.schemas.rule_calculations import (AttributePreviewInput, AttributePreviewResult, CalculationStep)
+from backend.app.modules.game_systems.schemas.rules.rule_calculations import (AttributePreviewInput, AttributePreviewResult, CalculationStep)
 
 
 def evaluate_attributes(data: AttributePreviewInput) -> AttributePreviewResult:

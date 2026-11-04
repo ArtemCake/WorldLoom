@@ -1,4 +1,4 @@
-# backend/app/modules/game_systems/schemas/rule_engine_removal.py
+# backend/app/modules/game_systems/schemas/rules/rule_engine_removal.py
 
 """Контракты плана и будущего подтверждённого выполнения операции."""
 
@@ -6,7 +6,7 @@ from typing import Literal
 from uuid import UUID
 from pydantic import Field
 from backend.app.modules.game_systems.schemas.game_rules import RulesModel
-from backend.app.modules.game_systems.schemas.rule_engine_lifecycle import RuleEngineRemovalPreview
+from backend.app.modules.game_systems.schemas.rules.rule_engine_lifecycle import RuleEngineRemovalPreview
 
 
 class RuleEngineRemovalPlan(RuleEngineRemovalPreview):

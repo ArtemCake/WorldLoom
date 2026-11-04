@@ -16,6 +16,7 @@ from backend.app.modules.game_systems.schemas.game_rules import (RulesProfile)
 OVERRIDABLE_FIELDS = frozenset({
 	"calculations",
 	"initial_attributes",
+	"resources",
 })
 
 def compose_system_rules(base_rules: RulesProfile, overrides: dict[str, Any] | None = None) -> RulesProfile:

@@ -1,4 +1,4 @@
-# backend/app/modules/game_systems/schemas/rule_previews.py
+# backend/app/modules/game_systems/schemas/rules/rule_previews.py
 
 """Входной контракт предпросмотра числового состояния по пользовательским правилам."""
 

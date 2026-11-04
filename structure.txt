@@ -114,18 +114,23 @@ WorldLoom/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── attribute_engine.py
 │   │   │   │   │   ├── formula_engine.py
+│   │   │   │   │   ├── resource_engine.py
+│   │   │   │   │   ├── resource_validation.py
 │   │   │   │   │   ├── rules_composition.py
 │   │   │   │   │   └── rules_engine.py
 │   │   │   │   ├── schemas/
+│   │   │   │   │   ├── rules/
+│   │   │   │   │   │   ├── __init__.py
+│   │   │   │   │   │   ├── rule_calculations.py
+│   │   │   │   │   │   ├── rule_engine_lifecycle.py
+│   │   │   │   │   │   ├── rule_engine_removal.py
+│   │   │   │   │   │   ├── rule_engines.py
+│   │   │   │   │   │   ├── rule_previews.py
+│   │   │   │   │   │   └── rule_resources.py
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── game_rules.py
 │   │   │   │   │   ├── game_system_editor.py
-│   │   │   │   │   ├── game_system_origin.py
-│   │   │   │   │   ├── rule_calculations.py
-│   │   │   │   │   ├── rule_engine_lifecycle.py
-│   │   │   │   │   ├── rule_engine_removal.py
-│   │   │   │   │   ├── rule_engines.py
-│   │   │   │   │   └── rule_previews.py
+│   │   │   │   │   └── game_system_origin.py
 │   │   │   │   ├── services/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── delete_service.py
@@ -320,6 +325,7 @@ WorldLoom/
 │   │   │   │   │   │   ├── presets/
 │   │   │   │   │   │   │   └── dnd5e-2014.js
 │   │   │   │   │   │   ├── shared/
+│   │   │   │   │   │   │   ├── attribute-value-editor.js
 │   │   │   │   │   │   │   ├── editor-dom.js
 │   │   │   │   │   │   │   ├── formula-contract.js
 │   │   │   │   │   │   │   ├── formula-editor.js
@@ -483,10 +489,15 @@ WorldLoom/
 │   ├── js/
 │   │   ├── engine-formula-text.test.mjs
 │   │   └── engine-presets.test.mjs
-│   └── python/
-│       ├── test_dnd5e_2014_preset.py
-│       ├── test_engine_numeric_contract.py
-│       └── test_web_assets.py
+│   ├── python/
+│   │   ├── test_attribute_choices.py
+│   │   ├── test_dnd5e_2014_preset.py
+│   │   ├── test_engine_numeric_contract.py
+│   │   ├── test_engine_resource_storage.py
+│   │   ├── test_profile_resources.py
+│   │   ├── test_resource_engine.py
+│   │   └── test_web_assets.py
+│   └── TEST_cOMMANDS.md
 ├── tools/
 │   ├── commands_tools.md
 │   ├── context_pack.py

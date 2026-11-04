@@ -26,8 +26,8 @@ from backend.app.modules.game_systems.errors import (GameSystemNotFound, GameSys
 from backend.app.modules.game_systems.models.rule_engines import RuleEngine, RuleEngineDraft, RuleEngineVersion
 from backend.app.modules.game_systems.rules.rules_engine import validate_rules_profile
 from backend.app.modules.game_systems.schemas.game_rules import RulesModel, RulesProfile
-from backend.app.modules.game_systems.schemas.rule_engines import (RuleEngineActivityUpdate, RuleEngineCreate, RuleEngineDelete, RuleEngineDeleteRead, RuleEngineDraftRead,
-	RuleEngineDraftUpdate, RuleEngineEditorRead, RuleEnginePage, RuleEnginePublish, RuleEngineRead, RuleEngineVersionPage, RuleEngineVersionRead, RuleEngineVersionSummary)
+from backend.app.modules.game_systems.schemas.rules.rule_engines import (RuleEngineActivityUpdate, RuleEngineCreate, RuleEngineDelete, RuleEngineDeleteRead, RuleEngineDraftRead,
+                                                                         RuleEngineDraftUpdate, RuleEngineEditorRead, RuleEnginePage, RuleEnginePublish, RuleEngineRead, RuleEngineVersionPage, RuleEngineVersionRead, RuleEngineVersionSummary)
 
 
 _ENGINES = RuleEngine.__table__
@@ -161,6 +161,17 @@ async def get_engine_draft(session: AsyncSession, engine_id: UUID, actor_id: UUI
 
 	return _read(RuleEngineDraftRead, draft)
 
+def _check_profile_replacement(current: Mapping[str, Any], incoming: Mapping[str, Any]) -> None:
+	"""Не позволять старому клиенту заменить новый профиль старым."""
+
+	try:
+		previous = RulesProfile.model_validate(dict(current))
+	except ValueError as exc:
+		raise GameSystemRulesStorageError("Сохранённый профиль основы имеет неподдерживаемый формат") from exc
+
+	if incoming["schema_version"] < previous.schema_version:
+		raise GameSystemRulesConflict("Понижение версии профиля запрещено. Откройте движок в редакторе новой версии")
+
 async def update_engine_draft(session: AsyncSession, engine_id: UUID, actor_id: UUID, data: RuleEngineDraftUpdate) -> RuleEngineDraftRead:
 	"""Сохранить полный профиль без изменения версии исполнителя."""
 	_prepare(session, actor_id)
@@ -170,6 +181,7 @@ async def update_engine_draft(session: AsyncSession, engine_id: UUID, actor_id: 
 	await _find_engine(session, engine_id, actor_id, owner_only=True, write=True)
 	draft = await _find_draft(session, engine_id, write=True)
 	_check_revision(draft, data.expected_revision)
+	_check_profile_replacement(draft["rules_json"], payload)
 
 	result = await session.execute(
 		update(_DRAFTS)

@@ -1,4 +1,4 @@
-# backend/app/modules/game_systems/schemas/rule_calculations.py
+# backend/app/modules/game_systems/schemas/rules/rule_calculations.py
 
 """Контракты общих целочисленных вычислений.
 

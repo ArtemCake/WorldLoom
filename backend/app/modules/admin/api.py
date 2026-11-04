@@ -22,10 +22,10 @@ from backend.app.modules.game_systems.schemas.game_rules import (GameSystemRules
 	GameSystemRulesPublish, GameSystemRulesPublishedState, GameSystemRulesVersionRead)
 from backend.app.modules.game_systems.schemas.game_system_origin import (GameSystemDraftEngineSet, GameSystemEngineEditorUpdate,
     GameSystemEngineOriginRead, GameSystemFromEngineCreate)
-from backend.app.modules.game_systems.schemas.rule_engine_lifecycle import RuleEngineRemovalPreview
-from backend.app.modules.game_systems.schemas.rule_engine_removal import RuleEngineRemovalPlan
-from backend.app.modules.game_systems.schemas.rule_engines import (RuleEngineActivityUpdate, RuleEngineCreate, RuleEngineDelete, RuleEngineDeleteRead, RuleEngineDraftRead,
-	RuleEngineDraftUpdate, RuleEngineEditorRead, RuleEnginePage, RuleEnginePublish, RuleEngineRead, RuleEngineVersionPage, RuleEngineVersionRead)
+from backend.app.modules.game_systems.schemas.rules.rule_engine_lifecycle import RuleEngineRemovalPreview
+from backend.app.modules.game_systems.schemas.rules.rule_engine_removal import RuleEngineRemovalPlan
+from backend.app.modules.game_systems.schemas.rules.rule_engines import (RuleEngineActivityUpdate, RuleEngineCreate, RuleEngineDelete, RuleEngineDeleteRead, RuleEngineDraftRead,
+                                                                         RuleEngineDraftUpdate, RuleEngineEditorRead, RuleEnginePage, RuleEnginePublish, RuleEngineRead, RuleEngineVersionPage, RuleEngineVersionRead)
 from backend.app.modules.game_systems.services import editor_service
 from backend.app.modules.game_systems.services import rule_engine_lifecycle_service as lifecycle
 from backend.app.modules.game_systems.services import rule_engine_removal_service as removal

@@ -27,7 +27,7 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.modules.game_systems.errors import GameSystemNotFound, GameSystemRulesStorageError, InvalidGameSystemRules
-from backend.app.modules.game_systems.schemas.rule_engine_removal import RuleEngineRemovalPlan
+from backend.app.modules.game_systems.schemas.rules.rule_engine_removal import RuleEngineRemovalPlan
 
 
 _SNAPSHOT_SQL = text("""

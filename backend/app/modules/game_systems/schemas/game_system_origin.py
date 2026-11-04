@@ -6,7 +6,7 @@ from typing import Any
 from pydantic import Field
 from backend.app.modules.catalog.schemas import GameSystemCreate
 from backend.app.modules.game_systems.schemas.game_rules import RulesModel, TransportUUID
-from backend.app.modules.game_systems.schemas.rule_engines import RuleEngineVersionRead
+from backend.app.modules.game_systems.schemas.rules.rule_engines import RuleEngineVersionRead
 
 
 class EngineRulesSource(RulesModel):

@@ -31,7 +31,7 @@ from backend.app.modules.game_systems.services.system_rule_origin import (load_e
     origin_for_publication)
 from backend.app.modules.catalog.schemas import GameSystemAdminRead, GameSystemCreate
 from backend.app.modules.game_systems.schemas.game_system_editor import GameSystemEditorCreate, GameSystemEditorRead, GameSystemEditorUpdate
-from backend.app.modules.game_systems.schemas.rule_engines import RuleEngineVersionRead
+from backend.app.modules.game_systems.schemas.rules.rule_engines import RuleEngineVersionRead
 
 
 _SYSTEMS = GameSystem.__table__

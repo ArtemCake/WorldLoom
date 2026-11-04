@@ -317,12 +317,16 @@ WorldLoom/
 │   │   │   │   │   │   ├── game-system-api.js
 │   │   │   │   │   │   └── rule-engine-api.js
 │   │   │   │   │   ├── editor/
+│   │   │   │   │   │   ├── presets/
+│   │   │   │   │   │   │   └── dnd5e-2014.js
 │   │   │   │   │   │   ├── shared/
 │   │   │   │   │   │   │   ├── editor-dom.js
 │   │   │   │   │   │   │   ├── formula-contract.js
 │   │   │   │   │   │   │   ├── formula-editor.js
 │   │   │   │   │   │   │   ├── formula-input.js
-│   │   │   │   │   │   │   └── formula-validation.js
+│   │   │   │   │   │   │   ├── formula-validation.js
+│   │   │   │   │   │   │   └── indicator-code.js
+│   │   │   │   │   │   ├── engine-editor-layout.js
 │   │   │   │   │   │   ├── engine-formula-text.js
 │   │   │   │   │   │   ├── engine-presets.js
 │   │   │   │   │   │   ├── engine-rules-editor.js
@@ -472,7 +476,8 @@ WorldLoom/
 ├── logs/
 │   ├── worldloom.log
 │   ├── worldloom.log.2026-11-03
-│   └── worldloom_error.log
+│   ├── worldloom_error.log
+│   └── worldloom_error.log.2026-11-03
 ├── staging/
 ├── tests/
 │   ├── js/

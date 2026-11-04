@@ -1,58 +1,176 @@
 // rename-script.js
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-// --- НАСТРОЙКА ПУТЕЙ ---
-// Используем fileURLToPath для корректной работы импорта в ESM
-import { fileURLToPath } from 'url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+const distRoot = path.resolve(projectRoot, 'frontend/dist');
+const manifestPath = path.join(distRoot, '.vite', 'manifest.json');
+const temporaryManifestPath = `${manifestPath}.tmp`;
 
-const jsDistPath = path.resolve(__dirname, 'frontend/dist/assets', 'js');
-const cssDistPath = path.resolve(__dirname, 'frontend/dist/assets', 'css');
+const targets = [
+  {
+    entry: 'src/js/main.js',
+    directory: 'assets/js',
+    extension: '.js',
+    filename: 'main.min.js',
+  },
+  {
+    entry: 'src/styles/style.scss',
+    directory: 'assets/css',
+    extension: '.css',
+    filename: 'style.min.css',
+  },
+];
 
-console.log('[RENAME-SCRIPT] Запущен поиск файлов...');
+function prepareRenames(manifest) {
+  return targets.map(({ entry, directory, extension, filename }) => {
+    const source = manifest[entry]?.file;
 
-function renameFile(folderPath, prefix, newName) {
-  try {
-    // Проверяем наличие папки
-    if (!fs.existsSync(folderPath)) {
-      console.warn(`Папка ${folderPath} не найдена. Пропускаем.`);
-      return;
+    if (
+    typeof source !== 'string'
+    || path.posix.dirname(source) !== directory
+    || path.posix.extname(source) !== extension
+    || source.includes('\\')
+    ) {
+      throw new Error(
+        `Некорректный путь результата сборки для ${entry}`,
+      );
     }
 
-    const files = fs.readdirSync(folderPath);
+    const destination = `${directory}/${filename}`;
+    const sourcePath = path.join(distRoot, source);
+    const destinationPath = path.join(distRoot, destination);
 
-    // Ищем файл, который начинается с указанного префикса
-    // (учитываем хеши вида main-DXie3Vxg.js)
-    const targetFile = files.find(file => file.startsWith(prefix));
-
-    if (targetFile) {
-      const oldPath = path.join(folderPath, targetFile);
-      const newPath = path.join(folderPath, newName);
-
-      // Переименовываем файл синхронно
-      fs.renameSync(oldPath, newPath);
-      console.log(`✅ Файл '${targetFile}' успешно переименован в '${newName}'`);
-    } else {
-      console.log(`Файл с префиксом '${prefix}' в папке ${folderPath} не найден.`);
+    if (!fs.statSync(sourcePath).isFile()) {
+      throw new Error(`Результат сборки не является файлом: ${source}`);
     }
-  } catch (err) {
-    console.error(`Ошибка при обработке ${folderPath}:`, err.message);
+
+    if (
+    source !== destination
+    && fs.existsSync(destinationPath)
+    ) {
+      throw new Error(
+        `Целевой файл уже существует: ${destination}. `
+        + 'Выполните чистую сборку через npm run build.',
+      );
+    }
+
+    return { source, destination, sourcePath, destinationPath };
+  });
+}
+
+function updateManifest(manifest, renames) {
+  const replacements = new Map(
+    renames.map(({ source, destination }) => [source, destination]),
+  );
+
+  const replacePath = (value) => replacements.get(value) ?? value;
+
+  for (const entry of Object.values(manifest)) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new Error('Манифест содержит некорректную запись');
+    }
+
+    if (typeof entry.file === 'string') {
+      entry.file = replacePath(entry.file);
+    }
+
+    for (const field of ['css', 'assets']) {
+      if (Array.isArray(entry[field])) {
+        entry[field] = entry[field].map(replacePath);
+      }
+    }
   }
 }
 
-// --- ВЫПОЛНЕНИЕ СКРИПТА ---
+function renameBuildFiles() {
+  const manifest = JSON.parse(
+    fs.readFileSync(manifestPath, 'utf8'),
+  );
+
+  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
+    throw new Error('Манифест должен содержать объект');
+  }
+
+  // Проверяем обе точки входа до изменения файлов.
+  const renames = prepareRenames(manifest);
+  updateManifest(manifest, renames);
+
+  const completed = [];
+  let temporaryManifestCreated = false;
+
+  try {
+    // Открываем новый файл исключительно для текущего запуска.
+    // Если .tmp уже существует, не перезаписываем и не удаляем его.
+    const descriptor = fs.openSync(temporaryManifestPath, 'wx');
+    temporaryManifestCreated = true;
+
+    try {
+      fs.writeFileSync(
+        descriptor,
+        `${JSON.stringify(manifest, null, 2)}\n`,
+        { encoding: 'utf8' },
+      );
+    } finally {
+      fs.closeSync(descriptor);
+    }
+
+    for (const rename of renames) {
+      if (rename.source === rename.destination) {
+        continue;
+      }
+
+      fs.renameSync(rename.sourcePath, rename.destinationPath);
+      completed.push(rename);
+    }
+
+    // Подменяем манифест только после переименования обоих ресурсов.
+    fs.renameSync(temporaryManifestPath, manifestPath);
+    temporaryManifestCreated = false;
+  } catch (error) {
+    // При обычной ошибке возвращаем переименованные файлы назад.
+    for (const rename of [...completed].reverse()) {
+      try {
+        fs.renameSync(rename.destinationPath, rename.sourcePath);
+      } catch (rollbackError) {
+        console.error(
+          `[RENAME-SCRIPT] Не удалось восстановить ${rename.source}:`,
+          rollbackError.message,
+        );
+      }
+    }
+
+    throw error;
+  } finally {
+    // Удаляем только временный файл, созданный этим запуском.
+    if (temporaryManifestCreated) {
+      try {
+        if (fs.existsSync(temporaryManifestPath)) {
+          fs.unlinkSync(temporaryManifestPath);
+        }
+      } catch (cleanupError) {
+        console.error(
+          '[RENAME-SCRIPT] Не удалось удалить временный манифест:',
+          cleanupError.message,
+        );
+      }
+    }
+  }
+
+  for (const { source, destination } of renames) {
+    console.log(`[RENAME-SCRIPT] ${source} → ${destination}`);
+  }
+
+  console.log(
+    '[RENAME-SCRIPT] Переименование и обновление манифеста завершены.',
+  );
+}
+
 try {
-  // 1. Переименовываем JS-файл
-  renameFile(jsDistPath, 'main-', 'main.min.js');
-
-  // 2. Переименовываем CSS-файл
-  renameFile(cssDistPath, 'styles-', 'style.min.css');
-
-  console.log('[RENAME-SCRIPT] Работа завершена.');
-} catch (e) {
-  console.error('[RENAME-SCRIPT] Фатальная ошибка:', e);
-  process.exit(1); // Останавливаем CI/CD пайплайн, если нейминг упал
+  renameBuildFiles();
+} catch (error) {
+  console.error('[RENAME-SCRIPT] Ошибка:', error.message);
+  process.exitCode = 1;
 }

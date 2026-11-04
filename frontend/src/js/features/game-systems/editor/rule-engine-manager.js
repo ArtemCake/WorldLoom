@@ -1,17 +1,22 @@
 // frontend/src/js/features/game-systems/editor/rule-engine-manager.js
 
-import { createRulesEditor } from './game-system-rules-editor.js';
-import { blocksEngineMutation, createRuleEngineApi } from '../api/rule-engine-api.js';
+import {
+createEngineRulesEditor
+} from './engine-rules-editor.js';
 
-function node(tag, text, className) {
-    const value = document.createElement(tag);
-    if (text !== undefined) value.textContent = text;
-    if (className) value.className = className;
-    return value;
-}
+import {
+blocksEngineMutation,
+createRuleEngineApi
+} from '../api/rule-engine-api.js';
+
+import {
+element as node
+} from './shared/editor-dom.js';
 
 export function mountRuleEngineManager(host, { request, isAllowed }) {
-    if (!host) return null;
+    if (!host) {
+        return null;
+    }
 
     const api = createRuleEngineApi(request);
 
@@ -81,7 +86,7 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
     function alreadyPublished() {
         return Boolean(draft) && versions.some(
             (item) =>
-                item.source_draft_revision + 1 === draft.revision
+            item.source_draft_revision + 1 === draft.revision
         );
     }
 
@@ -95,61 +100,64 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
             button.disabled = disabled;
         });
 
-        if (!form) return;
+        if (!form) {
+            return;
+        }
 
         form.querySelector('[data-engine-metadata]').disabled =
-            disabled;
+        disabled;
 
         form.querySelector('[data-engine-save]').disabled =
-            disabled || !loaded || blocked;
+        disabled || !loaded || blocked;
 
         form.querySelector('[data-engine-publish]').disabled =
-            disabled ||
-            !loaded ||
-            blocked ||
-            !engine ||
-            engine.is_active !== true ||
-            unsaved() ||
-            Boolean(alreadyPublished());
+        disabled ||
+        !loaded ||
+        blocked ||
+        !engine ||
+        engine.is_active !== true ||
+        unsaved() ||
+        Boolean(alreadyPublished());
 
-	        const activity = form.querySelector(
-	            '[data-engine-activity]'
-	        );
-	        const remove = form.querySelector(
-	            '[data-engine-delete]'
-	        );
+        const activity = form.querySelector('[data-engine-activity]');
+        const remove = form.querySelector('[data-engine-delete]');
 
-	        activity.hidden = !engine;
-	        activity.textContent = engine?.is_active === false
-	            ? 'Активировать движок'
-	            : 'Деактивировать движок';
-	        activity.disabled =
-	            disabled || !loaded || blocked || !engine;
+        activity.hidden = !engine;
+        activity.textContent = engine?.is_active === false
+        ? 'Активировать движок'
+        : 'Деактивировать движок';
 
-	        remove.hidden = !engine || versions.length > 0;
-	        remove.disabled =
-	            disabled || !loaded || blocked || !engine;
+        activity.disabled =
+        disabled || !loaded || blocked || !engine;
+
+        remove.hidden = !engine || versions.length > 0;
+        remove.disabled =
+        disabled || !loaded || blocked || !engine;
 
         editor?.setParentBusy(disabled || !loaded);
     }
 
     async function run(action, mutation = false, editing = true) {
-        if (working() || !isAllowed()) return;
-        if (mutation && blocked) return;
+        if (working() || !isAllowed()) {
+            return;
+        }
+
+        if (mutation && blocked) {
+            return;
+        }
 
         busy = true;
         let actionStarted = false;
 
         try {
             sync();
-
             actionStarted = true;
             await action();
         } catch (error) {
             if (
-                mutation &&
-                actionStarted &&
-                blocksEngineMutation(error, editing)
+            mutation &&
+            actionStarted &&
+            blocksEngineMutation(error, editing)
             ) {
                 blocked = true;
             }
@@ -157,13 +165,13 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
             console.error(error);
 
             status.textContent =
-                (error.message || 'Не удалось выполнить действие.') +
-                (blocked
-                    ? ' Повторная запись заблокирована. ' +
-                      'Обновите страницу и загрузите список движков ' +
-                      'для сверки. До перезагрузки введённые данные ' +
-                      'остаются в форме.'
-                    : '');
+            (error.message || 'Не удалось выполнить действие.') +
+            (blocked
+            ? ' Повторная запись заблокирована. ' +
+            'Обновите страницу и загрузите список движков ' +
+            'для сверки. До перезагрузки введённые данные ' +
+            'остаются в форме.'
+            : '');
         } finally {
             busy = false;
 
@@ -173,10 +181,10 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
                 console.error(error);
 
                 status.textContent =
-                    'Не удалось обновить состояние элементов формы. ' +
-                    'Проверьте разметку кнопок в buildForm(). ' +
-                    'Если выполнялась запись, перед повтором ' +
-                    'сверьте сохранённые данные после перезагрузки.';
+                'Не удалось обновить состояние элементов формы. ' +
+                'Проверьте разметку кнопок в buildForm(). ' +
+                'Если выполнялась запись, перед повтором ' +
+                'сверьте сохранённые данные после перезагрузки.';
             }
         }
     }
@@ -194,7 +202,9 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
 
             open.type = 'button';
             open.addEventListener('click', () => {
-                if (working() || !isAllowed() || !canDiscard()) return;
+                if (working() || !isAllowed() || !canDiscard()) {
+                    return;
+                }
 
                 void run(async () => {
                     // Старую форму не заменяем до успешного чтения.
@@ -207,10 +217,19 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
                         );
                     }
 
+                    if (state.draft.rules_json?.schema_version !== 3) {
+                        throw new Error(
+                            'Этот редактор движка поддерживает ' +
+                            'числовую схему правил 3. Старые черновики ' +
+                            'автоматически не преобразуются.'
+                        );
+                    }
+
                     buildForm(item, state.draft, state.versions);
                     blocked = false;
+
                     status.textContent =
-                        `Загружен черновик, ревизия ${draft.revision}.`;
+                    `Загружен черновик, ревизия ${draft.revision}.`;
                 });
             });
 
@@ -220,8 +239,8 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
                     'p',
                     `${item.slug} · ` +
                     (item.visibility === 'public'
-                        ? 'Публичный'
-                        : 'Приватный') +
+                    ? 'Публичный'
+                    : 'Приватный') +
                     (item.is_active === false ? ' · Неактивный' : '')
                 ),
                 node('p', item.description || 'Без описания'),
@@ -240,23 +259,28 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
 
     function showVersionState() {
         const info = form?.querySelector('[data-engine-version-state]');
-        if (!info) return;
+
+        if (!info) {
+            return;
+        }
 
         const numbers = versions
             .map((item) => item.version_number)
             .sort((a, b) => a - b);
 
         info.textContent = [
-            draft ? `Ревизия черновика: ${draft.revision}.` : 'Новый движок.',
+            draft
+            ? `Ревизия черновика: ${draft.revision}.`
+            : 'Новый движок.',
             numbers.length
-                ? `Публикации: ${numbers.join(', ')}.`
-                : 'Публикаций пока нет.',
+            ? `Публикации: ${numbers.join(', ')}.`
+            : 'Публикаций пока нет.',
             alreadyPublished()
-                ? 'Текущая ревизия уже опубликована.'
-                : '',
+            ? 'Текущая ревизия уже опубликована.'
+            : '',
             unsaved()
-                ? 'Есть несохранённые изменения.'
-                : ''
+            ? 'Есть несохранённые изменения.'
+            : ''
         ].filter(Boolean).join(' ');
     }
 
@@ -311,8 +335,10 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
 
                 <div data-engine-rules>
                     <div data-rules-basis></div>
+
                     <p data-rules-message role="status"
                        aria-live="polite"></p>
+
                     <fieldset data-rules-controls disabled>
                         <legend>Правила движка</legend>
                         <div data-rules-body></div>
@@ -355,45 +381,43 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
 
         form = area.querySelector('form');
         form.querySelector('[data-engine-heading]').textContent =
-            engine ? engine.name : 'Новый движок правил';
+        engine ? engine.name : 'Новый движок правил';
 
         const values = engine || {
             name: '',
             slug: `engine-${Date.now().toString(36)}-` +
-                Math.random().toString(36).slice(2, 8),
+            Math.random().toString(36).slice(2, 8),
             description: '',
             visibility: 'private'
         };
 
         for (const name of ['name', 'slug', 'description', 'visibility']) {
-            const control = form.elements.namedItem(name);
-            control.value = values[name] ?? '';
+            const input = form.elements.namedItem(name);
+            input.value = values[name] ?? '';
 
             if (engine) {
-                if (control instanceof HTMLSelectElement) {
-                    control.disabled = true;
+                if (input instanceof HTMLSelectElement) {
+                    input.disabled = true;
                 } else {
-                    control.readOnly = true;
+                    input.readOnly = true;
                 }
             }
         }
 
         form.querySelector('[data-engine-card-note]').textContent =
-            engine
-                ? 'Карточка показана только для чтения: текущий API ' +
-                  'сохраняет правила, но не изменяет название и видимость.'
-                : 'Выберите расчётный пресет и настройте его правила. ' +
-                  'Это не полный справочник D&D или Pathfinder.';
+        engine
+        ? 'Карточка показана только для чтения: текущий API ' +
+        'сохраняет правила, но не изменяет название и видимость.'
+        : 'Начните с пустых правил или загрузите числовую основу. ' +
+        'Затем настройте показатели, формулы и начальные значения. ' +
+        'Это не полная реализация D&D или Pathfinder.';
 
-        editor = createRulesEditor(
+        editor = createEngineRulesEditor(
             form.querySelector('[data-engine-rules]'),
             {
                 request,
-                systemId: null,
-                standaloneOnly: true,
-                singlePage: true,
                 getExecutorVersion: () =>
-                    draft?.rules_engine_version || '1.0',
+                draft?.rules_engine_version || '1.0',
                 onBusy(value) {
                     editorBusy = value;
                     sync();
@@ -406,8 +430,13 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
         );
 
         form.addEventListener('input', (event) => {
-            if (!(event.target instanceof HTMLElement)) return;
-            if (event.target.dataset.sample === 'true') return;
+            if (!(event.target instanceof HTMLElement)) {
+                return;
+            }
+
+            if (event.target.dataset.sample === 'true') {
+                return;
+            }
 
             if (event.target.closest('[data-engine-metadata]')) {
                 metadataDirty = true;
@@ -423,6 +452,7 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
         });
 
         form.addEventListener('submit', save);
+
         form.querySelector('[data-engine-publish]')
             .addEventListener('click', publish);
 
@@ -444,14 +474,18 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
     function save(event) {
         event.preventDefault();
 
-        if (working() || !loaded || blocked || !isAllowed()) return;
+        if (working() || !loaded || blocked || !isAllowed()) {
+            return;
+        }
 
         let rules;
         let data;
 
         // Локальная валидация до начала записывающего запроса.
         try {
-            if (!form.reportValidity()) return;
+            if (!form.reportValidity()) {
+                return;
+            }
 
             rules = editor.collect();
 
@@ -469,10 +503,10 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
                     name,
                     slug,
                     description:
-                        form.elements.namedItem('description')
-                            .value.trim() || null,
+                    form.elements.namedItem('description')
+                        .value.trim() || null,
                     visibility:
-                        form.elements.namedItem('visibility').value,
+                    form.elements.namedItem('visibility').value,
                     rules_engine_version: '1.0',
                     rules
                 };
@@ -507,15 +541,19 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
 
             metadataDirty = false;
             showVersionState();
+
             status.textContent =
-                'Черновик движка сохранён. Публикация не выполнялась.';
+            'Черновик движка сохранён. Публикация не выполнялась.';
         }, true, editing);
     }
 
     function changeActivity() {
         if (
-            working() || !isAllowed() || !loaded ||
-            blocked || !engine
+        working() ||
+        !isAllowed() ||
+        !loaded ||
+        blocked ||
+        !engine
         ) {
             return;
         }
@@ -524,12 +562,14 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
         const nextActive = !selected.is_active;
 
         const question = nextActive
-            ? `Активировать движок «${selected.name}»?`
-            : `Деактивировать движок «${selected.name}»? ` +
-              'Его нельзя будет выбрать для новой основы. ' +
-              'Уже связанные системы продолжат работать.';
+        ? `Активировать движок «${selected.name}»?`
+        : `Деактивировать движок «${selected.name}»? ` +
+        'Его нельзя будет выбрать для новой основы. ' +
+        'Уже связанные системы продолжат работать.';
 
-        if (!window.confirm(question)) return;
+        if (!window.confirm(question)) {
+            return;
+        }
 
         void run(async () => {
             const saved = await api.setActive(
@@ -540,7 +580,7 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
 
             engine = saved;
             engines = engines.map((item) =>
-                item.id === saved.id ? saved : item
+            item.id === saved.id ? saved : item
             );
 
             // Форму не пересоздаём: несохранённые правила остаются.
@@ -548,15 +588,19 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
             showVersionState();
 
             status.textContent = saved.is_active
-                ? 'Движок активирован.'
-                : 'Движок деактивирован. Сохранённые связи не изменены.';
+            ? 'Движок активирован.'
+            : 'Движок деактивирован. Сохранённые связи не изменены.';
         }, true);
     }
 
     function removeEngine() {
         if (
-            working() || !isAllowed() || !loaded ||
-            blocked || !engine || versions.length > 0
+        working() ||
+        !isAllowed() ||
+        !loaded ||
+        blocked ||
+        !engine ||
+        versions.length > 0
         ) {
             return;
         }
@@ -565,8 +609,8 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
         const expectedRevision = draft.revision;
 
         const warning = unsaved()
-            ? '\nНесохранённые изменения формы также будут потеряны.\n'
-            : '\n';
+        ? '\nНесохранённые изменения формы также будут потеряны.\n'
+        : '\n';
 
         const confirmation = window.prompt(
             `Удалить движок «${selected.name}» и его черновик?\n` +
@@ -577,11 +621,13 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
             ''
         );
 
-        if (confirmation === null) return;
+        if (confirmation === null) {
+            return;
+        }
 
         if (confirmation !== selected.name) {
             status.textContent =
-                'Название не совпало. Удаление не выполнялось.';
+            'Название не совпало. Удаление не выполнялось.';
             return;
         }
 
@@ -604,15 +650,20 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
             renderList();
 
             status.textContent =
-                `Движок «${selected.name}» и его черновик удалены.`;
+            `Движок «${selected.name}» и его черновик удалены.`;
         }, true);
     }
 
     function publish() {
         if (
-            working() || !isAllowed() || !loaded || blocked ||
-            !engine || engine.is_active !== true ||
-            unsaved() || alreadyPublished()
+        working() ||
+        !isAllowed() ||
+        !loaded ||
+        blocked ||
+        !engine ||
+        engine.is_active !== true ||
+        unsaved() ||
+        alreadyPublished()
         ) {
             return;
         }
@@ -649,8 +700,8 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
             showVersionState();
 
             status.textContent =
-                `Опубликована версия №${saved.version_number}. ` +
-                'Её можно выбрать при создании игровой системы.';
+            `Опубликована версия №${saved.version_number}. ` +
+            'Существующие системы автоматически не обновляются.';
         }, true);
     }
 
@@ -660,16 +711,18 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
             renderList();
 
             status.textContent = blocked
-                ? 'Список обновлён. Откройте сохранённый движок ' +
-                  'и сверьте состояние перед новой записью.'
-                : `Загружено ваших движков: ${engines.length}.`;
+            ? 'Список обновлён. Откройте сохранённый движок ' +
+            'и сверьте состояние перед новой записью.'
+            : `Загружено ваших движков: ${engines.length}.`;
         });
     });
 
     newButton.addEventListener('click', () => {
         if (
-            working() || blocked ||
-            !isAllowed() || !canDiscard()
+        working() ||
+        blocked ||
+        !isAllowed() ||
+        !canDiscard()
         ) {
             return;
         }
@@ -680,13 +733,17 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
 
             loaded = true;
             showVersionState();
+
             status.textContent =
-                'Выберите пресет и заполните карточку движка.';
+            'Заполните карточку движка и настройте числовые правила. ' +
+            'Можно начать с нуля или загрузить готовую основу.';
         });
     });
 
     window.addEventListener('beforeunload', (event) => {
-        if (!working() && !unsaved()) return;
+        if (!working() && !unsaved()) {
+            return;
+        }
 
         event.preventDefault();
         event.returnValue = '';

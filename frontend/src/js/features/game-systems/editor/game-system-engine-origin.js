@@ -13,15 +13,16 @@ export const OVERRIDABLE_FIELDS = Object.freeze([
 ]);
 
 const allowed = new Set(OVERRIDABLE_FIELDS);
+
 const own = (value, key) =>
-    Object.prototype.hasOwnProperty.call(value, key);
+Object.prototype.hasOwnProperty.call(value, key);
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
 function record(value) {
     return value !== null &&
-        typeof value === 'object' &&
-        !Array.isArray(value);
+    typeof value === 'object' &&
+    !Array.isArray(value);
 }
 
 function canonical(value) {
@@ -42,7 +43,7 @@ function canonical(value) {
 
 export function jsonEqual(left, right) {
     return JSON.stringify(canonical(left)) ===
-        JSON.stringify(canonical(right));
+    JSON.stringify(canonical(right));
 }
 
 function normalizedRules(raw) {
@@ -59,103 +60,105 @@ function normalizedRules(raw) {
     for (const item of Object.values(
         rules.calculations?.attributes || {}
     )) {
-        item.modifier_formula ??= null;
-    }
+    item.modifier_formula ??= null;
+}
 
-    return rules;
+return rules;
 }
 
 function checkOverrides(overrides) {
-    if (!record(overrides)) {
-        throw new Error('Переопределения должны быть объектом.');
-    }
+if (!record(overrides)) {
+throw new Error('Переопределения должны быть объектом.');
+}
 
-    for (const key of Object.keys(overrides)) {
-        if (!allowed.has(key)) {
-            throw new Error(
-                `Поле «${key}» нельзя переопределять.`
-            );
-        }
-    }
+for (const key of Object.keys(overrides)) {
+if (!allowed.has(key)) {
+throw new Error(
+`Поле «${key}» нельзя переопределять.`
+);
+}
+}
 }
 
 export function collectEngineOverrides(
-    baseRules,
-    effectiveRules,
-    explicitOverrides = {}
+baseRules,
+effectiveRules,
+explicitOverrides = {}
 ) {
-    checkOverrides(explicitOverrides);
+checkOverrides(explicitOverrides);
 
-    const base = normalizedRules(baseRules);
-    const effective = normalizedRules(effectiveRules);
+const base = normalizedRules(baseRules);
+const effective = normalizedRules(effectiveRules);
 
-    // Неизвестные или защищённые поля нельзя незаметно
-    // изменить либо потерять при отправке.
-    for (const key of new Set([
-        ...Object.keys(base),
-        ...Object.keys(effective)
-    ])) {
-        if (
-            !allowed.has(key) &&
-            !jsonEqual(base[key], effective[key])
-        ) {
-            throw new Error(
-                `Изменение поля «${key}» требует ` +
-                'отдельного перехода версии правил.'
-            );
-        }
-    }
+// Защищённые и неизвестные поля нельзя незаметно изменить
+// либо потерять при отправке.
+for (const key of new Set([
+...Object.keys(base),
+...Object.keys(effective)
+])) {
+if (
+!allowed.has(key) &&
+!jsonEqual(base[key], effective[key])
+) {
+throw new Error(
+`Изменение поля «${key}» требует ` +
+'отдельного перехода версии правил.'
+);
+}
+}
 
-    const overrides = {};
+const overrides = {};
 
-    for (const key of OVERRIDABLE_FIELDS) {
-        const explicitlySet = own(explicitOverrides, key);
-        const different = !jsonEqual(base[key], effective[key]);
+for (const key of OVERRIDABLE_FIELDS) {
+const explicitlySet = own(explicitOverrides, key);
+const different = !jsonEqual(base[key], effective[key]);
 
-        if (!explicitlySet && !different) continue;
+if (!explicitlySet && !different) {
+continue;
+}
 
-        if (!own(effective, key)) {
-            throw new Error(
-                `В итоговых правилах отсутствует поле «${key}».`
-            );
-        }
+if (!own(effective, key)) {
+throw new Error(
+`В итоговых правилах отсутствует поле «${key}».`
+);
+}
 
-        // Заменяем целое поле верхнего уровня.
-        overrides[key] = clone(effective[key]);
-    }
+// Контракт заменяет целое поле верхнего уровня.
+overrides[key] = clone(effective[key]);
+}
 
-    return overrides;
+return overrides;
 }
 
 export function readEngineOverrides(draft, version) {
-    if (
-        !version ||
-        typeof version.id !== 'string' ||
-        typeof version.engine_id !== 'string' ||
-        draft?.engine_version_id !== version.id
-    ) {
-        throw new Error(
-            'Публикация движка не соответствует черновику системы.'
-        );
-    }
+if (
+!version ||
+typeof version.id !== 'string' ||
+typeof version.engine_id !== 'string' ||
+draft?.engine_version_id !== version.id
+) {
+throw new Error(
+'Публикация движка не соответствует черновику системы.'
+);
+}
 
-    const overrides = draft.rules_overrides;
-    checkOverrides(overrides);
+const overrides = draft.rules_overrides;
+checkOverrides(overrides);
 
-    const assembled = {
-        ...clone(version.rules_json),
-        ...clone(overrides)
-    };
+const assembled = {
+...clone(version.rules_json),
+...clone(overrides)
+};
 
-    if (!jsonEqual(
-        normalizedRules(assembled),
-        normalizedRules(draft.rules)
-    )) {
-        throw new Error(
-            'Правила черновика не совпадают с сохранённой ' +
-            'основой и переопределениями.'
-        );
-    }
+if (!jsonEqual(
+normalizedRules(assembled),
+normalizedRules(draft.rules)
+)) {
+throw new Error(
+'Правила черновика не совпадают с сохранённой ' +
+'основой и переопределениями.'
+);
+}
 
-    return clone(overrides);
+return clone(overrides);
 }

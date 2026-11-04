@@ -317,6 +317,15 @@ WorldLoom/
 │   │   │   │   │   │   ├── game-system-api.js
 │   │   │   │   │   │   └── rule-engine-api.js
 │   │   │   │   │   ├── editor/
+│   │   │   │   │   │   ├── shared/
+│   │   │   │   │   │   │   ├── editor-dom.js
+│   │   │   │   │   │   │   ├── formula-contract.js
+│   │   │   │   │   │   │   ├── formula-editor.js
+│   │   │   │   │   │   │   ├── formula-input.js
+│   │   │   │   │   │   │   └── formula-validation.js
+│   │   │   │   │   │   ├── engine-formula-text.js
+│   │   │   │   │   │   ├── engine-presets.js
+│   │   │   │   │   │   ├── engine-rules-editor.js
 │   │   │   │   │   │   ├── game-system-engine-origin.js
 │   │   │   │   │   │   ├── game-system-rules-editor.js
 │   │   │   │   │   │   └── rule-engine-manager.js
@@ -349,8 +358,11 @@ WorldLoom/
 │   │   │   │   │   │   ├── game-map-controller.js
 │   │   │   │   │   │   ├── game-map-data.js
 │   │   │   │   │   │   ├── game-map-drag.js
+│   │   │   │   │   │   ├── game-map-fog-data.js
 │   │   │   │   │   │   ├── game-map-placement.js
 │   │   │   │   │   │   └── game-map-token-data.js
+│   │   │   │   │   ├── rendering/
+│   │   │   │   │   │   └── stored-map-fog.js
 │   │   │   │   │   ├── map-delete.js
 │   │   │   │   │   ├── map-edit.js
 │   │   │   │   │   ├── map-http.js
@@ -458,10 +470,17 @@ WorldLoom/
 │       └── private/
 │           └── maps/
 ├── logs/
+│   ├── worldloom.log
+│   ├── worldloom.log.2026-11-03
+│   └── worldloom_error.log
 ├── staging/
 ├── tests/
 │   ├── js/
+│   │   ├── engine-formula-text.test.mjs
+│   │   └── engine-presets.test.mjs
 │   └── python/
+│       ├── test_engine_numeric_contract.py
+│       └── test_web_assets.py
 ├── tools/
 │   ├── commands_tools.md
 │   ├── context_pack.py

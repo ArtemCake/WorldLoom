@@ -1,14 +1,41 @@
 <!-- frontend/templates/errors/not_found.html -->
 
 {% extends "base.html" %}
-{% block title %}Страница не найдена — {{ project_name }}{% endblock %}
+
+{% set status = error_status | default(404) %}
+
+{% block title %}
+{% if status == 404 %}
+Страница не найдена — {{ project_name }}
+{% elif status == 503 %}
+Сервис временно недоступен — {{ project_name }}
+{% else %}
+{{ error_title | default("Ошибка") }} — {{ project_name }}
+{% endif %}
+{% endblock %}
 
 {% block content %}
-<section class="legal-page not-found-page">
-	<h1 class="not-found-page__code">404</h1>
+<section
+		class="legal-page not-found-page"
+		data-http-error-page
+		data-http-error-status="{{ status }}"
+>
+	<h1 class="not-found-page__code">{{ status }}</h1>
+	
 	<p class="not-found-page__text">
-		Такой страницы пока нет: либо она ещё строится, либо ссылка ведёт не туда.
+		{% if status == 404 %}
+		Такой страницы пока нет: либо она ещё строится,
+		либо ссылка ведёт не туда.
+		{% elif status == 503 %}
+		Сервис временно недоступен.
+		Попробуйте открыть страницу позже.
+		{% else %}
+		{{ error_text | default("Не удалось выполнить запрос.") }}
+		{% endif %}
 	</p>
-	<a href="/" class="btn btn-primary">Вернуться на главную</a>
+	
+	<a href="/" class="btn btn-primary" hx-boost="false">
+		Вернуться на главную
+	</a>
 </section>
 {% endblock %}

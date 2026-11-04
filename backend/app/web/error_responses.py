@@ -11,7 +11,10 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.routing import APIRoute
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, Response
+import logging
 
+
+log = logging.getLogger(__name__)
 
 def _accept_quality(request: Request, media_type: str) -> float:
 	"""Прочитать явно указанный тип содержимого из Accept."""
@@ -77,8 +80,9 @@ def _response_headers(headers: Mapping[str, str] | None) -> dict[str, str]:
 	result["vary"] = ", ".join(vary)
 	return result
 
-def build_error_response(request: Request, status_code: int, detail: Any, *, code: str | None = None, headers: Mapping[str, str] | None = None) -> Response:
-	"""Собрать ответ без вывода входного тела запроса."""
+def build_error_response(request: Request, status_code: int, detail: Any, *, code: str | None = None,
+		headers: Mapping[str, str] | None = None) -> Response:
+	"""Собрать HTML- или JSON-ответ без обращения к БД."""
 	response_headers = _response_headers(headers)
 
 	if wants_html_error(request):
@@ -96,27 +100,108 @@ def build_error_response(request: Request, status_code: int, detail: Any, *, cod
 			500: "Ошибка приложения",
 			503: "Операция временно недоступна",
 		}
-		title = titles.get(status_code, "Не удалось выполнить запрос")
-		text = detail if isinstance(detail, str) else "Проверьте данные запроса и повторите действие."
-		content = (
-			'<!doctype html><html lang="ru"><head><meta charset="utf-8">'
-			'<meta name="viewport" content="width=device-width, initial-scale=1">'
-			f"<title>{status_code} — {escape(title)}</title></head>"
-			f"<body><main><h1>{status_code} — {escape(title)}</h1>"
-			f'<p>{escape(text)}</p><p><a href="/">На главную</a></p>'
-			"</main></body></html>"
+
+		title = titles.get(
+			status_code,
+			"Не удалось выполнить запрос",
 		)
-		response = HTMLResponse(content=content, status_code=status_code, headers=response_headers)
+
+		text = (
+			detail
+			if isinstance(detail, str)
+			else "Проверьте данные запроса и повторите действие."
+		)
+
+		# Резервный HTML готовим заранее.
+		# Он не зависит от шаблонов, настроек и подключения к БД.
+		content = (
+			'<!doctype html>'
+			'<html lang="ru">'
+			'<head>'
+			'<meta charset="utf-8">'
+			'<meta name="viewport" '
+			'content="width=device-width, initial-scale=1">'
+			f'<title>{status_code} — {escape(title)}</title>'
+			'</head>'
+			'<body>'
+			'<main>'
+			f'<h1>{status_code} — {escape(title)}</h1>'
+			f'<p>{escape(text)}</p>'
+			'<p><a href="/">На главную</a></p>'
+			'</main>'
+			'</body>'
+			'</html>'
+		)
+
+		try:
+			templates = getattr(
+				request.app.state,
+				"templates",
+				None,
+			)
+
+			settings = getattr(
+				request.app.state,
+				"settings",
+				None,
+			)
+
+			if templates is None:
+				raise RuntimeError(
+					"HTML-шаблоны не подключены"
+				)
+
+			response = templates.TemplateResponse(
+				request=request,
+				name="errors/not_found.html",
+				context={
+					"request": request,
+					"project_name": getattr(
+						settings,
+						"PROJECT_NAME",
+						"WorldLoom",
+					),
+					"user": None,
+					"csrf_token": "",
+					"error_status": status_code,
+					"error_title": title,
+					"error_text": text,
+				},
+				status_code=status_code,
+				headers=response_headers,
+			)
+
+		except Exception:
+			log.exception(
+				"Не удалось сформировать страницу ошибки %s",
+				status_code,
+			)
+
+			response = HTMLResponse(
+				content=content,
+				status_code=status_code,
+				headers=response_headers,
+			)
+
 	else:
-		payload = {"detail": jsonable_encoder(detail)}
+		payload = {
+			"detail": jsonable_encoder(detail),
+		}
 
 		if code is not None:
 			payload["code"] = code
 
-		response = JSONResponse(content=payload, status_code=status_code, headers=response_headers)
+		response = JSONResponse(
+			content=payload,
+			status_code=status_code,
+			headers=response_headers,
+		)
 
 	if request.method == "HEAD":
-		return Response(status_code=status_code, headers=dict(response.headers))
+		return Response(
+			status_code=status_code,
+			headers=dict(response.headers),
+		)
 
 	return response
 

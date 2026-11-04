@@ -1,8 +1,7 @@
 // frontend/src/js/features/game-systems/editor/engine-presets.js
 
-import {
-FORMULA_VALUE_LIMIT
-} from './shared/formula-contract.js';
+import {FORMULA_VALUE_LIMIT} from './shared/formula-contract.js';
+import {createDnd5e2014NumericProfile} from './presets/dnd5e-2014.js';
 
 const ABILITIES = [
 	['strength', 'Сила'],
@@ -84,12 +83,14 @@ const PRESETS = [
 	},
 	{
 		code: 'dnd5e_2014_srd51',
-		name: 'D&D 5e 2014 / SRD 5.1 — числовая основа',
+		name: 'D&D 5e 2014 / SRD 5.1 — базовые расчёты',
 		description:
-		'Шесть характеристик и формулы их модификаторов. ' +
-		'Начальные значения — 10. Это не полная система ' +
-		'и не процедура создания персонажа.',
-		create: dndNumericProfile
+		'Характеристики, модификаторы, уровень, бонус мастерства, ' +
+		'спасброски, 18 навыков и базовые пассивные значения. ' +
+		'Инициатива и КД без дополнительных эффектов. ' +
+		'Классовые механики, ресурсы и игровые действия ' +
+		'ещё не подключены.',
+		create: createDnd5e2014NumericProfile
 	},
 	{
 		code: 'dnd5e_2024',

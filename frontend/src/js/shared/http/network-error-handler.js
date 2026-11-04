@@ -44,6 +44,69 @@ export function initNetworkErrorHandlers() {
     if (handlersBound) return;
     handlersBound = true;
 
+    document.addEventListener('htmx:beforeSwap', (event) => {
+        const detail = event.detail;
+        const xhr = detail?.xhr;
+
+        if (!xhr || ![404, 503].includes(xhr.status)) {
+            return;
+        }
+
+        /*
+         * Заменяем содержимое только при переходе между страницами.
+         * Ошибки отправки форм и фоновых API-запросов не должны
+         * убирать текущий редактор и несохранённые данные.
+         */
+        const requestConfig = detail.requestConfig;
+
+        const method = String(
+            requestConfig?.verb || ''
+        ).toUpperCase();
+
+        if (
+        !requestConfig?.boosted ||
+        method !== 'GET'
+        ) {
+            return;
+        }
+
+        const contentType = (
+        xhr.getResponseHeader('Content-Type') || ''
+        ).toLowerCase();
+
+        if (!contentType.includes('text/html')) {
+            return;
+        }
+
+        const documentResponse = new DOMParser().parseFromString(
+            xhr.responseText,
+            'text/html'
+        );
+
+        const errorPage = documentResponse.querySelector(
+            '[data-http-error-page]'
+        );
+
+        const currentMain = document.querySelector(
+            'main.page-content'
+        );
+
+        if (!errorPage || !currentMain) {
+            return;
+        }
+
+        /*
+         * Берём только содержимое страницы, а не весь документ:
+         * меню, стили и скрипты повторно не вставляем.
+         */
+        detail.target = currentMain;
+        detail.serverResponse = errorPage.outerHTML;
+        detail.selectOverride = '[data-http-error-page]';
+        detail.swapOverride = 'innerHTML';
+        detail.shouldSwap = true;
+        detail.isError = false;
+    });
+
     document.addEventListener('htmx:beforeOnLoad', (event) => {
         if (!isSharedRequest(event.detail)) return;
 

@@ -1,0 +1,457 @@
+/* frontend/src/styles/pages/game-system-editor/_book-interactions.scss */
+
+/*
+ * Сворачивание параметров, уголки страниц и анимация.
+ * Подключается после основных стилей книги.
+ */
+
+.rules-book {
+    &__spread {
+        position: relative;
+        isolation: isolate;
+        perspective: 1800px;
+
+    &__element-navigation:empty {
+        display: none;
+    }
+
+    &__element-navigation:not(:empty) {
+        margin-bottom: 1.25rem;
+    }
+
+    &__parameters > summary {
+        min-width: 0;
+        font-size: 1.1rem;
+        overflow-wrap: anywhere;
+    }
+
+    }
+
+    &__page {
+        padding-bottom: 4.5rem;
+    }
+
+    &__parameters {
+        min-width: 0;
+    }
+
+    &__parameters > summary {
+        padding: 0.75rem 0;
+        color: var(--color-text-primary);
+        border-bottom: 1px solid var(--color-border-subtle);
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    &__parameters > summary:focus-visible {
+        outline: 2px solid var(--color-border-accent);
+        outline-offset: 3px;
+    }
+
+    &__parameters-body {
+        padding-top: 1.25rem;
+    }
+
+    &__corner {
+        position: absolute;
+        bottom: 0;
+        z-index: 2;
+        display: grid;
+        place-items: center;
+        width: 3.75rem;
+        height: 3.75rem;
+        padding: 0;
+        color: var(--color-text-secondary);
+        background: var(--color-bg-panel-alt);
+        border: 0;
+        font-size: 2rem;
+        line-height: 1;
+        transition: color 160ms ease, box-shadow 160ms ease;
+    }
+
+    &__corner--previous {
+        left: 0;
+        border-top-right-radius: 100%;
+        border-bottom-left-radius: 0.6rem;
+    }
+
+    &__corner--previous > span {
+        transform: translate(-0.3rem, 0.3rem);
+    }
+
+    &__corner--next {
+        right: 0;
+        border-top-left-radius: 100%;
+        border-bottom-right-radius: 0.6rem;
+    }
+
+    &__corner--next > span {
+        transform: translate(0.3rem, 0.3rem);
+    }
+
+    &__corner:hover:not(:disabled) {
+        color: var(--color-text-primary);
+        box-shadow: 0 0 0 1px var(--color-border-accent);
+    }
+
+    &__corner:disabled {
+        visibility: hidden;
+    }
+
+    &__turn-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        perspective: 1800px;
+        pointer-events: none;
+    }
+
+    &__turn-leaf {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 50%;
+        transform-style: preserve-3d;
+    }
+
+    &__turn-leaf--next {
+        right: 0;
+        transform-origin: left center;
+    }
+
+    &__turn-leaf--previous {
+        left: 0;
+        transform-origin: right center;
+    }
+
+     &__turn-front,
+     &__turn-back {
+         position: absolute;
+         inset: 0;
+         overflow: hidden;
+         box-sizing: border-box;
+         background: var(--color-bg-panel);
+         backface-visibility: hidden;
+         border: 0;
+     }
+
+     &__turn-back {
+         transform: rotateY(180deg);
+     }
+
+     &__snapshot {
+         position: absolute;
+         top: 0;
+         box-sizing: border-box;
+         margin: 0;
+         pointer-events: none;
+     }
+
+    &__footer {
+        justify-content: center;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        &__corner {
+            transition: none;
+        }
+    }
+}
+
+/* Прокрутка страниц: сшитый сгиб с перекрёстными стежками. */
+
+.rules-book {
+    --rules-book-binding-width: 34px;
+    --rules-book-binding-step: 34px;
+
+    --rules-book-binding-paper: var(--color-bg-panel);
+    --rules-book-binding-fold: var(--color-bg-panel-alt);
+    --rules-book-binding-edge: var(--color-border-subtle);
+    --rules-book-binding-thread: var(--color-text-secondary);
+    --rules-book-binding-highlight: var(--color-text-primary);
+    --rules-book-binding-control: var(--color-border-accent);
+
+    &__page {
+        scrollbar-width: thin;
+        scrollbar-color: var(--rules-book-binding-thread) var(--rules-book-binding-fold);
+    }
+
+    @supports selector(::-webkit-scrollbar) {
+        &__page {
+            scrollbar-width: auto;
+            scrollbar-color: auto;
+        }
+
+        &__page::-webkit-scrollbar {
+            width: var(--rules-book-binding-width);
+            height: 12px;
+        }
+
+        /*
+         * Общая основа без рамки вокруг всей дорожки.
+         * Цвета берутся из действующей темы.
+         */
+
+        &__page::-webkit-scrollbar-track {
+            background-color: var(--rules-book-binding-paper);
+            border: 0;
+            border-radius: 0;
+        }
+
+        /*
+         * Слои вертикального переплёта:
+         * — отверстия слева и справа;
+         * — два диагональных стежка;
+         * — продольный сгиб.
+         */
+
+        &__page::-webkit-scrollbar-track:vertical {
+            background-image:
+                radial-gradient(
+                    ellipse 2px 3px at 6px 50%,
+                    rgb(0 0 0 / 65%) 0 55%,
+                    var(--rules-book-binding-edge) 65% 80%,
+                    transparent 100%
+                ),
+                radial-gradient(
+                    ellipse 2px 3px at calc(100% - 6px) 50%,
+                    rgb(0 0 0 / 65%) 0 55%,
+                    var(--rules-book-binding-edge) 65% 80%,
+                    transparent 100%
+                ),
+                linear-gradient(
+                    28deg,
+                    transparent 44%,
+                    var(--rules-book-binding-edge) 45% 46%,
+                    var(--rules-book-binding-thread) 47% 49%,
+                    var(--rules-book-binding-highlight) 50%,
+                    transparent 52%
+                ),
+                linear-gradient(
+                    -28deg,
+                    transparent 44%,
+                    var(--rules-book-binding-edge) 45% 46%,
+                    var(--rules-book-binding-thread) 47% 49%,
+                    transparent 51%
+                ),
+                linear-gradient(
+                    to right,
+                    var(--rules-book-binding-paper) 0%,
+                    var(--rules-book-binding-fold) 28%,
+                    var(--rules-book-binding-edge) 44%,
+                    var(--rules-book-binding-fold) 50%,
+                    var(--rules-book-binding-edge) 56%,
+                    var(--rules-book-binding-fold) 72%,
+                    var(--rules-book-binding-paper) 100%
+                );
+
+            background-size:
+                100% var(--rules-book-binding-step),
+                100% var(--rules-book-binding-step),
+                calc(100% - 12px) var(--rules-book-binding-step),
+                calc(100% - 12px) var(--rules-book-binding-step),
+                100% 100%;
+
+            background-position:
+                center top,
+                center top,
+                center top,
+                center top,
+                center;
+
+            background-repeat:
+                repeat-y,
+                repeat-y,
+                repeat-y,
+                repeat-y,
+                no-repeat;
+
+            box-shadow:
+                inset 5px 0 7px -5px rgb(0 0 0 / 50%),
+                inset -5px 0 7px -5px rgb(0 0 0 / 50%);
+        }
+
+        /*
+         * Подвижный указатель:
+         * прозрачная середина сохраняет видимость нитей.
+         * Боковые отметки обозначают доступную область захвата.
+         */
+
+        &__page::-webkit-scrollbar-thumb:vertical {
+            min-height: 72px;
+            background-color: transparent;
+            border: 0;
+            border-radius: 0;
+            box-shadow:
+                inset 2px 0 0 var(--rules-book-binding-thread),
+                inset -2px 0 0 var(--rules-book-binding-thread);
+        }
+
+        &__page::-webkit-scrollbar-thumb:vertical:hover {
+            background-color: transparent;
+            box-shadow:
+                inset 3px 0 0 var(--rules-book-binding-control),
+                inset -3px 0 0 var(--rules-book-binding-control);
+        }
+
+        &__page::-webkit-scrollbar-thumb:vertical:active {
+            background-color: transparent;
+            box-shadow:
+                inset 4px 0 0 var(--rules-book-binding-control),
+                inset -4px 0 0 var(--rules-book-binding-control);
+        }
+
+        /* Горизонтальная прокрутка без имитации второго переплёта. */
+
+        &__page::-webkit-scrollbar-track:horizontal {
+            background: var(--rules-book-binding-fold);
+            box-shadow: none;
+        }
+
+        &__page::-webkit-scrollbar-thumb:horizontal {
+            min-width: 48px;
+            background: var(--rules-book-binding-thread);
+            background-clip: padding-box;
+            border: 3px solid var(--rules-book-binding-fold);
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        &__page::-webkit-scrollbar-thumb:horizontal:hover {
+            background-color: var(--rules-book-binding-control);
+        }
+
+        &__page::-webkit-scrollbar-corner {
+            background: var(--rules-book-binding-paper);
+        }
+
+        /* Без переполнения оставляем только декоративную дорожку. */
+        &__page::-webkit-scrollbar-thumb:vertical:disabled,
+        &__page::-webkit-scrollbar-thumb:vertical:disabled:hover,
+        &__page::-webkit-scrollbar-thumb:vertical:disabled:active {
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+        }
+
+    }
+
+    @media (forced-colors: active) {
+        &__page {
+            scrollbar-color: auto;
+        }
+
+        &__page::-webkit-scrollbar-track:vertical,
+        &__page::-webkit-scrollbar-track:horizontal {
+            background: Canvas;
+            box-shadow: none;
+        }
+
+        &__page::-webkit-scrollbar-thumb:vertical,
+        &__page::-webkit-scrollbar-thumb:horizontal {
+            background: ButtonText;
+            border: 1px solid Canvas;
+            box-shadow: none;
+        }
+
+        &__page::-webkit-scrollbar-thumb:vertical:hover,
+        &__page::-webkit-scrollbar-thumb:vertical:active,
+        &__page::-webkit-scrollbar-thumb:horizontal:hover {
+            background: Highlight;
+            box-shadow: none;
+        }
+
+        &__page::-webkit-scrollbar-corner {
+            background: Canvas;
+        }
+    }
+}
+
+/* Переплёт остаётся по центру. Справа — обычная тематическая прокрутка. */
+
+.rules-book {
+    &__page--reading {
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-border-subtle) var(--color-bg-panel);
+    }
+
+    @supports selector(::-webkit-scrollbar) {
+        &__page--reading {
+            scrollbar-width: auto;
+            scrollbar-color: auto;
+        }
+
+        &__page--reading::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        &__page--reading::-webkit-scrollbar-track:vertical,
+        &__page--reading::-webkit-scrollbar-track:horizontal {
+            background: var(--color-bg-panel);
+            border: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        &__page--reading::-webkit-scrollbar-thumb:vertical,
+        &__page--reading::-webkit-scrollbar-thumb:horizontal {
+            min-width: 40px;
+            min-height: 40px;
+            background: var(--color-border-subtle);
+            background-clip: padding-box;
+            border: 3px solid var(--color-bg-panel);
+            border-radius: 6px;
+            box-shadow: none;
+        }
+
+        &__page--reading::-webkit-scrollbar-thumb:vertical:hover,
+        &__page--reading::-webkit-scrollbar-thumb:horizontal:hover,
+        &__page--reading::-webkit-scrollbar-thumb:vertical:active,
+        &__page--reading::-webkit-scrollbar-thumb:horizontal:active {
+            background-color: var(--color-border-accent);
+            box-shadow: none;
+        }
+
+        &__page--reading::-webkit-scrollbar-thumb:vertical:disabled,
+        &__page--reading::-webkit-scrollbar-thumb:vertical:disabled:hover,
+        &__page--reading::-webkit-scrollbar-thumb:vertical:disabled:active {
+            background: transparent;
+            border-color: transparent;
+            box-shadow: none;
+        }
+
+        &__page--reading::-webkit-scrollbar-corner {
+            background: var(--color-bg-panel);
+        }
+    }
+
+    @media (forced-colors: active) {
+        &__page--reading {
+            scrollbar-color: auto;
+        }
+
+        &__page--reading::-webkit-scrollbar-track:vertical,
+        &__page--reading::-webkit-scrollbar-track:horizontal {
+            background: Canvas;
+        }
+
+        &__page--reading::-webkit-scrollbar-thumb:vertical,
+        &__page--reading::-webkit-scrollbar-thumb:horizontal {
+            background: ButtonText;
+            border-color: Canvas;
+        }
+
+        &__page--reading::-webkit-scrollbar-thumb:vertical:hover,
+        &__page--reading::-webkit-scrollbar-thumb:horizontal:hover,
+        &__page--reading::-webkit-scrollbar-thumb:vertical:active,
+        &__page--reading::-webkit-scrollbar-thumb:horizontal:active {
+            background: Highlight;
+        }
+
+        &__page--reading::-webkit-scrollbar-corner {
+            background: Canvas;
+        }
+    }
+}

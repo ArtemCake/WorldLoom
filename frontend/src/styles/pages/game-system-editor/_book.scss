@@ -1,0 +1,379 @@
+/* frontend/src/styles/pages/game-system-editor/_book.scss */
+
+@use './mixins' as *;
+
+/*
+ * Новая книга правил.
+ * Самостоятельная область оформления, не зависящая
+ * от разметки старых редакторов.
+ */
+
+.rules-book {
+    --rules-book-page-height: 44rem;
+    min-width: 0;
+    color: var(--color-text-primary);
+    font-family: var(--font-family-base);
+    min-width: 0;
+    color: var(--color-text-primary);
+    font-family: var(--font-family-base);
+
+    &,
+    * {
+        box-sizing: border-box;
+    }
+
+    [hidden] {
+        display: none !important;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        @include gs-editor-headings(inherit, inherit);
+    }
+
+    h1 {
+        margin: 0 0 0.5rem;
+        font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+        overflow-wrap: anywhere;
+    }
+
+    h2 {
+        margin: 0 0 1.5rem;
+        font-size: clamp(1.25rem, 2vw, 1.7rem);
+    }
+
+    h3 {
+        margin: 0 0 0.75rem;
+        font-size: 1.1rem;
+    }
+
+    h4 {
+        margin: 1rem 0 0.5rem;
+        font-size: 1rem;
+    }
+
+    p {
+        margin: 0 0 1rem;
+        text-align: left;
+        line-height: 1.65;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+        font: inherit;
+    }
+
+    button {
+        cursor: pointer;
+    }
+
+    button:disabled {
+        cursor: default;
+        opacity: 0.55;
+    }
+
+    :is(button, input, textarea, select):focus-visible {
+        @include gs-editor-focus;
+    }
+
+    &__header {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    &__muted,
+    &__eyebrow {
+        color: var(--color-text-secondary);
+        font-size: 0.9rem;
+    }
+
+    &__eyebrow {
+        margin-bottom: 0.75rem;
+        letter-spacing: 0.06em;
+    }
+
+    &__notice,
+    &__error {
+        padding: 0.85rem 1rem;
+        background: var(--color-bg-panel-alt);
+        border-left: 3px solid var(--color-border-accent);
+    }
+
+    &__workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(10rem, 13rem);
+        align-items: start;
+        gap: 0;
+    }
+
+    &__spread {
+        @include gs-editor-surface($radius: 0.6rem);
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        min-width: 0;
+        box-shadow: 0 0.3rem 0 var(--color-bg-panel-alt);
+    }
+
+    &__page {
+        min-width: 0;
+        height: var(--rules-book-page-height);
+        min-height: 0;
+        max-height: var(--rules-book-page-height);
+        padding: clamp(1.25rem, 2.6vw, 3rem);
+        overflow-x: auto;
+        overflow-y: scroll;
+        overscroll-behavior-y: contain;
+        scrollbar-gutter: stable;
+        overflow-wrap: anywhere;
+    }
+
+    &__page--settings {
+        border-right: 1px solid var(--color-border-subtle);
+    }
+
+    &__page--reading {
+        border-left: 0.4rem solid var(--color-bg-panel-alt);
+    }
+
+    &__tabs {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.45rem;
+        padding-block: 1.5rem;
+    }
+
+    &__tab {
+        min-height: 2.8rem;
+        margin: 0;
+        padding: 0.7rem 0.9rem;
+        color: var(--color-text-secondary);
+        background: var(--color-bg-panel-alt);
+        border: 1px solid var(--color-border-subtle);
+        border-left: 0;
+        border-radius: 0 0.5rem 0.5rem 0;
+        text-align: left;
+        overflow-wrap: anywhere;
+    }
+
+    &__tab[aria-current="page"] {
+        color: var(--color-text-primary);
+        background: var(--color-bg-panel);
+        border-color: var(--color-border-accent);
+        font-weight: 700;
+    }
+
+    &__field {
+        display: grid;
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
+
+        > span {
+            font-weight: 600;
+        }
+
+        input,
+        textarea,
+        select {
+            @include gs-editor-control(0.7rem 0.8rem, 0.4rem);
+            min-width: 0;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+    }
+
+    &__check {
+        display: flex;
+        align-items: start;
+        gap: 0.7rem;
+        margin-bottom: 0.75rem;
+
+        input {
+            flex: 0 0 auto;
+            width: 1rem;
+            height: 1rem;
+            margin-top: 0.2rem;
+        }
+    }
+
+    &__prose {
+        white-space: pre-wrap;
+    }
+
+    &__facts {
+        margin: 1.25rem 0;
+    }
+
+    &__fact {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 0.5rem 1rem;
+        padding-block: 0.55rem;
+        border-bottom: 1px solid var(--color-border-subtle);
+
+        dt {
+            color: var(--color-text-secondary);
+            font-weight: 400;
+        }
+
+        dd {
+            margin: 0;
+        }
+    }
+
+    &__entry {
+        padding-block: 1.25rem;
+        border-bottom: 1px solid var(--color-border-subtle);
+
+        &:first-child {
+            padding-top: 0;
+        }
+
+        code {
+            display: block;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            color: inherit;
+            line-height: 1.7;
+        }
+    }
+
+    &__footer {
+        @include gs-editor-row(1rem);
+        justify-content: space-between;
+        margin-top: 1.5rem;
+    }
+
+    @media (max-width: 1100px) {
+        &__workspace {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        &__tabs {
+            grid-row: 1;
+            flex-direction: row;
+            padding: 0 0 1rem;
+            overflow-x: auto;
+        }
+
+        &__tab {
+            flex: 0 0 auto;
+            max-width: 15rem;
+            border-left: 1px solid var(--color-border-subtle);
+            border-radius: 0.4rem;
+        }
+    }
+
+    @media (max-width: 720px) {
+        &__spread {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        &__page {
+            min-height: 0;
+            padding: 1.25rem;
+        }
+
+        &__page--settings {
+            border-right: 0;
+        }
+
+        &__page--reading {
+            border-top: 1px solid var(--color-border-subtle);
+            border-left: 0;
+        }
+
+        &__fact {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        &__footer > button {
+            flex: 1 1 auto;
+        }
+    }
+
+    /*
+     * Формы показателей.
+     * Положение после адаптивных правил сохранено.
+     */
+
+    &__attribute-form {
+        min-width: 0;
+        margin: 1.5rem 0 0;
+        padding: 0;
+        border: 0;
+
+        > legend {
+            width: 100%;
+            margin-bottom: 1.25rem;
+            padding: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+    }
+
+    &__attribute-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+
+    &__choice {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 0.4rem;
+    }
+}
+
+/* Порядок отдельного блока сохранён относительно исходного файла. */
+
+.rules-book {
+    &__form {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    &__basis-note {
+        margin-top: 1rem;
+    }
+    &__description {
+        margin: 0.75rem 0 1.25rem;
+        color: var(--color-text-primary);
+        line-height: 1.65;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    &__description-input {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 8rem;
+        padding: 0.75rem;
+        color: var(--color-text-primary);
+        background: var(--color-bg-panel);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 0.35rem;
+        font: inherit;
+        line-height: 1.5;
+        resize: vertical;
+    }
+
+    &__description-input:focus-visible {
+        outline: 2px solid var(--color-border-accent);
+        outline-offset: 2px;
+    }
+}

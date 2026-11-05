@@ -1,0 +1,204 @@
+/* frontend/src/styles/pages/game-system-editor/_view.scss */
+
+@use './mixins' as *;
+
+/* Просмотр игровой системы. */
+
+.page-content:has(.game-system-view-page) {
+    max-width: 1440px;
+    padding-inline: clamp(1rem, 2vw, 2rem);
+}
+
+.game-system-view-page {
+    color: var(--color-text-primary);
+    font-family: var(--font-family-base);
+
+    [hidden] {
+        display: none !important;
+    }
+
+    > [data-page-content] {
+        margin-top: 1rem;
+    }
+
+    .system-view {
+        display: grid;
+        gap: 1rem;
+        min-width: 0;
+    }
+
+    .system-view__panel {
+        @include gs-editor-surface($radius: var(--radius-md, 0.875rem));
+        min-width: 0;
+        margin: 0;
+        padding: clamp(1rem, 2vw, 1.75rem);
+        overflow-wrap: anywhere;
+
+        h2,
+        h3,
+        h4 {
+            @include gs-editor-headings;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: clamp(1.4rem, 2vw, 2rem);
+        }
+
+        h3 {
+            margin: 0 0 1.25rem;
+            font-size: 1.25rem;
+        }
+
+        h4 {
+            margin: 0 0 0.75rem;
+            font-size: 1.05rem;
+        }
+
+        p {
+            margin: 0 0 0.85rem;
+            text-align: left;
+            line-height: 1.65;
+        }
+
+        > :last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .system-view__header {
+        margin-bottom: 1rem;
+    }
+
+    .system-view__heading {
+        @include gs-editor-row(1rem, $align: flex-start);
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+
+    .system-view__actions {
+        @include gs-editor-row(0.65rem);
+    }
+
+    .system-view__description {
+        white-space: pre-wrap;
+    }
+
+    .system-view__note {
+        color: var(--color-text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .system-view__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .system-view__card {
+        @include gs-editor-surface(var(--color-bg-panel-alt));
+        min-width: 0;
+        padding: 1rem;
+
+        > :last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .system-view__formula {
+        padding: 0.8rem 1rem;
+        color: var(--color-text-primary);
+        background: var(--color-bg-panel);
+        border-left: 3px solid var(--color-border-accent);
+        border-radius: var(--radius-sm, 0.625rem);
+        overflow-wrap: anywhere;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .system-view__facts {
+        display: grid;
+        grid-template-columns: minmax(10rem, 1fr) minmax(0, 2fr);
+        gap: 0.65rem 1rem;
+        margin: 0 0 1rem;
+
+        dt {
+            color: var(--color-text-secondary);
+        }
+
+        dd {
+            margin: 0;
+            color: var(--color-text-primary);
+        }
+    }
+
+    .system-view__field {
+        display: grid;
+        gap: 0.5rem;
+        max-width: 32rem;
+        margin-bottom: 1rem;
+
+        select {
+            @include gs-editor-control;
+            box-sizing: border-box;
+            min-width: 0;
+            font: inherit;
+        }
+    }
+
+    .system-view__table-wrap {
+        max-width: 100%;
+        margin-top: 1rem;
+        overflow-x: auto;
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-variant-numeric: tabular-nums;
+        }
+
+        caption {
+            margin-bottom: 0.65rem;
+            color: var(--color-text-secondary);
+            text-align: left;
+        }
+
+        th,
+        td {
+            padding: 0.65rem 0.8rem;
+            border-bottom: 1px solid var(--color-border-subtle);
+            vertical-align: top;
+        }
+
+        th {
+            color: var(--color-text-primary);
+            background: var(--color-bg-panel-alt);
+        }
+    }
+
+    a:focus-visible,
+    button:focus-visible,
+    select:focus-visible,
+    .system-view__table-wrap:focus-visible {
+        @include gs-editor-focus;
+    }
+
+    @media (max-width: 768px) {
+        .system-view__facts {
+            grid-template-columns: minmax(0, 1fr);
+
+            dd {
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        .system-view__actions {
+            width: 100%;
+
+            .btn {
+                flex: 1 1 auto;
+            }
+        }
+    }
+}

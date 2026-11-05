@@ -47,11 +47,8 @@ class ResourceDefinition(CalculationModel):
         положительное число — восстановить это количество.
     """
 
-    label: str = Field(
-        min_length=1,
-        max_length=100,
-        pattern=r"\S",
-    )
+    label: str = Field(min_length=1, max_length=100, pattern=r"\S",)
+    description: str = Field(default="", strict=True, max_length=10000)
 
     maximum: CalculationValue | NumericReference
 

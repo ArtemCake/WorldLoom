@@ -1,0 +1,589 @@
+/* frontend/src/styles/pages/game-system-editor/_editor.scss */
+
+@use './mixins' as *;
+
+/* Общая основа редакторов. */
+
+.system-editor {
+    display: block;
+    min-width: 0;
+    margin-top: 1.25rem;
+    color: var(--color-text-primary);
+    font-family: var(--font-family-base);
+
+    [hidden] {
+        display: none !important;
+    }
+
+    p {
+        margin: 0 0 1rem;
+        text-align: left;
+    }
+
+    h2,
+    h3,
+    h4 {
+        @include gs-editor-headings;
+        margin: 0 0 1rem;
+    }
+
+    h2 {
+        font-size: 1.3rem;
+    }
+
+    h3 {
+        margin-top: 1.25rem;
+        font-size: 1.1rem;
+    }
+
+    fieldset {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    /*
+     * Радиокнопки и чекбоксы не должны получать
+     * размеры и отступы текстовых полей.
+     */
+    input,
+    select,
+    textarea {
+        box-sizing: border-box;
+        min-width: 0;
+        max-width: 100%;
+        font: inherit;
+    }
+
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+        @include gs-editor-control;
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+        flex: 0 0 auto;
+        width: 1.1rem;
+        height: 1.1rem;
+        padding: 0;
+        accent-color: var(--color-border-accent);
+    }
+
+    textarea {
+        resize: vertical;
+    }
+
+    input[readonly] {
+        color: var(--color-text-secondary);
+    }
+
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    button:focus-visible,
+    summary:focus-visible,
+    a:focus-visible {
+        @include gs-editor-focus;
+    }
+
+    button,
+    summary {
+        cursor: pointer;
+    }
+
+    button:disabled {
+        cursor: not-allowed;
+    }
+
+    &__legend {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    &__tabs {
+        @include gs-editor-row(0.5rem);
+        margin-bottom: 1rem;
+
+        [aria-current="step"] {
+            border-color: var(--color-border-accent);
+            box-shadow: inset 0 -3px 0 var(--color-border-accent);
+            font-weight: 700;
+        }
+    }
+
+    &__layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(15rem, 1fr);
+        align-items: start;
+        gap: 1rem;
+        min-width: 0;
+    }
+
+    &__panel {
+        @include gs-editor-surface($radius: var(--radius-xl, 1rem));
+        min-width: 0;
+        margin-bottom: 1rem;
+        padding: 1.25rem;
+    }
+
+    &__field {
+        display: grid;
+        gap: 0.4rem;
+        min-width: 0;
+        margin: 0 0 1rem;
+        text-align: left;
+    }
+
+    &__check {
+        @include gs-editor-row(0.65rem, nowrap);
+        margin-bottom: 1rem;
+
+        input {
+            margin: 0;
+        }
+    }
+
+    &__details {
+        margin: 1rem 0;
+
+        summary {
+            margin-bottom: 0.85rem;
+            color: var(--color-text-accent, var(--color-text-primary));
+        }
+    }
+
+    &__cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+
+    &__card {
+        @include gs-editor-surface(var(--color-bg-panel-alt), 0.85rem);
+        min-width: 0;
+        margin-bottom: 1rem;
+        padding: 1rem;
+
+        > button {
+            margin: 0.25rem 0.5rem 0.25rem 0;
+        }
+    }
+
+    &__operand {
+        @include gs-editor-row($align: end);
+        margin-bottom: 1rem;
+
+        label {
+            flex: 1 1 12rem;
+            min-width: 0;
+            margin: 0;
+        }
+    }
+
+    &__footer {
+        @include gs-editor-row;
+        @include gs-editor-surface($radius: 0.85rem);
+        position: sticky;
+        bottom: 0;
+        z-index: 5;
+        justify-content: space-between;
+        margin: 1rem 0;
+        padding: 1rem;
+
+        p {
+            margin: 0;
+        }
+    }
+
+    &__actions {
+        @include gs-editor-row(0.65rem);
+    }
+
+    &__result {
+        @include gs-editor-surface(var(--color-bg-panel-alt), 0.75rem);
+        margin-top: 1rem;
+        padding: 1rem;
+        overflow-wrap: anywhere;
+
+        dl {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.4rem 1rem;
+            margin: 0 0 1rem;
+        }
+
+        dd {
+            margin: 0;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        ol {
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.75rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        &__layout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        &__tabs .btn,
+        &__actions .btn {
+            flex: 1 1 auto;
+        }
+
+        &__panel {
+            padding: 1rem;
+        }
+
+        &__footer {
+            position: static;
+        }
+
+        &__actions {
+            width: 100%;
+        }
+    }
+}
+
+/*
+ * Страница конструктора игровой системы.
+ *
+ * Уточнения общей основы остаются в контексте страницы:
+ * их нельзя переносить в .system-editor без изменения других редакторов.
+ */
+
+.page-content:has(.game-system-editor-page),
+.page-content:has(.engine-editor) {
+    max-width: 1760px;
+    padding-inline: clamp(1rem, 2vw, 2rem);
+}
+
+.game-system-editor-page {
+    padding: 0;
+
+    > .profile-heading {
+        display: none;
+    }
+
+    > [data-page-reload] {
+        margin-bottom: 1rem;
+    }
+
+    .system-editor {
+        margin-top: 1rem;
+        font-size: 1rem;
+    }
+
+    .system-editor__heading {
+        @include gs-editor-row(1rem);
+        margin-bottom: 1.5rem;
+
+        h2 {
+            margin: 0;
+            font-size: clamp(1.4rem, 2vw, 2rem);
+        }
+    }
+
+    .system-editor__badge {
+        @include gs-editor-surface(var(--color-bg-panel-alt), 999px);
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.8rem;
+        color: var(--color-text-secondary);
+        font-size: 0.85rem;
+    }
+
+    .system-editor__tabs {
+        @include gs-editor-surface($radius: 999px);
+        flex-wrap: nowrap;
+        gap: 0.35rem;
+        box-sizing: border-box;
+        width: fit-content;
+        max-width: 100%;
+        margin-bottom: 0.85rem;
+        padding: 0.35rem;
+        overflow-x: auto;
+
+        .btn {
+            flex: 0 0 auto;
+            min-height: 2.8rem;
+            margin: 0;
+            padding: 0.65rem 1.35rem;
+            border-color: transparent;
+            border-radius: 999px;
+            font-size: 1rem;
+            white-space: nowrap;
+        }
+
+        [aria-current="step"] {
+            background: var(--color-bg-panel-alt);
+            border-color: var(--color-border-accent);
+        }
+    }
+
+    [data-editor-progress] {
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .system-editor__layout {
+        grid-template-columns: minmax(0, 2.3fr) minmax(17rem, 1fr);
+        align-items: stretch;
+        gap: 1.25rem;
+
+        > .system-editor__panel {
+            margin-bottom: 0;
+        }
+    }
+
+    .system-editor__panel {
+        padding: clamp(1.25rem, 2vw, 2rem);
+        border-radius: var(--radius-md, 0.875rem);
+
+        h2 {
+            margin-bottom: 1.4rem;
+            font-size: clamp(1.3rem, 1.6vw, 1.75rem);
+        }
+    }
+
+    .system-editor__help {
+        line-height: 1.65;
+
+        h2 {
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid var(--color-border-subtle);
+        }
+    }
+
+    .system-editor__field {
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .system-editor input:not([type="checkbox"]):not([type="radio"]),
+    .system-editor select {
+        min-height: 2.85rem;
+    }
+
+    .system-editor textarea {
+        min-height: 7rem;
+    }
+
+    [data-rules-basis] {
+        margin-top: 1.5rem;
+
+        > h3 {
+            margin-bottom: 1rem;
+            font-size: 1.35rem;
+        }
+    }
+
+    .system-editor__basis-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .system-editor__basis-card {
+        @include gs-editor-surface(var(--color-bg-panel-alt));
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        box-sizing: border-box;
+        min-width: 0;
+        min-height: 6.5rem;
+        margin: 0;
+        padding: 1rem;
+        cursor: pointer;
+
+        input[type="radio"] {
+            width: 1.15rem;
+            height: 1.15rem;
+            min-height: 0;
+            margin: 0;
+        }
+
+        &:focus-within {
+            @include gs-editor-focus;
+        }
+
+        &.is-selected {
+            @include gs-editor-selected;
+
+            .system-editor__basis-icon {
+                color: var(--color-border-accent);
+            }
+        }
+
+        &--unavailable {
+            border-style: dashed;
+            cursor: default;
+
+            .system-editor__basis-icon {
+                color: var(--color-text-secondary);
+            }
+        }
+    }
+
+    .system-editor__basis-icon {
+        display: block;
+        flex: 0 0 3rem;
+        width: 3rem;
+        height: 3rem;
+        color: var(--color-text-accent, var(--color-text-primary));
+        pointer-events: none;
+    }
+
+    .system-editor__icon-surface {
+        fill: var(--color-bg-panel);
+    }
+
+    .system-editor__basis-text {
+        display: grid;
+        flex: 1 1 0;
+        gap: 0.45rem;
+        min-width: 0;
+        overflow-wrap: anywhere;
+
+        strong {
+            color: var(--color-text-primary);
+            font-size: 1rem;
+        }
+
+        small {
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+    }
+
+    .system-editor__basis-note,
+    .system-editor__details {
+        @include gs-editor-surface(var(--color-bg-panel-alt));
+        padding: 0.85rem 1rem;
+    }
+
+    .system-editor__basis-note {
+        color: var(--color-text-secondary);
+        border-left: 3px solid var(--color-border-accent);
+    }
+
+    .system-editor__details {
+        margin-top: 1.5rem;
+
+        > summary {
+            margin-bottom: 0;
+        }
+
+        &[open] > summary {
+            margin-bottom: 1rem;
+        }
+    }
+
+    .system-editor__formula {
+        @include gs-editor-surface;
+        min-width: 0;
+        margin: 1rem 0;
+        padding: 1rem;
+        border-left: 3px solid var(--color-border-accent);
+
+        > h4 {
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+    }
+
+    .system-editor__formula-argument {
+        min-width: 0;
+        margin: 1rem 0;
+        padding-top: 1rem;
+        border-top: 1px solid var(--color-border-subtle);
+
+        > .system-editor__operand {
+            margin-bottom: 0;
+        }
+
+        > .system-editor__formula {
+            margin-left: 0.75rem;
+        }
+    }
+
+    .system-editor__footer {
+        min-height: 5.5rem;
+        gap: 1rem;
+        margin-top: 1.25rem;
+        padding: 1rem 1.5rem;
+        border-radius: var(--radius-md, 0.875rem);
+    }
+
+    .system-editor__actions {
+        .btn {
+            min-height: 3rem;
+            padding: 0.75rem 1.25rem;
+            font-size: 1rem;
+        }
+
+        [data-editor-next],
+        [data-editor-save] {
+            min-width: 14rem;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .system-editor__layout {
+            grid-template-columns: minmax(0, 1.8fr) minmax(15rem, 1fr);
+        }
+
+        .system-editor__basis-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .system-editor__layout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .system-editor__tabs {
+            width: 100%;
+        }
+
+        .system-editor__basis-icon {
+            flex-basis: 2.5rem;
+            width: 2.5rem;
+            height: 2.5rem;
+        }
+
+        .system-editor__formula {
+            padding: 0.65rem;
+        }
+
+        .system-editor__formula-argument > .system-editor__formula {
+            margin-left: 0.25rem;
+        }
+
+        .system-editor__footer {
+            padding: 1rem;
+        }
+
+        .system-editor__actions .btn {
+            flex: 1 1 100%;
+            min-width: 0;
+        }
+    }
+}

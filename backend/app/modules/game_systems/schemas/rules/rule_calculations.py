@@ -154,12 +154,8 @@ class AttributeChoice(CalculationModel):
 	"""Подписанный целочисленный вариант исходного показателя."""
 
 	value: CalculationValue
-
-	label: str = Field(
-		min_length=1,
-		max_length=100,
-		pattern=r"\S",
-	)
+	label: str = Field(min_length=1, max_length=100, pattern=r"\S",)
+	description: str = Field(default="", strict=True, max_length=10000)
 
 class AttributeDefinition(CalculationModel):
 	"""Исходное целое число или выбор из подписанных значений.
@@ -168,12 +164,8 @@ class AttributeDefinition(CalculationModel):
     choices ограничивает допустимые значения, а не только
     определяет оформление поля.
     """
-
-	label: str = Field(
-		min_length=1,
-		max_length=100,
-		pattern=r"\S",
-	)
+	label: str = Field(min_length=1, max_length=100, pattern=r"\S",)
+	description: str = Field(default="", strict=True, max_length=10000)
 
 	field_type: Literal["integer", "choice"] = "integer"
 
@@ -249,11 +241,8 @@ class AttributeDefinition(CalculationModel):
 class DerivedStat(CalculationModel):
 	"""Показатель, который вычисляется, а не принимается от клиента."""
 
-	label: str = Field(
-		min_length=1,
-		max_length=100,
-		pattern=r"\S",
-	)
+	label: str = Field(min_length=1, max_length=100, pattern=r"\S",)
+	description: str = Field(default="", strict=True, max_length=10000)
 	formula: StatFormula
 
 class AttributeCalculations(CalculationModel):

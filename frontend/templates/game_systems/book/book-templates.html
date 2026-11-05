@@ -1,0 +1,123 @@
+<!-- frontend/templates/game_systems/book/book_templates.html -->
+
+<template data-book-template="shell">
+	<section class="rules-book" data-book-part="root" aria-label="Книга игровой системы">
+		<header class="rules-book__header">
+			<div>
+				<h1 data-book-part="title"></h1>
+				<p class="rules-book__muted" data-book-part="status"></p>
+			</div>
+		</header>
+		
+		<p class="rules-book__notice">
+			Новая книга: изменения пока находятся только в этой вкладке.
+			Сохранение ещё не подключено.
+		</p>
+		
+		<p class="rules-book__error" data-book-part="error" role="alert" hidden></p>
+		
+		<div class="rules-book__workspace">
+			<div class="rules-book__spread">
+				<section class="rules-book__page rules-book__page--settings" aria-label="Настройки главы">
+					<p class="rules-book__eyebrow">Настройка</p>
+					<h2 data-book-part="left-title" tabindex="-1"></h2>
+					<div class="rules-book__element-navigation" data-book-part="settings-navigation"></div>
+					
+					<details class="rules-book__parameters" data-book-part="parameters">
+						<summary>
+							<span data-book-part="parameters-title">Настройки</span>
+						</summary>
+						
+						<div class="rules-book__parameters-body" data-book-part="settings"></div>
+					</details>
+
+				</section>
+				
+				<article class="rules-book__page rules-book__page--reading" aria-label="Содержание главы">
+					<p class="rules-book__eyebrow">Страницы правил</p>
+					<h2 data-book-part="right-title" tabindex="-1"></h2>
+					<div class="rules-book__reading" data-book-part="reading"></div>
+					<button class="rules-book__corner rules-book__corner--previous"
+					        data-book-part="previous"
+					        type="button"
+					        aria-label="Перелистнуть назад"
+					        title="Перелистнуть назад">
+						<span aria-hidden="true">‹</span>
+					</button>
+					
+					<button class="rules-book__corner rules-book__corner--next"
+					        data-book-part="next"
+					        type="button"
+					        aria-label="Перелистнуть вперёд"
+					        title="Перелистнуть вперёд">
+						<span aria-hidden="true">›</span>
+					</button>
+				</article>
+			</div>
+			
+			<nav class="rules-book__tabs" data-book-part="navigation" aria-label="Главы книги правил"></nav>
+		</div>
+		
+		<footer class="rules-book__footer">
+			<span class="rules-book__muted" data-book-part="position" aria-live="polite"></span>
+		</footer>
+
+	</section>
+</template>
+
+<template data-book-template="metadata">
+	<fieldset class="rules-book__form" data-book-part="fields" aria-label="Сведения об игровой системе">
+		<label class="rules-book__field">
+			<span>Название игровой системы</span>
+			<input data-book-part="name" name="name" type="text">
+		</label>
+		
+		<label class="rules-book__field">
+			<span>Код игровой системы</span>
+			<input data-book-part="slug" name="slug" type="text">
+		</label>
+		
+		<p class="rules-book__muted">
+			Код используется как техническое обозначение системы.
+		</p>
+		
+		<label class="rules-book__field">
+			<span>Описание игровой системы</span>
+			<textarea data-book-part="description" name="description" rows="7"></textarea>
+		</label>
+		
+		<label class="rules-book__check">
+			<input data-book-part="active" name="is_active" type="checkbox">
+			<span>Доступна при создании новых игр</span>
+		</label>
+		
+		<p class="rules-book__muted">
+			Это не настройка публичности и не действие публикации.
+		</p>
+	</fieldset>
+</template>
+
+<template data-book-template="basis">
+	<fieldset class="rules-book__form" data-book-part="fields" aria-label="Выбор основы правил">
+		<p>Начните с пустых правил или загрузите существующий пресет.</p>
+		
+		<label class="rules-book__field">
+			<span>Отправная точка</span>
+			<select data-book-part="preset" name="preset"></select>
+		</label>
+		
+		<p class="rules-book__muted" data-book-part="description"></p>
+		
+		<button class="btn btn-outline-primary" data-book-part="apply" type="button">
+			Загрузить выбранные правила
+		</button>
+		
+		<p class="rules-book__muted rules-book__basis-note">
+			Загрузка пресета не создаёт связь с опубликованной основой.
+		</p>
+		
+		<p class="rules-book__muted">
+			Выбор опубликованной версии подключим отдельной частью реализации.
+		</p>
+	</fieldset>
+</template>

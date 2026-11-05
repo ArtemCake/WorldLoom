@@ -1,0 +1,48 @@
+/* frontend/src/styles/pages/game-system-editor/_mixins.scss */
+
+/*
+ * Общие приёмы оформления.
+ *
+ * Миксины переиспользуют декларации, но не объединяют селекторы
+ * и не меняют их специфичность. Цвета берутся из действующей темы.
+ */
+
+@mixin gs-editor-surface($background: var(--color-bg-panel), $radius: var(--radius-sm, 0.625rem)) {
+    background: $background;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: $radius;
+}
+
+@mixin gs-editor-row($gap: 0.75rem, $wrap: wrap, $align: center) {
+    display: flex;
+    flex-wrap: $wrap;
+    align-items: $align;
+    gap: $gap;
+}
+
+@mixin gs-editor-focus($offset: 3px) {
+    outline: 2px solid var(--color-border-accent);
+    outline-offset: $offset;
+}
+
+@mixin gs-editor-headings($color: var(--color-text-primary), $font-family: var(--font-family-base)) {
+    color: $color;
+    font-family: $font-family;
+    text-align: left;
+    text-shadow: none;
+    letter-spacing: normal;
+}
+
+@mixin gs-editor-control($padding: 0.7rem 0.85rem, $radius: 0.6rem) {
+    width: 100%;
+    padding: $padding;
+    color: var(--color-text-primary);
+    background: var(--color-bg-panel-alt);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: $radius;
+}
+
+@mixin gs-editor-selected {
+    border-color: var(--color-border-accent);
+    box-shadow: inset 0 0 0 1px var(--color-border-accent);
+}

@@ -391,7 +391,7 @@ export function createEngineRulesEditor(host, {request, getExecutorVersion, onBu
 				getSources: () => formulaSources(row),
 				onChange: changed,
 				onError(text) {
-					formulaDetails.open = true;
+					formulaDetails.open = false;
 					message.textContent = text;
 				}
 			});

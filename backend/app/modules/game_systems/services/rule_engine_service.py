@@ -170,7 +170,7 @@ def _check_profile_replacement(current: Mapping[str, Any], incoming: Mapping[str
 		raise GameSystemRulesStorageError("Сохранённый профиль основы имеет неподдерживаемый формат") from exc
 
 	if incoming["schema_version"] < previous.schema_version:
-		raise GameSystemRulesConflict("Понижение версии профиля запрещено. Откройте движок в редакторе новой версии")
+		raise GameSystemRulesConflict("Понижение версии профиля запрещено. Откройте игровую систему в редакторе новой версии")
 
 async def update_engine_draft(session: AsyncSession, engine_id: UUID, actor_id: UUID, data: RuleEngineDraftUpdate) -> RuleEngineDraftRead:
 	"""Сохранить полный профиль без изменения версии исполнителя."""

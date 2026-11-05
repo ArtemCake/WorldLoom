@@ -40,7 +40,11 @@ test('каждый профиль имеет начальные значения
     for (const { code } of listEnginePresets()) {
         const profile = createEnginePreset(code);
 
-        assert.equal(profile.schema_version, 3);
+		assert.ok([3, 4].includes(profile.schema_version), 'Пресет должен использовать поддерживаемую версию профиля');
+
+		if (profile.schema_version === 4) {
+		    assert.ok(Object.hasOwn(profile, 'resources'), 'Профиль версии 4 должен содержать раздел ресурсов');
+		}
 
         assert.deepEqual(
             Object.keys(profile.initial_attributes).sort(),
@@ -108,7 +112,7 @@ test('D&D 2014 содержит исходные и вычисляемые по�
     const attributes = profile.calculations.attributes;
     const derived = profile.calculations.derived;
 
-    assert.equal(Object.keys(attributes).length, 31);
+    assert.equal(Object.keys(attributes).length, 32);
     assert.equal(Object.keys(derived).length, 51);
 
     const abilities = [

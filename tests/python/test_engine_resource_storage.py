@@ -73,7 +73,7 @@ class EngineResourceStorageTests(unittest.IsolatedAsyncioTestCase):
         self.engine = {
             "id": self.engine_id,
             "owner_id": self.actor_id,
-            "name": "Тестовый движок",
+            "name": "Тестовая игровая система",
             "slug": "resource-storage-test",
             "description": None,
             "visibility": "private",
@@ -103,7 +103,7 @@ class EngineResourceStorageTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_writes_resources_and_returns_them(self):
         session = make_session([row_result(self.engine), row_result(self.draft)])
 
-        data = RuleEngineCreate(name="Тестовый движок", slug="resource-storage-test", rules=self.profile)
+        data = RuleEngineCreate(name="Тестовая игровая система", slug="resource-storage-test", rules=self.profile)
 
         response = await service.create_engine_with_draft(session, self.actor_id, data)
 

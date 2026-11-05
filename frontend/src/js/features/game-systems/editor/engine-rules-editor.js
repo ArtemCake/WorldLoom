@@ -210,7 +210,7 @@ export function createEngineRulesEditor(host, {request, getExecutorVersion, onBu
 
 	const replacementNote =
 	'Загрузка основы заменяет показатели, формулы и ресурсы в форме. ' +
-	'Название, код и видимость движка не меняются. ' +
+	'Название, описание и код игровой системы не меняются. ' +
 	'До сохранения на сервер ничего не записывается.';
 
 	const presetWarning = node('p', replacementNote, 'profile-note');
@@ -731,11 +731,15 @@ export function createEngineRulesEditor(host, {request, getExecutorVersion, onBu
 			display(createEnginePreset('custom'));
 
 			message.textContent =
-			'Новый движок открыт с пустыми правилами. ' +
+			'Новая игровая система открыта с пустыми правилами. ' +
 			'Выберите готовую основу или добавьте свои показатели и ресурсы.';
 		},
 
 		collect,
+
+		loadProfile(profile, {lockCodes = false} = {}) {
+			display(profile, {lockCodes});
+		},
 
 		acceptEngineDraft(draft) {
 			const validDraft =

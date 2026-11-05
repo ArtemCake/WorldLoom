@@ -1,18 +1,23 @@
 // frontend/src/js/features/game-systems/editor/presets/dnd5e-2014.js
 
 /**
- * Базовые числовые расчёты D&D 5e 2014.
+ * Базовые числовые расчёты и определения ресурсов D&D 5e 2014.
  *
- * Совместимо с RulesProfile schema_version: 3.
+ * Совместимо с RulesProfile schema_version: 4.
  *
- * Это первая часть пакета правил, а не полная реализация:
+ * Это часть пакета правил, а не полная реализация:
  * - не выполняет броски;
- * - не расходует ресурсы;
+ * - не расходует ресурсы персонажа;
  * - не назначает владения по классу;
  * - не применяет состояния и ситуативные эффекты;
  * - не проверяет законность выбора компетентности;
- * - не создаёт персонажа по процедуре правил.
+ * - не создаёт персонажа по процедуре правил;
+ * - не вычисляет максимум хитов по классам и истории уровней;
+ * - не проверяет условия получения преимуществ отдыха.
  */
+
+import {FORMULA_VALUE_LIMIT} from '../shared/formula-contract.js';
+
 
 const ABILITIES = [
 	['strength', 'Сила'],
@@ -43,6 +48,36 @@ const SKILLS = [
 	['stealth', 'Скрытность', 'dexterity'],
 	['survival', 'Выживание', 'wisdom']
 ];
+
+function addHitPoints(profile) {
+	/*
+	 * Максимум вводится вручную до подключения классов,
+	 * истории повышения уровней и модифицирующих эффектов.
+	 *
+	 * 1 — техническое начальное заполнение редактора.
+	 * Это не результат создания персонажа по правилам.
+	 *
+	 * FORMULA_VALUE_LIMIT — предел числового контракта,
+	 * а не игровое ограничение максимума хитов.
+	 */
+	addAttribute(profile, 'hit_points_max', 'Максимум хитов', 1, FORMULA_VALUE_LIMIT, 1);
+
+	/*
+	 * Определение ресурса не содержит текущих хитов персонажа.
+	 * initial применяется только при создании состояния ресурса.
+	 *
+	 * long_rest означает уже подтверждённый отдых.
+	 * Проверка условий отдыха относится к отдельной процедуре.
+	 */
+	profile.resources.hit_points = {
+		label: 'Хиты',
+		maximum: attributeReference('hit_points_max'),
+		initial: 'full',
+		recovery: {
+			long_rest: 'full'
+		}
+	};
+}
 
 function operation(name, ...args) {
 	return {
@@ -92,12 +127,13 @@ function addDerived(profile, code, label, formula) {
 
 export function createDnd5e2014NumericProfile() {
 	const profile = {
-		schema_version: 3,
+		schema_version: 4,
 		calculations: {
 			attributes: {},
 			derived: {}
 		},
-		initial_attributes: {}
+		initial_attributes: {},
+		resources: {}
 	};
 
 	/*
@@ -295,6 +331,7 @@ export function createDnd5e2014NumericProfile() {
 			statReference('dexterity_modifier')
 		)
 	);
+	addHitPoints(profile);
 
 	return profile;
 }

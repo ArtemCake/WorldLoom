@@ -73,7 +73,7 @@ class RuleEngine(Base):
 		return _identity_repr(self, label="RuleEngine")
 
 class RuleEngineDraft(Base):
-	"""Один редактируемый черновик на движок."""
+	"""Один редактируемый черновик на игровую систему."""
 
 	__tablename__ = "rule_engine_drafts"
 	__table_args__ = (

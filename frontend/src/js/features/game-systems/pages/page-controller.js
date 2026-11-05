@@ -300,7 +300,7 @@ export function mountGameSystemsPage(root) {
 		return [
 			system.slug,
 			system.rules_engine_version
-				? `Движок: ${system.rules_engine_version}`
+				? `Игровая система: ${system.rules_engine_version}`
 				: null,
 			typeof system.is_active === 'boolean'
 				? (system.is_active ? 'Активна' : 'Неактивна')

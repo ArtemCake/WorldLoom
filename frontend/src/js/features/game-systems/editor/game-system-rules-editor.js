@@ -527,7 +527,7 @@ export function createRulesEditor(host, {
                 element(
                     'p',
                     'Редактор меняет правила этой системы, ' +
-                    'но не опубликованный движок. Новые публикации ' +
+                    'но не опубликованная система. Новые публикации ' +
                     'не подключаются автоматически.',
                     'profile-note'
                 )
@@ -541,7 +541,7 @@ export function createRulesEditor(host, {
         );
 
         catalog.append(
-            element('h3', 'Опубликованный движок'),
+            element('h3', 'Опубликованная игровая система'),
             element(
                 'p',
                 'Выбор публикации заменит текущие настройки правил. ' +
@@ -566,8 +566,8 @@ export function createRulesEditor(host, {
                 renderBasis();
 
                 message.textContent = loaded.length
-                ? 'Выберите движок и загрузите его публикации.'
-                : 'Доступных опубликованных движков пока нет.';
+                ? 'Выберите игровую систему и загрузите его публикации.'
+                : 'Доступных опубликованных игровых систем пока нет.';
             })
         ));
 
@@ -575,7 +575,7 @@ export function createRulesEditor(host, {
             const engineSelect = choices(
                 availableEngines.map((item) => [
                     item.id,
-                    item.name || item.slug || 'Движок без названия'
+                    item.name || item.slug || 'игровая система без названия'
                 ]),
                 selectedEngineId
             );
@@ -589,7 +589,7 @@ export function createRulesEditor(host, {
             });
 
             catalog.append(
-                field('Движок', engineSelect),
+                field('игровая система', engineSelect),
                 button(
                     'Загрузить публикации',
                     () => void basisAction(async () => {

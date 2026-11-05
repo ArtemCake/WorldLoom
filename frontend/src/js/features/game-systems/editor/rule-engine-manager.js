@@ -116,8 +116,8 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
 
         activity.hidden = !engine;
         activity.textContent = engine?.is_active === false
-        ? 'Активировать движок'
-        : 'Деактивировать движок';
+        ? 'Активировать игровую систему'
+        : 'Деактивировать игровую систему';
 
         activity.disabled =
         disabled || !loaded || blocked || !engine;
@@ -270,7 +270,7 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
         info.textContent = [
             draft
             ? `Ревизия черновика: ${draft.revision}.`
-            : 'Новый движок.',
+            : 'Новая игровая система.',
             numbers.length
             ? `Публикации: ${numbers.join(', ')}.`
             : 'Публикаций пока нет.',
@@ -374,14 +374,14 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
 
                 <button type="button" class="btn btn-outline-primary"
                         data-engine-delete>
-                    Удалить движок
+                    Удалить игровую систему
                 </button>
             </form>
         `;
 
         form = area.querySelector('form');
         form.querySelector('[data-engine-heading]').textContent =
-        engine ? engine.name : 'Новый движок правил';
+        engine ? engine.name : 'Новые правила игровой системы';
 
         const values = engine || {
             name: '',
@@ -586,8 +586,8 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
         const nextActive = !selected.is_active;
 
         const question = nextActive
-        ? `Активировать движок «${selected.name}»?`
-        : `Деактивировать движок «${selected.name}»? ` +
+        ? `Активировать игровую систему «${selected.name}»?`
+        : `Деактивировать игровую систему «${selected.name}»? ` +
         'Его нельзя будет выбрать для новой основы. ' +
         'Уже связанные системы продолжат работать.';
 
@@ -612,8 +612,8 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
             showVersionState();
 
             status.textContent = saved.is_active
-            ? 'Движок активирован.'
-            : 'Движок деактивирован. Сохранённые связи не изменены.';
+            ? 'Игровая система активирована.'
+            : 'Игровая система деактивирована. Сохранённые связи не изменены.';
         }, true);
     }
 
@@ -637,11 +637,11 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
         : '\n';
 
         const confirmation = window.prompt(
-            `Удалить движок «${selected.name}» и его черновик?\n` +
+            `Удалить игровую систему «${selected.name}» и его черновик?\n` +
             'Действие нельзя отменить. При наличии публикаций ' +
             'сервер запретит удаление.\n' +
             warning +
-            '\nДля подтверждения введите название движка:',
+            '\nДля подтверждения введите название игровой системы:',
             ''
         );
 
@@ -675,7 +675,7 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
             renderList();
 
             status.textContent =
-            `Движок «${selected.name}» и его черновик удалены.`;
+            `Игровая система «${selected.name}» и её черновик удалены.`;
         }, true);
     }
 
@@ -736,9 +736,9 @@ export function mountRuleEngineManager(host, { request, isAllowed }) {
             renderList();
 
             status.textContent = blocked
-            ? 'Список обновлён. Откройте сохранённый движок ' +
+            ? 'Список обновлён. Откройте сохранённую игровую систему ' +
             'и сверьте состояние перед новой записью.'
-            : `Загружено ваших движков: ${engines.length}.`;
+            : `Загружено ваших игровых систем: ${engines.length}.`;
         });
     });
 

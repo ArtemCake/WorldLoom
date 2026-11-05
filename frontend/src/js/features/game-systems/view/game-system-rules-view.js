@@ -638,7 +638,7 @@ export async function mountRulesView(host, { systemId, canEdit, request }) {
                     'Это сохранённые, но не опубликованные правила.'
                 : `Опубликованная версия №${snapshot.version_number} · ` +
                     `${publicationDate(snapshot.published_at)} · ` +
-                    `движок снимка: ${snapshot.rules_engine_version}.`;
+                    `игровая система снимка: ${snapshot.rules_engine_version}.`;
 
             body.replaceChildren(rendered);
         } catch (error) {

@@ -490,6 +490,7 @@ WorldLoom/
 ├── staging/
 ├── tests/
 │   ├── js/
+│   │   ├── dnd5e-2014-resources.test.mjs
 │   │   ├── engine-formula-text.test.mjs
 │   │   ├── engine-presets.test.mjs
 │   │   └── resource-contract.test.mjs

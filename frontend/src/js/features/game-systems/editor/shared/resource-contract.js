@@ -28,9 +28,12 @@ export function validateResources(resources, calculations = null) {
 
 	for (const [code, definition] of Object.entries(resources)) {
 		ensure(CODE_PATTERN.test(code), `Некорректный код ресурса: «${code}».`);
-		knownFields(definition, ['label', 'maximum', 'initial', 'recovery'], `Ресурс ${code}`);
+		knownFields(definition, ['label', 'description', 'maximum', 'initial', 'recovery'], `Ресурс ${code}`);
 
 		const {label, maximum} = definition;
+		const description = definition.description ?? '';
+		const validDescription = typeof description === 'string' && [...description].length <= 10000;
+		ensure(validDescription, `Ресурс ${code}: описание должно быть текстом до 10000 символов.`);
 		const initial = definition.initial ?? 'full';
 		const recovery = definition.recovery ?? {};
 
@@ -66,6 +69,11 @@ export function validateResources(resources, calculations = null) {
 		}
 
 		result[code] = {label, maximum, initial, recovery: copiedRecovery};
+
+		if (Object.hasOwn(definition, 'description')) {
+			result[code].description = description;
+		}
+
 	}
 
 	return result;

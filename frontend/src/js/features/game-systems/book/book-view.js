@@ -7,6 +7,7 @@ import {mountBookAttributes} from './book-attributes.js';
 import {getBookChapterItems, getBookTurn} from './book-pagination.js';
 import bookTemplatesSource from '../../../../../templates/game_systems/book/book-templates.html?raw';
 import {createBookPageTurn} from './book-page-turn.js';
+import {mountBookDefinitions} from './book-definitions.js';
 
 function element(tag, text = '', className = '') {
 	const node = document.createElement(tag);
@@ -214,7 +215,7 @@ export function mountRulesBook(host, {state}) {
 	const presets = listEnginePresets();
 	let touched = false;
 	let destroyed = false;
-	let attributesEditor = null;
+	let itemEditor = null;
 	const selectedItems = new Map();
 	const layout = bookTemplate('shell');
 	const book = bookPart(layout, 'root');
@@ -272,12 +273,14 @@ export function mountRulesBook(host, {state}) {
 		const collections = {
 			attributes: rules?.calculations?.attributes,
 			derived: rules?.calculations?.derived,
+			modifiers: rules?.calculations?.derived,
 			resources: rules?.resources
 		};
 
 		const newTitles = {
 			attributes: 'Новая характеристика',
 			derived: 'Новый показатель',
+			modifiers: 'Новый модификатор',
 			resources: 'Новый ресурс'
 		};
 
@@ -447,7 +450,8 @@ export function mountRulesBook(host, {state}) {
 			const facts = element('dl', '', 'rules-book__facts');
 
 			pair(facts, 'Характеристики', Object.keys(rules.calculations?.attributes ?? {}).length);
-			pair(facts, 'Показатели', Object.keys(rules.calculations?.derived ?? {}).length);
+			pair(facts, 'Модификаторы', getBookChapterItems(document, 'modifiers').length);
+			pair(facts, 'Вычисляемые показатели', getBookChapterItems(document, 'derived').length);
 			pair(facts, 'Ресурсы', Object.keys(rules.resources ?? {}).length);
 
 			reading.append(facts);
@@ -455,7 +459,7 @@ export function mountRulesBook(host, {state}) {
 			return;
 		}
 
-		if (['attributes', 'derived', 'resources'].includes(chapter)) {
+		if (['attributes', 'modifiers', 'derived', 'resources'].includes(chapter)) {
 			if (!rules) {
 				paragraph(reading, 'Сначала загрузите правила в главе «Основа правил».');
 				return;
@@ -464,14 +468,15 @@ export function mountRulesBook(host, {state}) {
 			const selectedCode = selectedItems.get(chapter) ?? null;
 
 			if (chapter === 'attributes') readAttributes(reading, rules, selectedCode);
-			if (chapter === 'derived') readDerived(reading, rules, selectedCode);
+			if (chapter === 'modifiers' || chapter === 'derived') {
+				readDerived(reading, rules, selectedCode);
+			}
 			if (chapter === 'resources') readResources(reading, rules, selectedCode);
 
 			return;
 		}
 
 		const notes = {
-			modifiers: 'Редактор общих и индивидуальных модификаторов ещё не подключён. Формулы пресета доступны в главе показателей.',
 			preview: 'Выполнение расчётов на примере персонажа ещё не подключено.',
 			publications: 'Загрузка и управление публикациями ещё не подключены. Публикация не выполнялась.',
 			access: 'Управление видимостью, правами и удалением ещё не подключено.'
@@ -496,8 +501,8 @@ export function mountRulesBook(host, {state}) {
 
 		if (itemIndex >= 0) {
 			detail = ` · правило ${itemIndex + 1} из ${items.length}`;
-		} else if (items.length && chapter === 'attributes') {
-			detail = ' · новая характеристика';
+		} else if (['attributes', 'modifiers', 'derived', 'resources'].includes(chapter)) {
+			detail = ' · новый элемент';
 		}
 
 		position.textContent = `Страница ${chapterIndex + 1} из ${BOOK_CHAPTERS.length}${detail}`;
@@ -505,13 +510,13 @@ export function mountRulesBook(host, {state}) {
 
 	function openChapter(code, focus = true, itemCode = undefined) {
 		report(() => {
-			if (attributesEditor?.isDirty()) {
-				const discard = window.confirm('Перейти на другую страницу без применения правок характеристики?');
+			if (itemEditor?.isDirty()) {
+				const discard = window.confirm('Перейти на другую страницу без применения правок элемента?');
 
 				if (!discard) return;
 			}
 
-			attributesEditor = null;
+			itemEditor = null;
 			state.selectChapter(code);
 
 			const snapshot = state.read();
@@ -529,9 +534,11 @@ export function mountRulesBook(host, {state}) {
 				renderMetadata();
 			} else if (code === 'basis') {
 				renderBasis();
-			} else if (code === 'attributes') {
-				attributesEditor = mountBookAttributes(settings, {
+			} else if (['attributes', 'modifiers', 'derived', 'resources'].includes(code)) {
+				const mountEditor = code === 'attributes' ? mountBookAttributes : mountBookDefinitions;
+				itemEditor = mountEditor(settings, {
 					state,
+					chapter: code,
 					initialCode: selectedCode,
 					navigationHost: settingsNavigation,
 					onTitleChange: (title) => {
@@ -549,7 +556,7 @@ export function mountRulesBook(host, {state}) {
 						input?.focus();
 					},
 					onSelectionChange: (selected) => {
-						selectedItems.set('attributes', selected);
+						selectedItems.set(code, selected);
 						renderReading();
 						refreshPagination();
 					},
@@ -619,8 +626,8 @@ export function mountRulesBook(host, {state}) {
 					return before !== pageIdentity();
 				}
 
-				if (snapshot.chapter === 'attributes' && attributesEditor) {
-					const changed = attributesEditor.selectItem(target.itemCode);
+				if (itemEditor) {
+					const changed = itemEditor.selectItem(target.itemCode);
 
 					if (!changed) return false;
 
@@ -645,7 +652,7 @@ export function mountRulesBook(host, {state}) {
 	next.addEventListener('click', () => turnPage(1), {signal});
 
 	function hasChanges() {
-		return (touched && state.read().dirty) || attributesEditor?.isDirty() === true;
+		return (touched && state.read().dirty) || itemEditor?.isDirty() === true;
 	}
 
 	window.addEventListener('beforeunload', (event) => {

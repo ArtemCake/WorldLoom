@@ -74,7 +74,8 @@ function button(text) {
 	return control;
 }
 
-export function createResourceEditor({getSources, onChange, onError, isBusy}) {
+export function createResourceEditor(options) {
+	const {getSources, onChange, onError, isBusy, single = false, getExternalCodes = () => []} = options;
 	const element = node('section');
 	element.dataset.engineRulesPanel = 'resources';
 	element.dataset.resourceEditor = '';
@@ -82,11 +83,25 @@ export function createResourceEditor({getSources, onChange, onError, isBusy}) {
 	const list = node('div', '', 'engine-attributes-grid');
 	const add = button('Добавить ресурс');
 	const rows = [];
-	const codes = createIndicatorCodeController({getGroups: () => [rows]});
+	const codes = createIndicatorCodeController({
+		getGroups: () => {
+			const external = getExternalCodes().map((code) => ({code: {value: code}}));
+
+			return [[...external, ...rows]];
+		}
+	});
 
 	element.append(node('h4', 'Ресурсы'));
 	element.append(node('p', 'Максимум и начальный запас относятся к правилам. Текущие остатки конкретного персонажа здесь не хранятся.'));
 	element.append(list, add);
+
+	if (single) {
+		add.hidden = true;
+
+		for (const child of element.children) {
+			if (child !== list && child !== add) child.hidden = true;
+		}
+	}
 
 	function report(action) {
 		if (isBusy()) return;
@@ -158,6 +173,9 @@ export function createResourceEditor({getSources, onChange, onError, isBusy}) {
 	}
 
 	function appendResource(code = '', definition = {}, lockCode = false) {
+		if (single && rows.length) {
+			throw new Error('В этом развороте редактируется один ресурс.');
+		}
 		if (rows.length >= 128) throw new Error('Слишком много ресурсов.');
 
 		const card = node('fieldset', '', 'engine-rule-card engine-rule-card--attribute');
@@ -176,6 +194,10 @@ export function createResourceEditor({getSources, onChange, onError, isBusy}) {
 			recovery: [],
 			savedReference: typeof maximum === 'string' ? maximum : ''
 		};
+		const description = node('textarea');
+		description.rows = 5;
+		description.value = definition.description ?? '';
+		row.description = field(identity, 'Описание', description);
 
 		const maximumModes = [['number', 'Заданное число'], ['reference', 'Из показателя']];
 		const initialModes = [['full', 'До максимума'], ['number', 'Заданный запас']];
@@ -225,9 +247,16 @@ export function createResourceEditor({getSources, onChange, onError, isBusy}) {
 			onChange();
 		}));
 
-		actions.append(remove);
+		if (!single) actions.append(remove);
 		card.append(identity, settings, recoveryDetails, actions);
 		codes.attach(row, {locked: lockCode});
+		if (single) {
+			const titleField = row.label.closest('label');
+			const codeField = row.code.closest('label');
+
+			codeField.before(titleField);
+			titleField.after(row.description.closest('label'));
+		}
 		list.append(card);
 		rows.push(row);
 
@@ -294,11 +323,29 @@ export function createResourceEditor({getSources, onChange, onError, isBusy}) {
 				: integer(entry.count, `Восстановление ресурса ${code}`, 1);
 			}
 
-			resources[code] = {label, maximum, initial, recovery};
+			const description = row.description.value.replace(/\r\n?/g, '\n');
+
+			resources[code] = {
+				label,
+				description: description.trim() ? description : '',
+				maximum,
+				initial,
+				recovery
+			};
+
 		}
 
 		return validateResources(resources, calculations);
 	}
 
-	return {element, load, collect, refreshSources, hasResources: () => rows.length > 0};
+	return {
+		element,
+		load,
+		collect,
+		refreshSources,
+		hasResources: () => rows.length > 0,
+		createItem: () => appendResource(),
+		getIdentity: () => rows[0] ?? null
+	};
+
 }

@@ -1,15 +1,22 @@
 // frontend/src/js/features/game-systems/book/book-pagination.js
 
 import {BOOK_CHAPTERS} from './book-state.js';
+import {isBookModifierCode} from './book-definition-data.js';
 
 export function getBookChapterItems(document, chapter) {
 	const rules = document.rules;
 
 	if (!rules) return [];
 
+	if (chapter === 'modifiers' || chapter === 'derived') {
+		const modifiers = chapter === 'modifiers';
+
+		return Object.keys(rules.calculations?.derived ?? {})
+			.filter((code) => isBookModifierCode(code) === modifiers);
+	}
+
 	const collections = {
 		attributes: rules.calculations?.attributes,
-		derived: rules.calculations?.derived,
 		resources: rules.resources
 	};
 

@@ -107,7 +107,7 @@ function revealInput(input) {
 	});
 }
 
-export function createIndicatorCodeController({ getGroups }) {
+export function createIndicatorCodeController({getGroups, codePrefix = ''}) {
 	const states = new WeakMap();
 
 	function groupFor(row) {
@@ -284,7 +284,8 @@ export function createIndicatorCodeController({ getGroups }) {
 
 		row.label.addEventListener('input', () => {
 			if (state.automatic) {
-				const base = codeFromLabel(row.label.value);
+				const generated = codeFromLabel(row.label.value);
+				const base = generated ? `${codePrefix}${generated}`.slice(0, MAX_CODE_LENGTH).replace(/_+$/g, '') : '';
 
 				row.code.value = base
 				? uniqueCode(base, row)

@@ -13,6 +13,89 @@
     --rules-book-content-muted: var(--color-text-secondary);
     --rules-book-control-bg: var(--color-bg-panel-alt);
 
+    &__definition-form {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+
+        label:not([hidden]) {
+            display: grid;
+            gap: 0.4rem;
+            min-width: 0;
+            margin-bottom: 1rem;
+        }
+
+        label > span {
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        label > input,
+        label > select,
+        label > textarea {
+            box-sizing: border-box;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            padding: 0.65rem 0.75rem;
+            color: var(--color-text-primary);
+            background: var(--color-bg-panel-alt);
+            border: 1px solid var(--color-border-subtle);
+            border-radius: 0.2rem;
+            font: inherit;
+        }
+
+        label > textarea {
+            min-height: 7rem;
+            resize: vertical;
+        }
+
+        .engine-attributes-grid {
+            display: block;
+        }
+
+        .engine-rule-card {
+            display: block;
+            min-width: 0;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        .engine-rule-card__identity,
+        .engine-rule-card__values {
+            display: block;
+            min-width: 0;
+        }
+
+        .engine-rule-card > legend {
+            margin-bottom: 1rem;
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+        }
+
+        details > summary {
+            cursor: pointer;
+        }
+
+        details > :not(summary) {
+            margin-top: 0.85rem;
+        }
+    }
+
+    &__formula-settings {
+        min-width: 0;
+        margin: 1.25rem 0;
+        padding: 0.85rem 0;
+        border-top: 1px solid var(--color-border-subtle);
+        border-bottom: 1px solid var(--color-border-subtle);
+    }
+
     /*
      * Названия глав.
      * Книжный шрифт применяется к заголовкам, а не ко всем полям.

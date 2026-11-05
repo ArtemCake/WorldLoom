@@ -314,7 +314,18 @@ export function mountRulesBook(host, {state}) {
 		const snapshot = state.read();
 
 		title.textContent = snapshot.document.system.name.trim() || 'Новая игровая система';
-		status.textContent = touched && snapshot.dirty ? 'Есть несохранённые изменения' : 'Новая книга — ещё не сохранена';
+
+		if (snapshot.mode === 'view') {
+			status.textContent = 'Просмотр — изменение правил отключено';
+		} else if (snapshot.blocked) {
+			status.textContent = 'Запись заблокирована. Загрузите и сверьте сохранённые данные.';
+		} else if (snapshot.writePending) {
+			status.textContent = 'Ожидается подтверждение записи';
+		} else if (snapshot.mode === 'create') {
+			status.textContent = 'Новая книга — ещё не сохранена';
+		} else {
+			status.textContent = snapshot.dirty ? 'Есть несохранённые изменения' : 'Изменения сохранены';
+		}
 	}
 
 	function renderMetadata() {
@@ -530,7 +541,39 @@ export function mountRulesBook(host, {state}) {
 			settingsNavigation.replaceChildren();
 			settings.replaceChildren();
 
-			if (code === 'main') {
+			if (snapshot.mode === 'view') {
+				paragraph(settings, 'Книга открыта для чтения. Изменение данных отключено.');
+
+				if (items.length) {
+					const picker = element('select');
+					const label = element('label', '', 'rules-book__field');
+					const rules = snapshot.document.rules;
+
+					const definitions = code === 'attributes'
+					? rules.calculations?.attributes
+					: code === 'resources' ? rules.resources : rules.calculations?.derived;
+
+					label.append(element('span', 'Выбранный элемент'));
+
+					for (const item of items) {
+						const option = element('option', definitions?.[item]?.label || item);
+
+						option.value = item;
+						picker.append(option);
+					}
+
+					picker.value = selectedCode ?? '';
+
+					picker.addEventListener('change', () => {
+						selectedItems.set(code, picker.value);
+						renderReading();
+						refreshPagination();
+					}, {signal});
+
+					label.append(picker);
+					settingsNavigation.append(label);
+				}
+			} else if (code === 'main') {
 				renderMetadata();
 			} else if (code === 'basis') {
 				renderBasis();
@@ -652,7 +695,10 @@ export function mountRulesBook(host, {state}) {
 	next.addEventListener('click', () => turnPage(1), {signal});
 
 	function hasChanges() {
-		return (touched && state.read().dirty) || itemEditor?.isDirty() === true;
+		const snapshot = state.read();
+
+		return snapshot.mode !== 'view'
+		&& (snapshot.dirty || snapshot.writePending !== null || itemEditor?.isDirty() === true);
 	}
 
 	window.addEventListener('beforeunload', (event) => {
@@ -687,5 +733,20 @@ export function mountRulesBook(host, {state}) {
 	observer.observe(document.documentElement, {childList: true, subtree: true});
 	openChapter(state.read().chapter, false);
 
-	return {destroy};
+	return {
+		destroy,
+		hasChanges,
+		hasPendingChanges: () => itemEditor?.isDirty() === true,
+		refresh() {
+			if (itemEditor?.isDirty()) {
+				throw new Error('Сначала примените или отмените правки открытого элемента.');
+			}
+
+			const chapter = state.read().chapter;
+			const selected = selectedItems.get(chapter) ?? null;
+
+			parameterKey = null;
+			openChapter(chapter, false, selected);
+		}
+	};
 }

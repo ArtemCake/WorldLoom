@@ -323,6 +323,8 @@ WorldLoom/
 │   │   │   │   │   │   └── rule-engine-api.js
 │   │   │   │   │   ├── book/
 │   │   │   │   │   │   ├── book-attributes.js
+│   │   │   │   │   │   ├── book-definition-data.js
+│   │   │   │   │   │   ├── book-definitions.js
 │   │   │   │   │   │   ├── book-page-turn.js
 │   │   │   │   │   │   ├── book-pagination.js
 │   │   │   │   │   │   ├── book-state.js

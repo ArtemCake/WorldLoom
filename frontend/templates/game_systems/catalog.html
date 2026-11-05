@@ -1,0 +1,96 @@
+<!-- frontend/templates/game_systems/catalog.html -->
+
+{% extends "base.html" %}
+
+{% block title %}
+Игровые системы — {{ project_name }}
+{% endblock %}
+
+{% block content %}
+<section class="system-catalog"
+         data-game-systems-page
+         data-page-mode="list"
+         data-system-id=""
+         hx-boost="false"
+         hx-history="false">
+	
+	<header class="system-catalog__header">
+		<div>
+			<p class="system-catalog__eyebrow">Библиотека правил</p>
+			<h1>Игровые системы</h1>
+			<p class="system-catalog__intro">
+				Откройте существующую систему или создайте собственную книгу правил.
+			</p>
+		</div>
+		
+		<button type="button"
+		        class="btn btn-outline-primary"
+		        data-page-reload>
+			Обновить список
+		</button>
+	</header>
+	
+	<p class="system-catalog__message"
+	   data-page-message
+	   role="status"
+	   aria-live="polite">
+		Загрузка…
+	</p>
+	
+	<p data-page-login hidden>
+		<a href="/login" class="btn btn-primary">Войти в аккаунт</a>
+	</p>
+	
+	<div data-page-content hidden>
+		<div class="system-catalog__toolbar">
+			<div class="system-catalog__filters">
+				<label class="system-catalog__field">
+					<span>Найти систему</span>
+					<input type="search"
+					       data-catalog-search
+					       placeholder="Название, описание или код"
+					       autocomplete="off">
+				</label>
+				
+				<label class="system-catalog__field">
+					<span>Активность</span>
+					<select data-catalog-status>
+						<option value="all">Все системы</option>
+						<option value="active">Активные</option>
+						<option value="inactive">Неактивные</option>
+					</select>
+				</label>
+			</div>
+			
+			<a href="/game-systems/catalog/new"
+			   class="btn btn-primary"
+			   data-system-create
+			   hx-boost="false"
+			   hidden>
+				Создать систему
+			</a>
+
+		</div>
+		
+		<p class="system-catalog__summary"
+		   data-catalog-summary
+		   aria-live="polite"></p>
+		
+		<div class="system-catalog__list" data-systems-list></div>
+		
+		<aside class="system-catalog__note">
+			<h2>Активность системы</h2>
+			<p>
+				Активные системы доступны при создании игры.
+				Деактивация не удаляет существующие игры и связанный контент.
+				Активность системы не означает публикацию её правил.
+			</p>
+		</aside>
+
+	</div>
+	
+	<noscript>
+		<p>Для загрузки списка и управления игровыми системами нужен JavaScript.</p>
+	</noscript>
+</section>
+{% endblock %}

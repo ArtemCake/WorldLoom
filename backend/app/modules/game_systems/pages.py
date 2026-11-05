@@ -25,7 +25,8 @@ def _render_system_page(request: Request, user: User | None, csrf_protect: CsrfP
 		"system_id": str(system_id) if system_id is not None else "",
 	}
 
-	return render_page(request, "game_systems/game_systems.html", context, csrf_protect)
+	template = "game_systems/catalog.html" if page_mode == "list" else "game_systems/book.html"
+	return render_page(request, template, context, csrf_protect)
 
 @router.get("", response_class=HTMLResponse, name="game_systems_catalog_get")
 async def catalog_page(request: Request, user: OptionalUser, csrf_protect: PageCsrf) -> HTMLResponse:

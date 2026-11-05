@@ -1,0 +1,61 @@
+<!-- frontend/templates/game_systems/book.html -->
+
+{% extends "base.html" %}
+
+{% set page_titles = {
+"create": "Новая игровая система",
+"edit": "Редактирование игровой системы",
+"view": "Просмотр игровой системы"
+} %}
+
+{% block title %}
+{{ page_titles[page_mode] }} — {{ project_name }}
+{% endblock %}
+
+{% block content %}
+<section class="game-system-book-page"
+         data-game-systems-page
+         data-page-mode="{{ page_mode }}"
+         data-system-id="{{ system_id }}"
+         hx-boost="false"
+         hx-history="false">
+	
+	<nav class="game-system-book-page__toolbar" aria-label="Управление книгой">
+		<a href="/game-systems/catalog" class="btn btn-outline-primary" hx-boost="false">
+			К списку систем
+		</a>
+		
+		<a class="btn btn-outline-primary" data-book-edit hx-boost="false" hidden>
+			Редактировать
+		</a>
+		
+		<button type="button" class="btn btn-outline-primary" data-book-reload>
+			Загрузить заново
+		</button>
+		
+		<button type="button" class="btn btn-primary" data-book-save hidden disabled>
+			Сохранить
+		</button>
+		
+		<label class="game-system-book-page__source" data-book-source-field hidden>
+			<span>Показать правила</span>
+			<select data-book-source>
+				<option value="draft">Сохранённый черновик</option>
+				<option value="published">Последняя публикация</option>
+			</select>
+		</label>
+	</nav>
+	
+	<p data-book-message role="status" aria-live="polite">Загрузка…</p>
+	
+	<p data-book-login hidden>
+		<a href="/login" class="btn btn-primary">Войти в аккаунт</a>
+	</p>
+	
+	<div data-book-host></div>
+	
+	<noscript>
+		<p>Для открытия книги правил нужен JavaScript.</p>
+	</noscript>
+</section>
+{% endblock %}

@@ -213,7 +213,7 @@ export function createRulesBookState(options) {
 
 		selectChapter(code) {
 			if (!CHAPTER_CODES.has(code)) {
-				throw new Error('Неизвестная глава книги правил.');
+				throw new Error('Неизвестная страница книги правил.');
 			}
 
 			chapter = code;

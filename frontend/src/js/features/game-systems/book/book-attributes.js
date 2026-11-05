@@ -1,6 +1,7 @@
 // frontend/src/js/features/game-systems/book/book-attributes.js
 
 import {CODE_PATTERN, FORMULA_VALUE_LIMIT as LIMIT} from '../editor/shared/formula-contract.js';
+import {createIndicatorCodeController} from '../editor/shared/indicator-code.js';
 
 const MAX_ATTRIBUTES = 128;
 const MAX_CHOICES = 128;
@@ -379,6 +380,22 @@ export function mountBookAttributes(host, options) {
 		code.readOnly = selected !== null;
 
 		const title = field(editor, 'Название', definition.label ?? '');
+		const codeRow = {code, label: title};
+		const indicatorCodes = createIndicatorCodeController({
+			getGroups: () => {
+				const currentDefinitions = state.read().document.rules?.calculations?.attributes ?? {};
+
+				const existingRows = Object.keys(currentDefinitions)
+					.filter((existingCode) => existingCode !== selected)
+					.map((existingCode) => ({code: {value: existingCode}}));
+
+				return [[...existingRows, codeRow]];
+			}
+		});
+
+		indicatorCodes.attach(codeRow, {locked: selected !== null});
+		indicatorCodes.validate();
+
 		title.addEventListener('input', () => {
 			const fallback = selected === null ? 'Новая характеристика' : selected;
 
@@ -487,6 +504,7 @@ export function mountBookAttributes(host, options) {
 		const actions = node('div', '', 'rules-book__attribute-actions');
 
 		actions.append(button('Применить к книге', () => report(() => {
+			if (!indicatorCodes.validate({showAll: true, focus: true})) return;
 			const choice = kind.value === 'choice';
 			const input = {
 				code: code.value.trim(),

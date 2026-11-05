@@ -376,6 +376,26 @@
         scrollbar-color: var(--color-border-subtle) var(--color-bg-panel);
     }
 
+    &__field > .engine-rule-card__code-hint,
+    &__field > .engine-rule-card__code-error {
+        font-size: 0.85rem;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+    }
+
+    &__field > .engine-rule-card__code-hint {
+        display: block;
+        margin-top: 0.35rem;
+        color: var(--color-text-secondary);
+    }
+
+    &__field > .engine-rule-card__code-error:not([hidden]) {
+        display: block;
+        margin-top: 0.35rem;
+        color: var(--color-text-primary);
+        font-weight: 600;
+    }
+
     @supports selector(::-webkit-scrollbar) {
         &__page--reading {
             scrollbar-width: auto;

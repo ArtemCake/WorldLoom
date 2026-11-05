@@ -24,7 +24,7 @@ export function getBookTurn(document, chapter, selectedCode, direction) {
 	const chapterIndex = BOOK_CHAPTERS.findIndex((item) => item.code === chapter);
 
 	if (chapterIndex < 0) {
-		throw new Error('Неизвестная глава книги.');
+		throw new Error('Неизвестная страница книги.');
 	}
 
 	const items = getBookChapterItems(document, chapter);
@@ -42,8 +42,8 @@ export function getBookTurn(document, chapter, selectedCode, direction) {
 		}
 	}
 
-	// Форма нового элемента находится после существующих элементов главы.
-	// Назад из неё открывается последний элемент, вперёд — следующая глава.
+	// Форма нового элемента находится после существующих элементов страницы.
+	// Назад из неё открывается последний элемент, вперёд — следующая страница.
 	if (selectedCode === null && items.length && direction === -1) {
 		return {chapter, itemCode: items[items.length - 1]};
 	}

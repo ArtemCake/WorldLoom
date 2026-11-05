@@ -500,13 +500,13 @@ export function mountRulesBook(host, {state}) {
 			detail = ' · новая характеристика';
 		}
 
-		position.textContent = `Глава ${chapterIndex + 1} из ${BOOK_CHAPTERS.length}${detail}`;
+		position.textContent = `Страница ${chapterIndex + 1} из ${BOOK_CHAPTERS.length}${detail}`;
 	}
 
 	function openChapter(code, focus = true, itemCode = undefined) {
 		report(() => {
 			if (attributesEditor?.isDirty()) {
-				const discard = window.confirm('Перейти в другую главу без применения правок характеристики?');
+				const discard = window.confirm('Перейти на другую страницу без применения правок характеристики?');
 
 				if (!discard) return;
 			}

@@ -337,7 +337,7 @@ export function mountBookAttributes(host, options) {
 		const currentTitle = selected === null ? 'Новая характеристика' : definitions[selected].label || selected;
 		onTitleChange(currentTitle);
 
-		const navigation = node('div');
+		const navigation = node('div', '', 'rules-book__element-picker');
 
 		if (entries.length) {
 			const options = [['', 'Новая характеристика'], ...entries.map(([code, item]) => [code, item.label || code])];
@@ -403,10 +403,16 @@ export function mountBookAttributes(host, options) {
 		});
 
 		const description = descriptionField(editor, definition.description ?? '');
+
+		title.parentElement.classList.add('rules-book__field--title');
+		code.parentElement.classList.add('rules-book__field--code');
+		code.parentElement.before(title.parentElement);
+		title.parentElement.after(description.parentElement);
+
 		const types = [['integer', 'Число'], ['choice', 'Выбор из вариантов']];
 		const kind = select(editor, 'Тип значения', types, type);
 
-		const numeric = node('div');
+		const numeric = node('div', '', 'rules-book__value-fields');
 		const minimum = field(numeric, 'Минимум', definition.min_value ?? 0, 'number');
 		const maximum = field(numeric, 'Максимум', definition.max_value ?? 20, 'number');
 		const initialValue = selected === null ? 0 : rules.initial_attributes[selected];

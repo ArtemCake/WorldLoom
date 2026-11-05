@@ -1,0 +1,448 @@
+/* frontend/src/styles/pages/game-system-editor/_book-content.scss */
+
+/*
+ * Содержимое книги правил.
+ * Не меняет высоту листов, прокрутку, переплёт и анимацию.
+ */
+
+.rules-book {
+    --rules-book-heading-font: Georgia, "Times New Roman", serif;
+    --rules-book-content-line: var(--color-border-subtle);
+    --rules-book-content-accent: var(--color-border-accent);
+    --rules-book-content-text: var(--color-text-primary);
+    --rules-book-content-muted: var(--color-text-secondary);
+    --rules-book-control-bg: var(--color-bg-panel-alt);
+
+    /*
+     * Названия глав.
+     * Книжный шрифт применяется к заголовкам, а не ко всем полям.
+     */
+
+    &__page > h2 {
+        margin: 0 0 1.5rem;
+        padding-bottom: 0.9rem;
+        color: var(--rules-book-content-text);
+        border-bottom: 1px solid var(--rules-book-content-line);
+        font-family: var(--rules-book-heading-font);
+        font-size: clamp(1.5rem, 2.2vw, 2rem);
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+        overflow-wrap: anywhere;
+    }
+
+    &__page > &__eyebrow {
+        margin-bottom: 0.5rem;
+        color: var(--rules-book-content-muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1.5;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+    /*
+     * Выбор элемента остаётся над сворачиваемыми настройками.
+     */
+
+    &__element-navigation:empty {
+        display: none;
+    }
+
+    &__element-navigation:not(:empty) {
+        margin-bottom: 1.5rem;
+    }
+
+    &__element-picker {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 0.75rem;
+        min-width: 0;
+
+        > .rules-book__field {
+            flex: 1 1 12rem;
+            min-width: 0;
+            margin: 0;
+        }
+
+        > .btn {
+            flex: 0 1 auto;
+            max-width: 100%;
+            min-height: 2.75rem;
+            margin: 0;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    /*
+     * Раскрываемый элемент — раздел книги, а не отдельная карточка.
+     */
+
+    &__parameters {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    &__parameters > summary {
+        position: relative;
+        display: block;
+        min-width: 0;
+        margin: 0;
+        padding: 1rem 2rem 1rem 0;
+        color: var(--rules-book-content-text);
+        background: transparent;
+        border: 0;
+        border-top: 1px solid var(--rules-book-content-line);
+        border-bottom: 1px solid var(--rules-book-content-line);
+        border-radius: 0;
+        font-family: var(--rules-book-heading-font);
+        font-size: 1.35rem;
+        font-weight: 700;
+        line-height: 1.35;
+        list-style: none;
+        overflow-wrap: anywhere;
+        cursor: pointer;
+
+        &::marker {
+            content: "";
+        }
+
+        &::-webkit-details-marker {
+            display: none;
+        }
+
+        &::after {
+            position: absolute;
+            top: 1.3rem;
+            right: 0.4rem;
+            width: 0.5rem;
+            height: 0.5rem;
+            border-right: 2px solid currentColor;
+            border-bottom: 2px solid currentColor;
+            content: "";
+            transform: rotate(45deg);
+        }
+
+        &:hover {
+            color: var(--rules-book-content-accent);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--rules-book-content-accent);
+            outline-offset: 4px;
+        }
+    }
+
+    &__parameters[open] > summary::after {
+        top: 1.55rem;
+        transform: rotate(225deg);
+    }
+
+    &__parameters-body {
+        min-width: 0;
+        padding-top: 1.25rem;
+    }
+
+    /*
+     * Формы встроены в страницу.
+     * Поля не получают самостоятельных внешних карточек.
+     */
+
+    &__form,
+    &__attribute-form {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+    }
+
+    &__attribute-form > legend {
+        float: none;
+        width: 100%;
+        margin: 0 0 1.25rem;
+        padding: 0;
+        color: var(--rules-book-content-muted);
+        font-family: inherit;
+        font-size: 0.8rem;
+        font-weight: 500;
+        line-height: 1.5;
+    }
+
+    &__field {
+        display: grid;
+        gap: 0.4rem;
+        min-width: 0;
+        margin: 0 0 1.15rem;
+
+        > span {
+            color: var(--rules-book-content-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
+        > input,
+        > select,
+        > textarea {
+            box-sizing: border-box;
+            display: block;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            min-height: 2.75rem;
+            margin: 0;
+            padding: 0.65rem 0.75rem;
+            color: var(--rules-book-content-text);
+            background: var(--rules-book-control-bg);
+            border: 1px solid var(--rules-book-content-line);
+            border-radius: 0.2rem;
+            box-shadow: none;
+            font-family: inherit;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        > textarea {
+            min-height: 8rem;
+            resize: vertical;
+        }
+
+        > input[readonly] {
+            color: var(--rules-book-content-muted);
+            border-style: dashed;
+        }
+
+        > :is(input, select, textarea):focus-visible {
+            border-color: var(--rules-book-content-accent);
+            outline: 2px solid var(--rules-book-content-accent);
+            outline-offset: 2px;
+        }
+
+        > [aria-invalid="true"] {
+            border-color: var(--rules-book-content-accent);
+            outline: 1px solid var(--rules-book-content-accent);
+        }
+
+        > :is(input, select, textarea):disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+    }
+
+    &__field--title > input {
+        font-family: var(--rules-book-heading-font);
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    &__field--code > input {
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+    }
+
+    /*
+     * Связанные числовые параметры.
+     * Сетка зависит от доступного места внутри листа.
+     */
+
+    &__value-fields {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+        align-items: start;
+        gap: 0.85rem;
+        min-width: 0;
+        margin: 0.25rem 0 1.25rem;
+
+        > .rules-book__field {
+            margin: 0;
+        }
+
+        input {
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    /*
+     * Варианты выбора разделяются линиями, а не рамками-карточками.
+     */
+
+    &__choice {
+        min-width: 0;
+        margin: 0 0 1.25rem;
+        padding: 1.25rem 0;
+        background: transparent;
+        border: 0;
+        border-top: 1px solid var(--rules-book-content-line);
+        border-radius: 0;
+        box-shadow: none;
+
+        > .btn {
+            max-width: 100%;
+            white-space: normal;
+        }
+    }
+
+    &__attribute-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--rules-book-content-line);
+
+        > .btn {
+            max-width: 100%;
+            margin: 0;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    /*
+     * Правая страница — статья правил.
+     */
+
+    &__reading {
+        min-width: 0;
+        color: var(--rules-book-content-text);
+        font-size: 1rem;
+        line-height: 1.75;
+    }
+
+    &__entry {
+        min-width: 0;
+        margin: 0;
+        padding: 1.5rem 0;
+        background: transparent;
+        border: 0;
+        border-bottom: 1px solid var(--rules-book-content-line);
+        border-radius: 0;
+        box-shadow: none;
+
+        &:first-child {
+            padding-top: 0;
+        }
+
+        > h3 {
+            margin: 0 0 0.5rem;
+            color: var(--rules-book-content-text);
+            font-family: var(--rules-book-heading-font);
+            font-size: clamp(1.4rem, 2vw, 1.85rem);
+            font-weight: 700;
+            line-height: 1.3;
+            overflow-wrap: anywhere;
+        }
+
+        > h4 {
+            margin: 1.5rem 0 0.65rem;
+            font-family: var(--rules-book-heading-font);
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        > .rules-book__muted {
+            margin-bottom: 1rem;
+            font-size: 0.8rem;
+        }
+
+        > ul,
+        > ol {
+            margin: 0.75rem 0 1.25rem;
+            padding-left: 1.35rem;
+        }
+
+        > ul > li,
+        > ol > li {
+            margin-bottom: 0.65rem;
+            padding-left: 0.2rem;
+        }
+
+        > code {
+            display: block;
+            min-width: 0;
+            margin: 0.75rem 0 1.25rem;
+            padding: 0.85rem 1rem;
+            color: var(--rules-book-content-text);
+            background: var(--rules-book-control-bg);
+            border: 0;
+            border-left: 3px solid var(--rules-book-content-accent);
+            border-radius: 0;
+            font-family: ui-monospace, Consolas, monospace;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    &__reading &__description,
+    &__reading &__prose {
+        margin: 0.85rem 0 1.4rem;
+        color: var(--rules-book-content-text);
+        line-height: 1.8;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    &__facts {
+        margin: 1.25rem 0;
+        padding: 0;
+        border-top: 1px solid var(--rules-book-content-line);
+    }
+
+    &__fact {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-items: baseline;
+        gap: 0.4rem 1rem;
+        padding: 0.7rem 0;
+        border-bottom: 1px solid var(--rules-book-content-line);
+
+        > dt {
+            min-width: 0;
+            color: var(--rules-book-content-muted);
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        > dd {
+            min-width: 0;
+            margin: 0;
+            color: var(--rules-book-content-text);
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    @media (max-width: 480px) {
+        &__element-picker > .btn {
+            flex: 1 1 100%;
+        }
+
+        &__attribute-actions > .btn {
+            flex: 1 1 100%;
+        }
+
+        &__fact {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    @media (forced-colors: active) {
+        &__parameters > summary:hover {
+            color: LinkText;
+        }
+    }
+}

@@ -321,6 +321,12 @@ WorldLoom/
 │   │   │   │   │   ├── api/
 │   │   │   │   │   │   ├── game-system-api.js
 │   │   │   │   │   │   └── rule-engine-api.js
+│   │   │   │   │   ├── book/
+│   │   │   │   │   │   ├── book-attributes.js
+│   │   │   │   │   │   ├── book-page-turn.js
+│   │   │   │   │   │   ├── book-pagination.js
+│   │   │   │   │   │   ├── book-state.js
+│   │   │   │   │   │   └── book-view.js
 │   │   │   │   │   ├── editor/
 │   │   │   │   │   │   ├── presets/
 │   │   │   │   │   │   │   └── dnd5e-2014.js
@@ -420,6 +426,14 @@ WorldLoom/
 │   │       │   ├── _container.scss
 │   │       │   └── _navbar.scss
 │   │       ├── pages/
+│   │       │   ├── game-system-editor/
+│   │       │   │   ├── _book-content.scss
+│   │       │   │   ├── _book-interactions.scss
+│   │       │   │   ├── _book.scss
+│   │       │   │   ├── _editor.scss
+│   │       │   │   ├── _engine.scss
+│   │       │   │   ├── _mixins.scss
+│   │       │   │   └── _view.scss
 │   │       │   ├── _admin.scss
 │   │       │   ├── _auth.scss
 │   │       │   ├── _game-map.scss
@@ -448,6 +462,8 @@ WorldLoom/
 │   │   ├── errors/
 │   │   │   └── not_found.html
 │   │   ├── game_systems/
+│   │   │   ├── book/
+│   │   │   │   └── book-templates.html
 │   │   │   └── game_systems.html
 │   │   ├── games/
 │   │   │   ├── partials/
@@ -493,7 +509,10 @@ WorldLoom/
 │   │   ├── dnd5e-2014-resources.test.mjs
 │   │   ├── engine-formula-text.test.mjs
 │   │   ├── engine-presets.test.mjs
-│   │   └── resource-contract.test.mjs
+│   │   ├── resource-contract.test.mjs
+│   │   ├── rules-book-attributes.test.mjs
+│   │   ├── rules-book-pagination.test.mjs
+│   │   └── rules-book-state.test.mjs
 │   ├── python/
 │   │   ├── test_attribute_choices.py
 │   │   ├── test_dnd5e_2014_preset.py

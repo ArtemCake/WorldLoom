@@ -8,6 +8,9 @@ import bookTemplatesSource from '../../../../../templates/game_systems/book/book
 import {createBookPageTurn} from './book-page-turn.js';
 import {mountBookDefinitions} from './book-definitions.js';
 import {renderReadableFormula} from '../editor/shared/formula-presentation.js';
+import {mountBookBasisPicker} from './book-basis-picker.js';
+import {mountBookPreview, renderBookPreviewResult} from './book-preview.js';
+
 
 function element(tag, text = '', className = '') {
 	const node = document.createElement(tag);
@@ -220,7 +223,7 @@ function bookPart(root, name) {
 	return matches[0];
 }
 
-export function mountRulesBook(host, {state}) {
+export function mountRulesBook(host, {state, request}) {
 	if (!(host instanceof HTMLElement)) {
 		throw new Error('Не найден контейнер книги правил.');
 	}
@@ -232,6 +235,8 @@ export function mountRulesBook(host, {state}) {
 	let touched = false;
 	let destroyed = false;
 	let itemEditor = null;
+	let basisEditor = null;
+	let previewEditor = null;
 	const selectedItems = new Map();
 	const layout = bookTemplate('shell');
 	const book = bookPart(layout, 'root');
@@ -321,6 +326,7 @@ export function mountRulesBook(host, {state}) {
 		try {
 			action();
 		} catch (failure) {
+			console.error('Ошибка интерфейса книги:', failure);
 			error.textContent = failure instanceof Error ? failure.message : 'Не удалось выполнить действие.';
 			error.hidden = false;
 		}
@@ -391,6 +397,42 @@ export function mountRulesBook(host, {state}) {
 		const fragment = bookTemplate('basis');
 		const snapshot = state.read();
 
+		if (typeof request === 'function') {
+			basisEditor = mountBookBasisPicker(settings, {
+				state,
+				request,
+
+				onApplied(changed) {
+					touched = touched || changed;
+					openChapter('basis', false);
+					host.dispatchEvent(new Event('change', {bubbles: true}));
+				},
+
+				onPendingChange() {
+					host.dispatchEvent(new Event('change', {bubbles: true}));
+				}
+			});
+		} else {
+			paragraph(settings, 'Загрузка опубликованных основ не подключена.', 'rules-book__muted');
+		}
+		if (snapshot.document.origin !== null) {
+			const version = snapshot.document.origin.engine_version;
+			const number = version?.version_number;
+
+			const title = Number.isSafeInteger(number)
+			? `Используется опубликованная основа, версия №${number}.`
+			: 'Используется опубликованная основа.';
+
+			settings.append(element('p', title, 'rules-book__muted'));
+			settings.append(element(
+				'p',
+				'Изменения в главах книги сохраняются как переопределения. Опубликованная основа остаётся неизменной.',
+				'rules-book__muted'
+			));
+
+			return;
+		}
+		settings.append(element('h4', 'Самостоятельные правила из локального пресета'));
 		const fields = bookPart(fragment, 'fields');
 		const select = bookPart(fragment, 'preset');
 		const description = bookPart(fragment, 'description');
@@ -425,6 +467,9 @@ export function mountRulesBook(host, {state}) {
 
 		apply.addEventListener('click', () => report(() => {
 			const current = state.read();
+			if (current.document.origin !== null) {
+				throw new Error('Нельзя заменить связанную основу локальным пресетом без отдельного перехода.');
+			}
 			const preset = presets.find((item) => item.code === select.value);
 
 			if (!preset) {
@@ -455,10 +500,19 @@ export function mountRulesBook(host, {state}) {
 	}
 
 	function renderReading() {
-		const {document, chapter} = state.read();
+		const snapshot = state.read();
+		const {document, chapter} = snapshot;
 		const {system, rules} = document;
+		const currentChapter = BOOK_CHAPTERS.find((item) => item.code === chapter);
 
 		reading.replaceChildren();
+
+		rightTitle.textContent = currentChapter?.title ?? 'Правила';
+
+		if (chapter === 'preview') {
+			renderBookPreviewResult(reading, snapshot);
+			return;
+		}
 
 		if (chapter === 'main') {
 			rightTitle.textContent = system.name.trim() || 'Книга без названия';
@@ -474,12 +528,22 @@ export function mountRulesBook(host, {state}) {
 			return;
 		}
 
-		rightTitle.textContent = BOOK_CHAPTERS.find((item) => item.code === chapter).title;
-
 		if (chapter === 'basis') {
 			if (!rules) {
 				paragraph(reading, 'Основа ещё не загружена.');
 				return;
+			}
+			const version = document.origin?.engine_version;
+
+			if (version) {
+				paragraph(reading, `Опубликованная основа · версия №${version.version_number}.`);
+				paragraph(
+					reading,
+					'Изменения системы сохраняются отдельно от неизменяемой публикации основы.',
+					'rules-book__muted'
+				);
+			} else {
+				paragraph(reading, 'Самостоятельные правила без связи с опубликованной основой.');
 			}
 
 			const facts = element('dl', '', 'rules-book__facts');
@@ -512,7 +576,6 @@ export function mountRulesBook(host, {state}) {
 		}
 
 		const notes = {
-			preview: 'Выполнение расчётов на примере персонажа ещё не подключено.',
 			publications: 'Сохраните книгу, затем используйте кнопку публикации над ней. Последняя публикация открывается отдельно для чтения.',
 			access: 'Управление видимостью, правами и удалением ещё не подключено.'
 		};
@@ -551,7 +614,11 @@ export function mountRulesBook(host, {state}) {
 				if (!discard) return;
 			}
 
+			basisEditor?.destroy();
+			basisEditor = null;
 			itemEditor = null;
+			previewEditor?.destroy();
+			previewEditor = null;
 			state.selectChapter(code);
 
 			const snapshot = state.read();
@@ -560,12 +627,21 @@ export function mountRulesBook(host, {state}) {
 			const chapter = BOOK_CHAPTERS.find((item) => item.code === code);
 
 			selectedItems.set(code, selectedCode);
+
 			leftTitle.textContent = chapter.title;
+			parametersTitle.textContent = chapter.title;
+			rightTitle.textContent = chapter.title;
 			settings.replaceChildren();
 			settingsNavigation.replaceChildren();
-			settings.replaceChildren();
 
-			if (snapshot.mode === 'view') {
+
+			if (code === 'preview') {
+				previewEditor = mountBookPreview(settings, {
+					state,
+					request,
+					onChange: () => renderReading()
+				});
+			} else if (snapshot.mode === 'view') {
 				paragraph(settings, 'Книга открыта для чтения. Изменение данных отключено.');
 
 				if (items.length) {
@@ -609,6 +685,7 @@ export function mountRulesBook(host, {state}) {
 					initialCode: selectedCode,
 					navigationHost: settingsNavigation,
 					onTitleChange: (title) => {
+						if (destroyed || state.read().chapter !== code) return;
 						parametersTitle.textContent = title;
 					},
 					onCreate: () => {
@@ -722,7 +799,13 @@ export function mountRulesBook(host, {state}) {
 		const snapshot = state.read();
 
 		return snapshot.mode !== 'view'
-		&& (snapshot.dirty || snapshot.writePending !== null || itemEditor?.isDirty() === true);
+		&& (
+		snapshot.dirty
+		|| snapshot.writePending !== null
+		|| itemEditor?.isDirty() === true
+		|| basisEditor?.isDirty() === true
+		);
+
 	}
 
 	window.addEventListener('beforeunload', (event) => {
@@ -746,6 +829,10 @@ export function mountRulesBook(host, {state}) {
 		if (destroyed) return;
 
 		destroyed = true;
+		basisEditor?.destroy();
+		basisEditor = null;
+		previewEditor?.destroy();
+		previewEditor = null;
 		controller.abort();
 		observer.disconnect();
 	}
@@ -760,7 +847,7 @@ export function mountRulesBook(host, {state}) {
 	return {
 		destroy,
 		hasChanges,
-		hasPendingChanges: () => itemEditor?.isDirty() === true,
+		hasPendingChanges: () => itemEditor?.isDirty() === true || basisEditor?.isDirty() === true,
 		refresh() {
 			if (itemEditor?.isDirty()) {
 				throw new Error('Сначала примените или отмените правки открытого элемента.');

@@ -212,7 +212,7 @@ function mountBookPage(root) {
         nextState.selectChapter(chapter);
         book?.destroy();
         state = nextState;
-        book = mountRulesBook(host, {state});
+        book = mountRulesBook(host, {state, request: requestGameSystem});
     }
 
     async function load() {

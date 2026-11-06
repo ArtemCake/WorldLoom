@@ -4,6 +4,7 @@ import {CODE_PATTERN} from '../editor/shared/formula-contract.js';
 import {validateDependencyGraph, validateFormulaTree} from '../editor/shared/formula-validation.js';
 import {validateResources} from '../editor/shared/resource-contract.js';
 import {normalizeShortLabel} from '../editor/shared/short-label.js';
+import {collectEngineOverrides} from '../editor/game-system-engine-origin.js';
 
 export function isBookModifierCode(code) {
 	return code.startsWith('modifier_') || /_modifier(?:_\d+)?$/.test(code);
@@ -15,11 +16,9 @@ export function editableBookRules(document) {
 	if (!rules || ![3, 4].includes(rules.schema_version)) {
 		throw new Error('Для редактирования требуется профиль правил формата 3 или 4.');
 	}
-
 	if (origin !== null) {
-		throw new Error('Редактирование связанной основы ещё не подключено.');
+		collectEngineOverrides(origin.engine_version?.rules_json, rules, origin.rules_overrides);
 	}
-
 	if (!rules.calculations?.attributes || !rules.calculations?.derived) {
 		throw new Error('В профиле отсутствуют коллекции характеристик или формул.');
 	}
@@ -103,6 +102,9 @@ function collectionFor(rules, chapter) {
 
 export function writeBookDefinition(document, chapter, previousCode, code, input) {
 	const rules = editableBookRules(document);
+	if (chapter === 'resources' && document.origin !== null && rules.schema_version === 3) {
+		throw new Error('Эта опубликованная основа использует формат 3 без ресурсов. Для ресурсов нужна основа формата 4.');
+	}
 	const collection = collectionFor(rules, chapter);
 	const creating = previousCode === null;
 

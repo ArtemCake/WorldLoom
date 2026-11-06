@@ -4,6 +4,7 @@ import {CODE_PATTERN, FORMULA_VALUE_LIMIT as LIMIT} from '../editor/shared/formu
 import {createIndicatorCodeController} from '../editor/shared/indicator-code.js';
 import {createShortLabelField} from '../editor/shared/short-label-field.js';
 import {normalizeShortLabel} from '../editor/shared/short-label.js';
+import {collectEngineOverrides} from '../editor/game-system-engine-origin.js';
 
 const MAX_ATTRIBUTES = 128;
 const MAX_CHOICES = 128;
@@ -21,7 +22,8 @@ function editableRules(document) {
 	}
 
 	if (document.origin !== null) {
-		throw new Error('Редактирование связанной основы ещё не подключено.');
+		const origin = document.origin;
+		collectEngineOverrides(origin.engine_version?.rules_json, rules, origin.rules_overrides);
 	}
 
 	if (!object(rules.calculations?.attributes) || !object(rules.initial_attributes)) {

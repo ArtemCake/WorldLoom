@@ -322,10 +322,14 @@ WorldLoom/
 │   │   │   │   │   │   └── game-system-api.js
 │   │   │   │   │   ├── book/
 │   │   │   │   │   │   ├── book-attributes.js
+│   │   │   │   │   │   ├── book-basis-data.js
+│   │   │   │   │   │   ├── book-basis-picker.js
 │   │   │   │   │   │   ├── book-definition-data.js
 │   │   │   │   │   │   ├── book-definitions.js
 │   │   │   │   │   │   ├── book-page-turn.js
 │   │   │   │   │   │   ├── book-pagination.js
+│   │   │   │   │   │   ├── book-preview-data.js
+│   │   │   │   │   │   ├── book-preview.js
 │   │   │   │   │   │   ├── book-publication.js
 │   │   │   │   │   │   ├── book-state.js
 │   │   │   │   │   │   └── book-view.js
@@ -515,8 +519,11 @@ WorldLoom/
 │   │   ├── engine-presets.test.mjs
 │   │   ├── resource-contract.test.mjs
 │   │   ├── rules-book-attributes.test.mjs
+│   │   ├── rules-book-basis.test.mjs
+│   │   ├── rules-book-engine-origin.test.mjs
 │   │   ├── rules-book-formula-presentation.test.mjs
 │   │   ├── rules-book-pagination.test.mjs
+│   │   ├── rules-book-preview.test.mjs
 │   │   ├── rules-book-publication.test.mjs
 │   │   ├── rules-book-short-label.test.mjs
 │   │   └── rules-book-state.test.mjs

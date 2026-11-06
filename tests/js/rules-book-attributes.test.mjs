@@ -155,18 +155,30 @@ test('удаление свободной характеристики удал�
     assert.deepEqual(source.rules.initial_attributes, {});
 });
 
-test('не преобразует старый профиль и не разрывает связь с основой', () => {
+test('не преобразует старый профиль при попытке редактирования', () => {
     const legacy = document();
+
     legacy.rules.schema_version = 2;
 
-    assert.throws(() => writeBookAttribute(legacy, null, numeric()), /формата/);
-    assert.equal(legacy.rules.schema_version, 2);
+    const before = structuredClone(legacy);
 
+    assert.throws(() => writeBookAttribute(legacy, null, numeric()), /формата/u);
+    assert.deepEqual(legacy, before);
+});
+
+test('не изменяет документ при неполных сведениях об основе', () => {
     const linked = document();
+
     linked.origin = {publication: {version_number: 1}};
 
-    assert.throws(() => writeBookAttribute(linked, null, numeric()), /основы/);
-    assert.deepEqual(linked.origin, {publication: {version_number: 1}});
+    const before = structuredClone(linked);
+
+    assert.throws(
+        () => writeBookAttribute(linked, null, numeric()),
+        {name: 'Error', message: 'Для связанной системы требуется профиль правил формата 3 или 4.'}
+    );
+
+    assert.deepEqual(linked, before);
 });
 
 test('применение меняет состояние книги и отменяет старый предпросмотр', () => {

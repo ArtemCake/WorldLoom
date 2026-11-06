@@ -6,6 +6,8 @@ import {createResourceEditor} from '../editor/shared/resource-editor.js';
 import {formatEngineFormula, parseEngineFormula} from '../editor/engine-formula-text.js';
 import {getBookChapterItems} from './book-pagination.js';
 import {bookFormulaSources, editableBookRules, removeBookDefinition, writeBookDefinition} from './book-definition-data.js';
+import {createShortLabelField} from '../editor/shared/short-label-field.js';
+import {bookFormulaDefinition} from './book-definition-data.js';
 
 const TITLES = {
 	modifiers: ['Модификатор', 'Новый модификатор', 'Добавить модификатор'],
@@ -190,6 +192,8 @@ export function mountBookDefinitions(host, options) {
 		} else {
 			const title = field(editor, 'Название', definition.label ?? '');
 			const description = field(editor, 'Описание', definition.description ?? '', 'textarea');
+			const shortLabel = createShortLabelField({labelInput: title, definition, onChange: markChanged});
+			editor.append(shortLabel.element);
 			const code = field(editor, 'Код для ссылок в формулах', selected ?? '');
 
 			title.parentElement.classList.add('rules-book__field--title');
@@ -224,6 +228,7 @@ export function mountBookDefinitions(host, options) {
 				value: definition.formula ?? {operation: 'sum', arguments: [0]},
 				parse: parseEngineFormula,
 				format: formatEngineFormula,
+				getDefinition: (reference) => bookFormulaDefinition(state.read().document.rules, reference),
 				getSources: () => bookFormulaSources(state.read().document.rules, selected),
 				onChange: markChanged,
 				onError: (text) => {
@@ -244,6 +249,7 @@ export function mountBookDefinitions(host, options) {
 					code: code.value.trim(),
 					definition: {
 						label: title.value,
+						short_label: shortLabel.collect(),
 						description: description.value,
 						formula: formula.collect()
 					}

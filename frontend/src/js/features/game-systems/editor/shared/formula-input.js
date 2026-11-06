@@ -1,27 +1,30 @@
 // frontend/src/js/features/game-systems/editor/shared/formula-input.js
 
-import { choices, element, field } from './editor-dom.js';
-import { createFormulaEditor } from './formula-editor.js';
+import {choices, element, field} from './editor-dom.js';
+import {createFormulaEditor} from './formula-editor.js';
+import {renderReadableFormula} from './formula-presentation.js';
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
-/**
- * parse и format передаются снаружи:
- * компонент не привязан к синтаксису конкретного формата правил.
- */
-export function createFormulaInput({ value, parse, format, getSources, onChange, onError }) {
+export function createFormulaInput({value, parse, format, getSources, onChange, onError, getDefinition = () => null}) {
 	let formula = clone(value);
 	let mode = 'visual';
 
 	const root = element('div');
 	root.dataset.formulaInput = 'true';
 
+	const preview = element('section');
+	preview.className = 'formula-input__preview';
+
+	const previewContent = element('div');
+	preview.append(element('h4', 'Формула расчёта'), previewContent);
+
 	const modeOptions = [
 		['visual', 'Визуальный конструктор'],
-		['text', 'Текстовая запись']
+		['text', 'Код формулы']
 	];
-	const modeSelect = choices(modeOptions, mode);
 
+	const modeSelect = choices(modeOptions, mode);
 	const visualHost = element('div');
 
 	const text = document.createElement('textarea');
@@ -30,14 +33,56 @@ export function createFormulaInput({ value, parse, format, getSources, onChange,
 	text.disabled = true;
 	text.spellcheck = false;
 
-	const textHost = field('Формула', text);
+	const textHost = field('Код формулы', text);
 	textHost.hidden = true;
 
-	const visual = createFormulaEditor({ getSources, onChange, onStructureChange: renderVisual, onError });
+	const textHelp = element('p', 'Техническая запись для ручного ввода. Читаемая формула показана выше.');
+	textHelp.className = 'profile-note';
+	textHost.append(textHelp);
+
+	function refreshPreview() {
+		try {
+			const current = mode === 'text' ? parse(text.value) : formula;
+			const sources = new Map(getSources(null));
+
+			const options = {
+				getLabel: (reference) => {
+					const definition = getDefinition(reference);
+
+					if (definition) return definition;
+
+					const label = sources.get(reference);
+
+					if (typeof label !== 'string' || !label.trim()) return reference;
+
+					return label.replace(/^(Характеристика|Значение|Показатель):\s*/u, '');
+				}
+			};
+
+			renderReadableFormula(previewContent, current, options);
+		} catch (error) {
+			previewContent.textContent = error instanceof Error
+			? `Предпросмотр недоступен: ${error.message}`
+			: 'Предпросмотр недоступен. Проверьте формулу.';
+		}
+	}
+
+	function changed() {
+		refreshPreview();
+		onChange();
+	}
+
+	const visual = createFormulaEditor({
+		getSources,
+		onChange: changed,
+		onStructureChange: renderVisual,
+		onError
+	});
 
 	function renderVisual() {
 		visual.reset();
 		visualHost.replaceChildren(visual.render(formula, null));
+		refreshPreview();
 	}
 
 	function updateModeControls() {
@@ -45,8 +90,6 @@ export function createFormulaInput({ value, parse, format, getSources, onChange,
 
 		visualHost.hidden = isTextMode;
 		textHost.hidden = !isTextMode;
-
-		// Скрытое поле не должно блокировать проверку формы.
 		text.required = isTextMode;
 		text.disabled = !isTextMode;
 	}
@@ -58,26 +101,26 @@ export function createFormulaInput({ value, parse, format, getSources, onChange,
 
 		try {
 			if (next === 'visual') {
-				// При ошибке разбора остаёмся в текстовом режиме.
 				const parsed = parse(text.value);
+
 				formula = parsed;
 				renderVisual();
 			} else {
-				// Форматирование выполняем до смены режима.
 				text.value = format(formula);
 			}
 
 			mode = next;
 			updateModeControls();
+			refreshPreview();
 		} catch (error) {
 			modeSelect.value = mode;
 			onError(error.message || 'Не удалось переключить представление.');
 		}
 	});
 
-	text.addEventListener('input', onChange);
+	text.addEventListener('input', changed);
 
-	root.append(field('Представление формулы', modeSelect), visualHost, textHost);
+	root.append(preview, field('Редактирование формулы', modeSelect), visualHost, textHost);
 
 	updateModeControls();
 	renderVisual();
@@ -91,6 +134,7 @@ export function createFormulaInput({ value, parse, format, getSources, onChange,
 
 		refreshSources() {
 			visual.refreshSources();
+			refreshPreview();
 		}
 	};
 }

@@ -2,6 +2,8 @@
 
 import {CODE_PATTERN, FORMULA_VALUE_LIMIT as LIMIT} from '../editor/shared/formula-contract.js';
 import {createIndicatorCodeController} from '../editor/shared/indicator-code.js';
+import {createShortLabelField} from '../editor/shared/short-label-field.js';
+import {normalizeShortLabel} from '../editor/shared/short-label.js';
 
 const MAX_ATTRIBUTES = 128;
 const MAX_CHOICES = 128;
@@ -89,6 +91,9 @@ export function writeBookAttribute(document, previousCode, input) {
 	const definition = {...(creating ? {} : definitions[code])};
 	definition.label = label(input.label, 'Характеристика');
 
+	if (Object.hasOwn(input, 'short_label')) {
+		definition.short_label = normalizeShortLabel(input.short_label);
+	}
 	if (Object.hasOwn(input, 'description')) {
 		definition.description = normalizeDescription(input.description);
 	}
@@ -409,6 +414,14 @@ export function mountBookAttributes(host, options) {
 		code.parentElement.before(title.parentElement);
 		title.parentElement.after(description.parentElement);
 
+		const shortLabel = createShortLabelField({
+			labelInput: title,
+			definition,
+			onChange: () => { changed = true; }
+		});
+
+		description.parentElement.after(shortLabel.element);
+
 		const types = [['integer', 'Число'], ['choice', 'Выбор из вариантов']];
 		const kind = select(editor, 'Тип значения', types, type);
 
@@ -515,6 +528,7 @@ export function mountBookAttributes(host, options) {
 			const input = {
 				code: code.value.trim(),
 				label: title.value,
+				short_label: shortLabel.collect(),
 				description: description.value,
 				field_type: kind.value,
 				min_value: choice ? null : readNumber(minimum, 'Минимум'),

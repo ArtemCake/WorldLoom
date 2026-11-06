@@ -1,6 +1,10 @@
+// frontend/src/js/features/game-systems/editor/shared/resource-editor.js
+
 import {CODE_PATTERN, FORMULA_VALUE_LIMIT as LIMIT} from './formula-contract.js';
 import {createIndicatorCodeController} from './indicator-code.js';
 import {validateResources} from './resource-contract.js';
+import {createShortLabelField} from './short-label-field.js';
+
 
 function node(tag, text = '', className = '') {
 	const element = document.createElement(tag);
@@ -194,6 +198,14 @@ export function createResourceEditor(options) {
 			recovery: [],
 			savedReference: typeof maximum === 'string' ? maximum : ''
 		};
+		row.shortLabel = createShortLabelField({
+			labelInput: row.label,
+			definition,
+			onChange
+		});
+
+		row.label.closest('label').after(row.shortLabel.element);
+
 		const description = node('textarea');
 		description.rows = 5;
 		description.value = definition.description ?? '';
@@ -327,6 +339,7 @@ export function createResourceEditor(options) {
 
 			resources[code] = {
 				label,
+				short_label: row.shortLabel.collect(),
 				description: description.trim() ? description : '',
 				maximum,
 				initial,

@@ -1,7 +1,8 @@
+// frontend/src/js/features/game-systems/editor/shared/indicator-code.js
+
 import { CODE_PATTERN } from './formula-contract.js';
 
 const MAX_CODE_LENGTH = 40;
-
 const TRANSLITERATION = {
 	а: 'a',
 	б: 'b',

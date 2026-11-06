@@ -3,6 +3,7 @@
 import {CODE_PATTERN} from '../editor/shared/formula-contract.js';
 import {validateDependencyGraph, validateFormulaTree} from '../editor/shared/formula-validation.js';
 import {validateResources} from '../editor/shared/resource-contract.js';
+import {normalizeShortLabel} from '../editor/shared/short-label.js';
 
 export function isBookModifierCode(code) {
 	return code.startsWith('modifier_') || /_modifier(?:_\d+)?$/.test(code);
@@ -69,8 +70,25 @@ function normalizeDefinition(input) {
 	}
 
 	const text = input.description.replace(/\r\n?/g, '\n');
+	const result = {...input, label, description: text.trim() ? text : ''};
 
-	return {...input, label, description: text.trim() ? text : ''};
+	if (Object.hasOwn(input, 'short_label')) {
+		result.short_label = normalizeShortLabel(input.short_label);
+	}
+
+	return result;
+}
+
+export function bookFormulaDefinition(rules, reference) {
+	const match = /^(attribute|stat)\.(.+)$/u.exec(reference);
+
+	if (!match) return null;
+
+	const definitions = match[1] === 'attribute'
+	? rules?.calculations?.attributes
+	: rules?.calculations?.derived;
+
+	return definitions?.[match[2]] ?? null;
 }
 
 function collectionFor(rules, chapter) {

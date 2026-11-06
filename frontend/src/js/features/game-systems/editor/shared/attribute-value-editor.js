@@ -1,3 +1,5 @@
+// frontend/src/js/features/game-systems/editor/shared/attribute-value-editor.js
+
 import {
 FORMULA_VALUE_LIMIT as LIMIT
 } from './formula-contract.js';

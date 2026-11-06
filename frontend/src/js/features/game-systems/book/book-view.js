@@ -2,12 +2,12 @@
 
 import {BOOK_CHAPTERS} from './book-state.js';
 import {createEnginePreset, listEnginePresets} from '../editor/engine-presets.js';
-import {formatEngineFormula} from '../editor/engine-formula-text.js';
 import {mountBookAttributes} from './book-attributes.js';
 import {getBookChapterItems, getBookTurn} from './book-pagination.js';
 import bookTemplatesSource from '../../../../../templates/game_systems/book/book-templates.html?raw';
 import {createBookPageTurn} from './book-page-turn.js';
 import {mountBookDefinitions} from './book-definitions.js';
+import {renderReadableFormula} from '../editor/shared/formula-presentation.js';
 
 function element(tag, text = '', className = '') {
 	const node = document.createElement(tag);
@@ -41,14 +41,6 @@ function pair(parent, title, value) {
 
 	row.append(element('dt', title), element('dd', String(value ?? 'Не задано')));
 	parent.append(row);
-}
-
-function formulaText(value) {
-	try {
-		return formatEngineFormula(value);
-	} catch {
-		return 'Формула не распознана. Исходное определение сохранено без изменений.';
-	}
 }
 
 function entry(parent, title, code, description = '') {
@@ -102,6 +94,18 @@ function readAttributes(parent, rules, selectedCode) {
 	}
 }
 
+function formulaReferenceLabel(reference, rules) {
+	const match = /^(attribute|stat)\.(.+)$/u.exec(reference);
+
+	if (!match) return reference;
+
+	const definitions = match[1] === 'attribute'
+	? rules.calculations?.attributes
+	: rules.calculations?.derived;
+
+	return definitions?.[match[2]] ?? reference;
+}
+
 function readDerived(parent, rules, selectedCode) {
 	const definitions = rules.calculations?.derived ?? {};
 	const exists = selectedCode !== null && Object.hasOwn(definitions, selectedCode);
@@ -114,10 +118,21 @@ function readDerived(parent, rules, selectedCode) {
 
 	for (const [code, definition] of entries) {
 		const section = entry(parent, definition.label, code, definition.description);
-		const expression = element('code', formulaText(definition.formula));
+		const expression = element('div');
 
 		paragraph(section, 'Правило вычисления:');
 		section.append(expression);
+
+		try {
+			const options = {
+				label: definition.label || code,
+				getLabel: (reference) => formulaReferenceLabel(reference, rules)
+			};
+
+			renderReadableFormula(expression, definition.formula, options);
+		} catch {
+			expression.textContent = 'Формула не распознана. Исходное определение сохранено без изменений.';
+		}
 	}
 
 	paragraph(parent, 'Здесь показаны определения формул, а не результаты их выполнения.', 'rules-book__muted');
@@ -213,6 +228,7 @@ export function mountRulesBook(host, {state}) {
 	const controller = new AbortController();
 	const {signal} = controller;
 	const presets = listEnginePresets();
+	let selectedPresetCode = null;
 	let touched = false;
 	let destroyed = false;
 	let itemEditor = null;
@@ -389,6 +405,11 @@ export function mountRulesBook(host, {state}) {
 			select.append(option);
 		}
 
+		if (presets.some((preset) => preset.code === selectedPresetCode)) {
+			select.value = selectedPresetCode;
+		}
+		selectedPresetCode = select.value;
+
 		apply.disabled = presets.length === 0;
 
 		function describe() {
@@ -397,7 +418,10 @@ export function mountRulesBook(host, {state}) {
 			description.textContent = preset?.description ?? 'Нет доступных пресетов.';
 		}
 
-		select.addEventListener('change', describe, {signal});
+		select.addEventListener('change', () => {
+			selectedPresetCode = select.value;
+			describe();
+		}, {signal});
 
 		apply.addEventListener('click', () => report(() => {
 			const current = state.read();

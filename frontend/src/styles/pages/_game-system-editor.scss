@@ -8,3 +8,125 @@
 @use './game-system-editor/book';
 @use './game-system-editor/book-interactions';
 @use './game-system-editor/book-content';
+
+.readable-formula {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0.75rem 0 1rem;
+    color: var(--color-text-primary);
+
+    &__label {
+        margin-bottom: 0.6rem;
+        font-weight: 600;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
+    &__viewport {
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        padding: 0.8rem 0.25rem;
+        overflow: visible;
+    }
+
+    &__expression {
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        font-size: 1.1rem;
+        line-height: 1.9;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: normal;
+        text-align: start;
+    }
+
+    &__group {
+        display: inline;
+        white-space: normal;
+    }
+
+    &__parameter {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
+
+    &__number {
+        white-space: nowrap;
+    }
+
+    &__operator {
+        white-space: normal;
+    }
+
+    &__fraction {
+        display: inline-grid;
+        grid-template-columns: minmax(0, 1fr);
+        box-sizing: border-box;
+        width: max-content;
+        min-width: 0;
+        max-width: 100%;
+        margin: 0.15em 0.2em;
+        vertical-align: middle;
+        line-height: 1.5;
+        text-align: center;
+    }
+
+    &__numerator,
+    &__denominator {
+        display: block;
+        box-sizing: border-box;
+        min-width: 0;
+        max-width: 100%;
+        padding: 0.15em 0.35em;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    &__numerator {
+        border-bottom: 1px solid currentColor;
+    }
+
+    &__note {
+        margin: 0.5rem 0 0;
+        color: var(--color-text-secondary);
+        font-size: 0.85rem;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+    }
+}
+
+.formula-input__preview {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin-bottom: 1rem;
+
+    > h4 {
+        margin: 0 0 0.5rem;
+        font-size: 1rem;
+    }
+}
+
+.short-label-field {
+    min-width: 0;
+    margin-bottom: 1rem;
+
+    > small {
+        display: block;
+        margin: 0.35rem 0 0.6rem;
+        color: var(--color-text-secondary);
+        line-height: 1.5;
+    }
+
+    > button {
+        max-width: 100%;
+        white-space: normal;
+    }
+}

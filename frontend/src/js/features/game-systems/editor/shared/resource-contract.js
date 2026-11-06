@@ -1,4 +1,7 @@
+// frontend/src/js/features/game-systems/editor/shared/resource-contract.js
+
 import {CODE_PATTERN, FORMULA_VALUE_LIMIT as LIMIT} from './formula-contract.js';
+import {normalizeShortLabel} from './short-label.js';
 
 export function isRecord(value) {
 	return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -28,7 +31,8 @@ export function validateResources(resources, calculations = null) {
 
 	for (const [code, definition] of Object.entries(resources)) {
 		ensure(CODE_PATTERN.test(code), `Некорректный код ресурса: «${code}».`);
-		knownFields(definition, ['label', 'description', 'maximum', 'initial', 'recovery'], `Ресурс ${code}`);
+		const fields = ['label', 'short_label', 'description', 'maximum', 'initial', 'recovery'];
+		knownFields(definition, fields, `Ресурс ${code}`);
 
 		const {label, maximum} = definition;
 		const description = definition.description ?? '';
@@ -70,6 +74,9 @@ export function validateResources(resources, calculations = null) {
 
 		result[code] = {label, maximum, initial, recovery: copiedRecovery};
 
+		if (Object.hasOwn(definition, 'short_label')) {
+			result[code].short_label = normalizeShortLabel(definition.short_label);
+		}
 		if (Object.hasOwn(definition, 'description')) {
 			result[code].description = description;
 		}

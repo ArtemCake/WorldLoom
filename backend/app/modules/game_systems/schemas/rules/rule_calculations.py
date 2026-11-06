@@ -166,6 +166,7 @@ class AttributeDefinition(CalculationModel):
     """
 	label: str = Field(min_length=1, max_length=100, pattern=r"\S",)
 	description: str = Field(default="", strict=True, max_length=10000)
+	short_label: str | None = Field(default=None, strict=True, min_length=1, max_length=40, pattern=r"\S")
 
 	field_type: Literal["integer", "choice"] = "integer"
 
@@ -243,6 +244,8 @@ class DerivedStat(CalculationModel):
 
 	label: str = Field(min_length=1, max_length=100, pattern=r"\S",)
 	description: str = Field(default="", strict=True, max_length=10000)
+	short_label: str | None = Field(default=None, strict=True, min_length=1, max_length=40, pattern=r"\S")
+
 	formula: StatFormula
 
 class AttributeCalculations(CalculationModel):

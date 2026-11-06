@@ -319,14 +319,14 @@ WorldLoom/
 │   │   │   │   │   └── password-toggle.js
 │   │   │   │   ├── game-systems/
 │   │   │   │   │   ├── api/
-│   │   │   │   │   │   ├── game-system-api.js
-│   │   │   │   │   │   └── rule-engine-api.js
+│   │   │   │   │   │   └── game-system-api.js
 │   │   │   │   │   ├── book/
 │   │   │   │   │   │   ├── book-attributes.js
 │   │   │   │   │   │   ├── book-definition-data.js
 │   │   │   │   │   │   ├── book-definitions.js
 │   │   │   │   │   │   ├── book-page-turn.js
 │   │   │   │   │   │   ├── book-pagination.js
+│   │   │   │   │   │   ├── book-publication.js
 │   │   │   │   │   │   ├── book-state.js
 │   │   │   │   │   │   └── book-view.js
 │   │   │   │   │   ├── editor/
@@ -342,19 +342,14 @@ WorldLoom/
 │   │   │   │   │   │   │   ├── indicator-code.js
 │   │   │   │   │   │   │   ├── resource-contract.js
 │   │   │   │   │   │   │   └── resource-editor.js
-│   │   │   │   │   │   ├── engine-editor-layout.js
 │   │   │   │   │   │   ├── engine-formula-text.js
 │   │   │   │   │   │   ├── engine-presets.js
-│   │   │   │   │   │   ├── engine-rules-editor.js
-│   │   │   │   │   │   ├── game-system-engine-origin.js
-│   │   │   │   │   │   ├── game-system-rules-editor.js
-│   │   │   │   │   │   └── rule-engine-manager.js
+│   │   │   │   │   │   └── game-system-engine-origin.js
 │   │   │   │   │   ├── pages/
+│   │   │   │   │   │   ├── catalog-controller.js
 │   │   │   │   │   │   ├── catalog-page.js
-│   │   │   │   │   │   ├── editor-page.js
-│   │   │   │   │   │   └── page-controller.js
+│   │   │   │   │   │   └── editor-page.js
 │   │   │   │   │   └── view/
-│   │   │   │   │       └── game-system-rules-view.js
 │   │   │   │   ├── games/
 │   │   │   │   │   ├── sessions/
 │   │   │   │   │   │   ├── session-combat.js
@@ -432,6 +427,7 @@ WorldLoom/
 │   │       │   │   ├── _book-content.scss
 │   │       │   │   ├── _book-interactions.scss
 │   │       │   │   ├── _book.scss
+│   │       │   │   ├── _catalog.scss
 │   │       │   │   ├── _editor.scss
 │   │       │   │   ├── _engine.scss
 │   │       │   │   ├── _mixins.scss
@@ -466,7 +462,8 @@ WorldLoom/
 │   │   ├── game_systems/
 │   │   │   ├── book/
 │   │   │   │   └── book-templates.html
-│   │   │   └── game_systems.html
+│   │   │   ├── book.html
+│   │   │   └── catalog.html
 │   │   ├── games/
 │   │   │   ├── partials/
 │   │   │   │   ├── game_map.html
@@ -503,6 +500,7 @@ WorldLoom/
 │   ├── worldloom.log
 │   ├── worldloom.log.2026-11-03
 │   ├── worldloom.log.2026-11-04
+│   ├── worldloom.log.2026-11-05
 │   ├── worldloom_error.log
 │   └── worldloom_error.log.2026-11-03
 ├── staging/
@@ -514,6 +512,7 @@ WorldLoom/
 │   │   ├── resource-contract.test.mjs
 │   │   ├── rules-book-attributes.test.mjs
 │   │   ├── rules-book-pagination.test.mjs
+│   │   ├── rules-book-publication.test.mjs
 │   │   └── rules-book-state.test.mjs
 │   ├── python/
 │   │   ├── test_attribute_choices.py

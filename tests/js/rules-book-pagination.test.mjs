@@ -135,7 +135,7 @@ test('проверяет направление и существование э
 
     assert.throws(() => getBookTurn(source, 'attributes', 'missing', 1), /отсутствует/);
     assert.throws(() => getBookTurn(source, 'attributes', 'strength', 0), /Направление/);
-    assert.throws(() => getBookTurn(source, 'unknown', null, 1), /Неизвестная глава/);
+    assert.throws(() => getBookTurn(source, 'unknown', null, 1), /Неизвестная страница книги/);
 });
 
 test('перелистывание не меняет документ', () => {

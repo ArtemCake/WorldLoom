@@ -37,6 +37,21 @@
 			Сохранить
 		</button>
 		
+		<button type="button"
+		        class="btn btn-primary"
+		        data-book-publish
+		        hidden
+		        disabled>
+			Опубликовать сохранённый черновик
+		</button>
+		
+		<a class="btn btn-outline-primary"
+		   data-book-published
+		   hx-boost="false"
+		   hidden>
+			Посмотреть последнюю публикацию
+		</a>
+		
 		<label class="game-system-book-page__source" data-book-source-field hidden>
 			<span>Показать правила</span>
 			<select data-book-source>

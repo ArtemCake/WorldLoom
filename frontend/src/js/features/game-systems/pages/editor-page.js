@@ -4,6 +4,7 @@ import {requestGameSystem} from '../api/game-system-api.js';
 import {createRulesBookState} from '../book/book-state.js';
 import {mountRulesBook} from '../book/book-view.js';
 import {collectEngineOverrides, readEngineOverrides} from '../editor/game-system-engine-origin.js';
+import {publishBookRules} from '../book/book-publication.js';
 
 const initializedRoots = new WeakSet();
 const MODES = new Set(['create', 'edit', 'view']);
@@ -70,8 +71,11 @@ function mountBookPage(root) {
     const edit = root.querySelector('[data-book-edit]');
     const sourceField = root.querySelector('[data-book-source-field]');
     const source = root.querySelector('[data-book-source]');
+    const publish = root.querySelector('[data-book-publish]');
+    const published = root.querySelector('[data-book-published]');
+    const required = [host, message, login, reload, save, edit, sourceField, source, publish, published];
 
-    if (!host || !message || !login || !reload || !save || !edit || !sourceField || !source) {
+    if (required.some((item) => !item)) {
         initializedRoots.delete(root);
         return;
     }
@@ -106,6 +110,76 @@ function mountBookPage(root) {
 
         if (systemId) {
             edit.href = `/game-systems/catalog/${encodeURIComponent(systemId)}/edit`;
+        }
+        publish.hidden = mode !== 'edit' || access?.can_edit !== true;
+        publish.disabled = busy || !snapshot?.canPublish || book?.hasPendingChanges() === true;
+
+        published.hidden = !systemId || busy;
+
+        if (systemId) {
+            const id = encodeURIComponent(systemId);
+
+            published.href = `/game-systems/catalog/${id}?source=published`;
+        }
+    }
+
+    async function publishBook() {
+        if (busy || !state || !book) return;
+
+        const snapshot = state.read();
+
+        if (access?.can_edit !== true || snapshot.mode !== 'edit') {
+            message.textContent = 'Публикация недоступна.';
+            return;
+        }
+
+        if (book.hasPendingChanges()) {
+            message.textContent = 'Сначала примените к книге или отмените правки открытого элемента.';
+            return;
+        }
+
+        if (snapshot.document.system.is_active !== true) {
+            message.textContent = 'Перед публикацией активируйте и сохраните систему.';
+            return;
+        }
+
+        if (!snapshot.canPublish) {
+            message.textContent = 'Перед публикацией сохраните изменения и сверьте состояние книги.';
+            return;
+        }
+
+        const question = `Опубликовать сохранённую ревизию ${snapshot.revision}? Опубликованный снимок нельзя изменить.`;
+
+        if (!window.confirm(question)) return;
+
+        busy = true;
+        login.hidden = true;
+        sync();
+        message.textContent = 'Публикация сохранённого черновика…';
+
+        try {
+            const version = await publishBookRules({
+                state,
+                systemId,
+                request: requestGameSystem,
+                allowed: access.can_edit === true,
+                hasPendingChanges: () => book.hasPendingChanges()
+            });
+
+            book.refresh();
+
+            const revision = state.read().revision;
+
+            message.textContent = `Опубликована версия №${version.version_number}. Текущая ревизия черновика: ${revision}.`;
+        } catch (error) {
+            showError(error);
+
+            if (state.read().blocked) {
+                message.textContent += ' Повторная запись заблокирована. Загрузите данные заново и сверьте состояние.';
+            }
+        } finally {
+            busy = false;
+            sync();
         }
     }
 
@@ -187,7 +261,10 @@ function mountBookPage(root) {
             ensure(system?.id === systemId, 'Сервер вернул другую игровую систему.');
 
             if (!sourceInitialized) {
-                source.value = manager ? 'draft' : 'published';
+                const requestedSource = new URLSearchParams(window.location.search).get('source');
+                const publishedRequested = mode === 'view' && requestedSource === 'published';
+
+                source.value = manager && !publishedRequested ? 'draft' : 'published';
                 sourceInitialized = true;
             }
 
@@ -344,6 +421,7 @@ function mountBookPage(root) {
     save.addEventListener('click', () => void saveBook(), {signal});
     reload.addEventListener('click', () => void load(), {signal});
     source.addEventListener('change', () => void load(), {signal});
+    publish.addEventListener('click', () => void publishBook(), {signal});
 
     root.addEventListener('input', sync, {signal});
     root.addEventListener('change', sync, {signal});

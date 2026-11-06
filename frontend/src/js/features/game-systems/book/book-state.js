@@ -129,6 +129,7 @@ export function createRulesBookState(options) {
 	let baseline = saved ? fingerprint(current) : null;
 	let currentMode = mode;
 	let currentRevision = revision;
+	let publishedRevision = null;
 	let chapter = 'main';
 	let sample = {};
 	let preview = null;
@@ -172,8 +173,11 @@ export function createRulesBookState(options) {
 	}
 
 	function canPublish() {
-		const writable = currentMode !== 'view' && !blocked && pendingWrite === null;
-		return writable && currentRevision !== null && current.rules !== null && !dirty();
+		const writable = currentMode === 'edit' && !blocked && pendingWrite === null;
+		const savedRules = currentRevision !== null && current.rules !== null && !dirty();
+		const active = current.system.is_active === true;
+
+		return writable && savedRules && active && publishedRevision !== currentRevision;
 	}
 
 	function beginWrite(kind) {
@@ -319,8 +323,16 @@ export function createRulesBookState(options) {
 			return beginWrite('publish');
 		},
 
-		acceptPublish(ticket) {
+		acceptPublish(ticket, revision = ticket?.expectedRevision + 1) {
 			assertTicket(ticket, 'publish');
+			checkRevision(revision, true);
+
+			if (revision !== ticket.expectedRevision + 1) {
+				throw new Error('Ответ публикации не соответствует ожидаемой ревизии черновика.');
+			}
+
+			currentRevision = revision;
+			publishedRevision = revision;
 			pendingWrite = null;
 		},
 

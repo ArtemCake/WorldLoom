@@ -24,7 +24,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.modules.game_systems.errors import (GameSystemNotFound, GameSystemRulesConflict, InvalidGameSystemRules)
 from backend.app.modules.game_systems.models.rule_engines import (RuleEngine, RuleEngineVersion)
-from backend.app.modules.game_systems.rules.rules_composition import (compose_system_rules)
+from backend.app.modules.game_systems.rules.rules_composition import compose_system_draft, compose_system_rules
 from backend.app.modules.game_systems.rules.rules_engine import (validate_rules_profile)
 from backend.app.modules.game_systems.schemas.game_rules import (RulesProfile)
 from backend.app.modules.game_systems.schemas.game_system_origin import (EngineRulesSource)
@@ -59,7 +59,7 @@ def _saved_origin(draft: Mapping[str, Any]) -> tuple[UUID | None, dict[str, Any]
 
 	return version_id, overrides
 
-def _assemble(version: Mapping[str, Any], overrides: dict[str, Any], executor_version: str, *, stored: bool) -> dict[str, Any]:
+def _assemble(version: Mapping[str, Any], overrides: dict[str, Any], executor_version: str, *, stored: bool, draft_mode: bool = False) -> dict[str, Any]:
 	"""Собрать снимок с нормализованными переопределениями."""
 	if version["rules_engine_version"] != executor_version:
 		raise GameSystemRulesConflict(
@@ -78,7 +78,8 @@ def _assemble(version: Mapping[str, Any], overrides: dict[str, Any], executor_ve
 		) from exc
 
 	try:
-		effective = compose_system_rules(base, overrides)
+		composer = compose_system_draft if draft_mode else compose_system_rules
+		effective = composer(base, overrides)
 	except ValueError as exc:
 		if stored:
 			raise GameSystemRulesConflict(
@@ -158,6 +159,7 @@ async def load_engine_origin(session: AsyncSession, source: EngineRulesSource, a
 		source.rules_overrides,
 		executor_version,
 		stored=False,
+		draft_mode=True,
 	)
 
 async def load_saved_engine_version(session: AsyncSession, draft: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -221,6 +223,7 @@ async def load_editor_engine_origin(session: AsyncSession, source: EngineRulesSo
 				source.rules_overrides,
 				executor_version,
 				stored=False,
+				draft_mode=True,
 			)
 
 	return await load_engine_origin(

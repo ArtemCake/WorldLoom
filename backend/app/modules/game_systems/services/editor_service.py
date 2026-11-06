@@ -59,11 +59,13 @@ def _rules_payload(value: RulesProfile | Mapping[str, Any]) -> dict[str, Any]:
 	return profile.model_dump(mode="json")
 
 def _incoming_payload(profile: RulesProfile) -> dict[str, Any]:
+	"""Проверить сохраняемый черновик без выполнения начальных расчётов."""
 	try:
-		return _rules_payload(profile)
+		checked = RulesProfile.model_validate(profile.model_dump(mode="python"))
+		return checked.model_dump(mode="json")
 	except ValueError as exc:
 		raise InvalidGameSystemRules(
-			"Профиль или его начальное состояние недопустимы"
+			"Структура профиля или его начальные значения недопустимы"
 		) from exc
 
 def _draft_read(row: Mapping[str, Any]) -> GameSystemRulesDraftRead:

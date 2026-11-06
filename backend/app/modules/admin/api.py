@@ -202,6 +202,14 @@ async def get_latest_rules(system_id: UUID, response: Response, session: Session
 		version = await editor_service.get_latest_rules_version(session, system_id, active_only=False)
 		return GameSystemRulesPublishedState(version=version)
 
+@router.get("/game-systems/{system_id}/rules/versions/{version_id}", response_model=GameSystemRulesVersionRead)
+async def get_system_rules_version(system_id: UUID, version_id: UUID, response: Response, session: SessionDependency):
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _rules_operation(session, write=False):
+		return await editor_service.get_rules_version(session, system_id, version_id, active_only=False)
+
+
 @router.get("/rule-engines", response_model=RuleEnginePage, operation_id="adminListRuleEngines")
 async def list_engines(response: Response, session: SessionDependency, actor_id: ActorDependency, owned_only: bool = False, limit: int = Query(default=50, ge=1, le=100),
 		offset: int = Query(default=0, ge=0)) -> RuleEnginePage:

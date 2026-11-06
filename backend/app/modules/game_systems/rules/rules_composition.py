@@ -1,16 +1,16 @@
 # backend/app/modules/game_systems/rules/rules_composition.py
 
-"""Композиция универсального числового профиля правил.
+"""Композиция черновиков и исполняемых числовых правил.
 
-Не загружает данные, не проверяет права и не управляет
-транзакциями.
+Не загружает данные, не проверяет права и не управляет транзакциями.
+Переданный раздел заменяет исходный целиком.
 """
 
 from __future__ import annotations
 from copy import deepcopy
 from typing import Any
-from backend.app.modules.game_systems.rules.rules_engine import (validate_rules_profile)
-from backend.app.modules.game_systems.schemas.game_rules import (RulesProfile)
+from backend.app.modules.game_systems.rules.rules_engine import validate_rules_profile
+from backend.app.modules.game_systems.schemas.game_rules import RulesProfile
 
 
 OVERRIDABLE_FIELDS = frozenset({
@@ -19,37 +19,19 @@ OVERRIDABLE_FIELDS = frozenset({
 	"resources",
 })
 
-def compose_system_rules(base_rules: RulesProfile, overrides: dict[str, Any] | None = None) -> RulesProfile:
-	"""Собрать независимый и проверенный итоговый профиль.
-
-	Семантика:
-	- отсутствующее поле наследуется;
-	- переданное поле заменяет раздел целиком;
-	- вложенные словари автоматически не объединяются;
-	- None передаётся валидатору как явное значение;
-	- версия схемы не переопределяется;
-	- входные объекты не изменяются.
-	"""
+def compose_system_draft(base_rules: RulesProfile, overrides: dict[str, Any] | None = None) -> RulesProfile:
+	"""Собрать независимый профиль без выполнения начальных расчётов."""
 	if not isinstance(base_rules, RulesProfile):
-		raise ValueError(
-			"Основа должна быть профилем RulesProfile"
-		)
+		raise ValueError("Основа должна быть профилем RulesProfile")
 
 	if overrides is None:
 		overrides = {}
 
 	if not isinstance(overrides, dict):
-		raise ValueError(
-			"Переопределения должны быть словарём"
-		)
+		raise ValueError("Переопределения должны быть словарём")
 
-	if any(
-			not isinstance(key, str)
-			for key in overrides
-	):
-		raise ValueError(
-			"Названия разделов должны быть строками"
-		)
+	if any(not isinstance(key, str) for key in overrides):
+		raise ValueError("Названия разделов должны быть строками")
 
 	forbidden = set(overrides) - OVERRIDABLE_FIELDS
 
@@ -59,13 +41,13 @@ def compose_system_rules(base_rules: RulesProfile, overrides: dict[str, Any] | N
 			+ ", ".join(sorted(forbidden))
 		)
 
-	effective = deepcopy(
-		base_rules.model_dump(mode="python")
-	)
+	effective = deepcopy(base_rules.model_dump(mode="python"))
 	effective.update(deepcopy(overrides))
 
-	profile = RulesProfile.model_validate(effective)
+	return RulesProfile.model_validate(effective)
 
-	# Проверяем не только структуру, но и вычислимость
-	# итогового начального состояния.
+def compose_system_rules(base_rules: RulesProfile, overrides: dict[str, Any] | None = None) -> RulesProfile:
+	"""Собрать профиль и проверить вычислимость начального состояния."""
+	profile = compose_system_draft(base_rules, overrides)
+
 	return validate_rules_profile(profile)

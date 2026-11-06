@@ -5,6 +5,7 @@ import {createRulesBookState} from '../book/book-state.js';
 import {mountRulesBook} from '../book/book-view.js';
 import {collectEngineOverrides, readEngineOverrides} from '../editor/game-system-engine-origin.js';
 import {publishBookRules} from '../book/book-publication.js';
+import * as publicationSource from '../book/book-publication-source.js';
 
 const initializedRoots = new WeakSet();
 const MODES = new Set(['create', 'edit', 'view']);
@@ -107,6 +108,10 @@ function mountBookPage(root) {
         save.textContent = snapshot?.mode === 'create' ? 'Создать систему и черновик' : 'Сохранить изменения';
 
         edit.hidden = mode !== 'view' || access?.can_edit !== true || !systemId;
+        const pinnedPublication = mode === 'view'
+        && new URLSearchParams(window.location.search).has('version');
+
+        edit.textContent = pinnedPublication ? 'Редактировать текущий черновик' : 'Редактировать';
 
         if (systemId) {
             edit.href = `/game-systems/catalog/${encodeURIComponent(systemId)}/edit`;
@@ -171,6 +176,14 @@ function mountBookPage(root) {
             const revision = state.read().revision;
 
             message.textContent = `Опубликована версия №${version.version_number}. Текущая ревизия черновика: ${revision}.`;
+            const link = document.createElement('a');
+
+            link.href = publicationSource.bookPublicationHref(systemId, version.id);
+            link.textContent = `Открыть опубликованную версию №${version.version_number}`;
+            link.setAttribute('hx-boost', 'false');
+
+            message.append(document.createTextNode(' '), link);
+
         } catch (error) {
             showError(error);
 
@@ -229,6 +242,7 @@ function mountBookPage(root) {
 
         try {
             access = await requestGameSystem('/game-systems/access');
+            const selectedVersion = publicationSource.selectedBookPublication(window.location.search, mode);
 
             if (mode === 'create') {
                 ensure(access.can_create === true, 'Создание игровых систем недоступно.');
@@ -262,20 +276,30 @@ function mountBookPage(root) {
 
             if (!sourceInitialized) {
                 const requestedSource = new URLSearchParams(window.location.search).get('source');
-                const publishedRequested = mode === 'view' && requestedSource === 'published';
+                const publishedRequested = mode === 'view'
+                && (requestedSource === 'published' || selectedVersion !== null);
 
                 source.value = manager && !publishedRequested ? 'draft' : 'published';
                 sourceInitialized = true;
             }
 
-            sourceField.hidden = mode !== 'view' || !manager;
+            if (selectedVersion !== null) {
+                source.value = 'published';
+            }
 
-            const draftMode = mode === 'edit' || (manager && source.value === 'draft');
-            const path = draftMode
-            ? `${adminPath}/rules/draft`
-            : `${manager ? adminPath : `/game-systems/items/${id}`}/rules/latest`;
+            sourceField.hidden = mode !== 'view' || !manager || selectedVersion !== null;
 
-            const result = await requestGameSystem(path);
+            const draftMode = mode === 'edit'
+            || (selectedVersion === null && manager && source.value === 'draft');
+
+            const result = draftMode
+            ? await requestGameSystem(`${adminPath}/rules/draft`)
+            : await publicationSource.loadBookPublishedRules({
+                request: requestGameSystem,
+                systemId,
+                manager,
+                versionId: selectedVersion
+            });
             const key = draftMode ? 'draft' : 'version';
 
             ensure(result && Object.hasOwn(result, key), 'Не удалось проверить ответ с правилами.');
@@ -292,8 +316,13 @@ function mountBookPage(root) {
 
             const origin = mode === 'edit' ? await loadOrigin(snapshot, adminPath) : null;
             const revision = draftMode ? snapshot.revision : null;
+            const card = cardValues(system);
 
-            replaceBook({system: cardValues(system), rules: snapshot.rules, origin}, revision);
+            if (!draftMode) {
+                card.rules_engine_version = snapshot.rules_engine_version;
+            }
+            replaceBook({system: card, rules: snapshot.rules, origin}, revision);
+
 
             message.textContent = draftMode
             ? `Сохранённый черновик · ревизия ${snapshot.revision}.`

@@ -48,7 +48,7 @@ test('Вычисляемые показатели используют чита�
     const formula = operation('sum', 10, 'stat.strength_modifier');
     const result = createFormulaPresentation(formula, {getLabel: labels});
 
-    assert.equal(result.text, '(10 + Модификатор силы)');
+    assert.equal(result.text, '(10 + МС)');
 });
 
 test('Минимум и максимум показываются читаемо', () => {
@@ -95,5 +95,58 @@ test('Тип ссылки отделяется от параметра квад�
 
     const result = createFormulaPresentation(formula, {getLabel: (reference) => names[reference] || reference});
 
-    assert.equal(result.text, '(Модификатор [Сила] + Владение спасброском [Сила])');
+    assert.equal(result.text, '(М[Сила] + ВС[Сила])');
+});
+
+test('Расшифровка содержит использованные автоматические сокращения', () => {
+    const formula = operation('subtract', 'attribute.character_level', 1);
+    const options = {
+        getLabel: () => ({label: 'Общий уровень персонажа', short_label: null})
+    };
+
+    const result = createFormulaPresentation(formula, options);
+
+    assert.deepEqual(result.abbreviations, [
+        {shortLabel: 'ОУП', fullLabel: 'Общий уровень персонажа'}
+    ]);
+});
+
+test('Расшифровка учитывает пользовательское обозначение и убирает повторы ссылки', () => {
+    const formula = operation('sum', 'stat.learning_speed', 'stat.learning_speed');
+    const options = {
+        getLabel: () => ({label: 'Скорость обучения навыку', short_label: 'Обучение'})
+    };
+
+    const result = createFormulaPresentation(formula, options);
+
+    assert.deepEqual(result.abbreviations, [
+        {shortLabel: 'Обучение', fullLabel: 'Скорость обучения навыку'}
+    ]);
+});
+
+test('Полные названия без сокращения не требуют расшифровки', () => {
+    const formula = operation('sum', 'attribute.strength', 1);
+    const options = {
+        getLabel: () => ({label: 'Сила'})
+    };
+
+    const result = createFormulaPresentation(formula, options);
+
+    assert.equal(result.text, '(Сила + 1)');
+    assert.deepEqual(result.abbreviations, []);
+});
+
+test('Разные параметры с одинаковым сокращением остаются в расшифровке', () => {
+    const formula = operation('sum', 'stat.learning_speed', 'stat.movement_speed');
+    const definitions = {
+        'stat.learning_speed': {label: 'Скорость обучения', short_label: 'С'},
+        'stat.movement_speed': {label: 'Скорость передвижения', short_label: 'С'}
+    };
+
+    const result = createFormulaPresentation(formula, {getLabel: (reference) => definitions[reference]});
+
+    assert.deepEqual(result.abbreviations, [
+        {shortLabel: 'С', fullLabel: 'Скорость обучения'},
+        {shortLabel: 'С', fullLabel: 'Скорость передвижения'}
+    ]);
 });

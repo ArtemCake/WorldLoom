@@ -338,10 +338,13 @@ WorldLoom/
 │   │   │   │   │   │   │   ├── formula-contract.js
 │   │   │   │   │   │   │   ├── formula-editor.js
 │   │   │   │   │   │   │   ├── formula-input.js
+│   │   │   │   │   │   │   ├── formula-presentation.js
 │   │   │   │   │   │   │   ├── formula-validation.js
 │   │   │   │   │   │   │   ├── indicator-code.js
 │   │   │   │   │   │   │   ├── resource-contract.js
-│   │   │   │   │   │   │   └── resource-editor.js
+│   │   │   │   │   │   │   ├── resource-editor.js
+│   │   │   │   │   │   │   ├── short-label-field.js
+│   │   │   │   │   │   │   └── short-label.js
 │   │   │   │   │   │   ├── engine-formula-text.js
 │   │   │   │   │   │   ├── engine-presets.js
 │   │   │   │   │   │   └── game-system-engine-origin.js
@@ -430,6 +433,7 @@ WorldLoom/
 │   │       │   │   ├── _catalog.scss
 │   │       │   │   ├── _editor.scss
 │   │       │   │   ├── _engine.scss
+│   │       │   │   ├── _formula.scss
 │   │       │   │   ├── _mixins.scss
 │   │       │   │   └── _view.scss
 │   │       │   ├── _admin.scss
@@ -511,8 +515,10 @@ WorldLoom/
 │   │   ├── engine-presets.test.mjs
 │   │   ├── resource-contract.test.mjs
 │   │   ├── rules-book-attributes.test.mjs
+│   │   ├── rules-book-formula-presentation.test.mjs
 │   │   ├── rules-book-pagination.test.mjs
 │   │   ├── rules-book-publication.test.mjs
+│   │   ├── rules-book-short-label.test.mjs
 │   │   └── rules-book-state.test.mjs
 │   ├── python/
 │   │   ├── test_attribute_choices.py

@@ -34,6 +34,7 @@ export function createFormulaPresentation(formula, options = {}) {
 	validateFormulaTree(formula, {allowedSources: (reference) => REFERENCE_PATTERN.test(reference)});
 
 	const rounding = new Set();
+	const abbreviations = new Map();
 
 	function visit(value) {
 		if (typeof value === 'number') {
@@ -57,6 +58,10 @@ export function createFormulaPresentation(formula, options = {}) {
 			const result = token('mtext', readable);
 
 			result.fullLabel = label;
+
+			if (readable !== label) {
+				abbreviations.set(value, {shortLabel: readable, fullLabel: label});
+			}
 
 			return result;
 		}
@@ -106,7 +111,7 @@ export function createFormulaPresentation(formula, options = {}) {
 	if (rounding.has('down')) notes.push('⌊…⌋ — округление вниз до целого.');
 	if (rounding.has('up')) notes.push('⌈…⌉ — округление вверх до целого.');
 
-	return {tree, text: tree.linear, notes};
+	return {tree, text: tree.linear, notes, abbreviations: [...abbreviations.values()]};
 }
 
 function createResponsiveFormulaNode(model, ownerDocument) {
@@ -208,6 +213,28 @@ export function renderReadableFormula(host, formula, options = {}) {
 		note.className = 'readable-formula__note';
 		note.textContent = presentation.notes.join(' ');
 		wrapper.append(note);
+	}
+	if (presentation.abbreviations.length) {
+		const legend = ownerDocument.createElement('section');
+		const heading = ownerDocument.createElement('p');
+		const list = ownerDocument.createElement('ul');
+
+		legend.className = 'readable-formula__legend';
+		heading.className = 'readable-formula__legend-title';
+		heading.textContent = 'Обозначения';
+		list.className = 'readable-formula__legend-list';
+
+		for (const abbreviation of presentation.abbreviations) {
+			const item = ownerDocument.createElement('li');
+			const name = ownerDocument.createElement('strong');
+
+			name.textContent = abbreviation.shortLabel;
+			item.append(name, ownerDocument.createTextNode(` — ${abbreviation.fullLabel}`));
+			list.append(item);
+		}
+
+		legend.append(heading, list);
+		wrapper.append(legend);
 	}
 
 	host.replaceChildren(wrapper);

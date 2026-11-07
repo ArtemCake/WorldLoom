@@ -34,6 +34,7 @@ from backend.app.modules.users.models.user import User
 from backend.app.web.csrf import enforce_csrf
 from backend.app.modules.game_systems.schemas.game_system_editor import GameSystemEditorCreate, GameSystemEditorRead, GameSystemEditorUpdate
 from backend.app.modules.game_systems.services.delete_service import delete_game_system
+from backend.app.modules.game_systems.schemas.game_rules import GameSystemRulesVersionPage
 
 
 logger = logging.getLogger(__name__)
@@ -201,6 +202,13 @@ async def get_latest_rules(system_id: UUID, response: Response, session: Session
 	async with _rules_operation(session, write=False):
 		version = await editor_service.get_latest_rules_version(session, system_id, active_only=False)
 		return GameSystemRulesPublishedState(version=version)
+
+@router.get("/game-systems/{system_id}/rules/versions", response_model=GameSystemRulesVersionPage)
+async def get_rules_history(system_id: UUID, response: Response, session: SessionDependency, limit: int = 20, before: int | None = None):
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _rules_operation(session, write=False):
+		return await editor_service.list_publications(session, system_id, active_only=False, limit=limit, before=before)
 
 @router.get("/game-systems/{system_id}/rules/versions/{version_id}", response_model=GameSystemRulesVersionRead)
 async def get_system_rules_version(system_id: UUID, version_id: UUID, response: Response, session: SessionDependency):

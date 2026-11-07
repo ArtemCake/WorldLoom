@@ -15,6 +15,7 @@ from backend.app.modules.auth.dependencies import (get_current_user)
 from backend.app.modules.game_systems.errors import (GameSystemError, GameSystemNotFound, GameSystemRulesStorageError)
 from backend.app.modules.game_systems.schemas.game_rules import (GameSystemRulesPublishedState, GameSystemRulesVersionRead)
 from backend.app.modules.game_systems.services import (editor_service)
+from backend.app.modules.game_systems.schemas.game_rules import GameSystemRulesVersionPage
 
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,13 @@ async def get_latest_rules(system_id: UUID, response: Response, session: Session
 			system_id,
 		)
 		return GameSystemRulesPublishedState(version=version)
+
+@router.get("/items/{system_id}/rules/versions", response_model=GameSystemRulesVersionPage)
+async def get_rules_history(system_id: UUID, response: Response, session: SessionDependency, limit: int = 20, before: int | None = None):
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _read_operation(session):
+		return await editor_service.list_publications(session, system_id, limit=limit, before=before)
 
 @router.get("/items/{system_id}/rules/versions/{version_id}", response_model=GameSystemRulesVersionRead, operation_id="getActiveGameSystemRulesVersion")
 async def get_rules_version(system_id: UUID, version_id: UUID, response: Response, session: SessionDependency) -> GameSystemRulesVersionRead:

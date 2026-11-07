@@ -32,6 +32,7 @@ from backend.app.modules.game_systems.services.system_rule_origin import (load_e
 from backend.app.modules.catalog.schemas import GameSystemAdminRead, GameSystemCreate
 from backend.app.modules.game_systems.schemas.game_system_editor import GameSystemEditorCreate, GameSystemEditorRead, GameSystemEditorUpdate
 from backend.app.modules.game_systems.schemas.rules.rule_engines import RuleEngineVersionRead
+from backend.app.modules.game_systems.schemas.game_rules import GameSystemRulesVersionPage, GameSystemRulesVersionSummary
 
 
 _SYSTEMS = GameSystem.__table__
@@ -480,6 +481,47 @@ async def get_rules_version(session: AsyncSession, system_id: UUID, version_id: 
 		)
 
 	return _version_read(version)
+
+async def list_publications(session: AsyncSession, system_id: UUID, *, active_only: bool = True, limit: int = 20, before: int | None = None):
+	"""Прочитать метаданные публикаций, не загружая профили правил."""
+	_require_clean_session(session)
+
+	if type(limit) is not int or not 1 <= limit <= 100:
+		raise InvalidGameSystemRules("Размер страницы должен быть целым числом от 1 до 100")
+
+	if before is not None and (type(before) is not int or before < 1):
+		raise InvalidGameSystemRules("Граница истории должна быть положительным целым числом")
+
+	await _get_system(session, system_id, write=False, active_only=active_only)
+
+	query = select(
+		_VERSIONS.c.id,
+		_VERSIONS.c.system_id,
+		_VERSIONS.c.version_number,
+		_VERSIONS.c.rules_engine_version,
+		_VERSIONS.c.published_at,
+	).where(_VERSIONS.c.system_id == system_id)
+
+	if before is not None:
+		query = query.where(_VERSIONS.c.version_number < before)
+
+	result = await session.execute(
+		query.order_by(_VERSIONS.c.version_number.desc()).limit(limit + 1)
+	)
+
+	rows = list(result.mappings().all())
+
+	try:
+		items = [
+			GameSystemRulesVersionSummary.model_validate(dict(row))
+			for row in rows[:limit]
+		]
+
+		next_before = items[-1].version_number if len(rows) > limit else None
+
+		return GameSystemRulesVersionPage(items=items, next_before=next_before)
+	except ValueError as exc:
+		raise GameSystemRulesStorageError("Не удалось прочитать метаданные публикаций") from exc
 
 def _editor_read(system: Mapping[str, Any], draft: Mapping[str, Any]) -> GameSystemEditorRead:
 	"""Проверить полный ответ до фиксации изменений."""

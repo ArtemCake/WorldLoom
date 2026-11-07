@@ -10,6 +10,8 @@ import {mountBookDefinitions} from './book-definitions.js';
 import {renderReadableFormula} from '../editor/shared/formula-presentation.js';
 import {mountBookBasisPicker} from './book-basis-picker.js';
 import {mountBookPreview, renderBookPreviewResult} from './book-preview.js';
+import {mountBookPublications} from './book-publications.js';
+import {renderBookBasisChanges} from './book-basis-changes.js';
 
 
 function element(tag, text = '', className = '') {
@@ -223,7 +225,7 @@ function bookPart(root, name) {
 	return matches[0];
 }
 
-export function mountRulesBook(host, {state, request}) {
+export function mountRulesBook(host, {state, request, systemId = null, manager = false, getSystemId = () => systemId}) {
 	if (!(host instanceof HTMLElement)) {
 		throw new Error('Не найден контейнер книги правил.');
 	}
@@ -237,6 +239,7 @@ export function mountRulesBook(host, {state, request}) {
 	let itemEditor = null;
 	let basisEditor = null;
 	let previewEditor = null;
+	let publicationsPanel = null;
 	const selectedItems = new Map();
 	const layout = bookTemplate('shell');
 	const book = bookPart(layout, 'root');
@@ -505,10 +508,21 @@ export function mountRulesBook(host, {state, request}) {
 		const {system, rules} = document;
 		const currentChapter = BOOK_CHAPTERS.find((item) => item.code === chapter);
 
+		publicationsPanel?.destroy();
+		publicationsPanel = null;
+
 		reading.replaceChildren();
 
 		rightTitle.textContent = currentChapter?.title ?? 'Правила';
 
+        if (chapter === 'publications') {
+            publicationsPanel = mountBookPublications(reading, {
+                request,
+                systemId: getSystemId(),
+                manager
+            });
+            return;
+        }
 		if (chapter === 'preview') {
 			renderBookPreviewResult(reading, snapshot);
 			return;
@@ -553,9 +567,10 @@ export function mountRulesBook(host, {state, request}) {
 			pair(facts, 'Вычисляемые показатели', getBookChapterItems(document, 'derived').length);
 			pair(facts, 'Ресурсы', Object.keys(rules.resources ?? {}).length);
 
-			reading.append(facts);
-			paragraph(reading, 'Откройте соответствующую главу, чтобы прочитать загруженные определения.');
-			return;
+            reading.append(facts);
+            renderBookBasisChanges(reading, document);
+            paragraph(reading, 'Откройте соответствующую главу, чтобы прочитать загруженные определения.');
+            return;
 		}
 
 		if (['attributes', 'modifiers', 'derived', 'resources'].includes(chapter)) {
@@ -576,7 +591,6 @@ export function mountRulesBook(host, {state, request}) {
 		}
 
 		const notes = {
-			publications: 'Сохраните книгу, затем используйте кнопку публикации над ней. Последняя публикация открывается отдельно для чтения.',
 			access: 'Управление видимостью, правами и удалением ещё не подключено.'
 		};
 
@@ -641,6 +655,13 @@ export function mountRulesBook(host, {state, request}) {
 					request,
 					onChange: () => renderReading()
 				});
+			} else if (code === 'publications') {
+				paragraph(settings, 'История опубликованных правил показана справа.');
+				paragraph(
+					settings,
+					'Новая версия создаётся кнопкой публикации над книгой после сохранения черновика.',
+					'rules-book__muted'
+				);
 			} else if (snapshot.mode === 'view') {
 				paragraph(settings, 'Книга открыта для чтения. Изменение данных отключено.');
 
@@ -833,6 +854,8 @@ export function mountRulesBook(host, {state, request}) {
 		basisEditor = null;
 		previewEditor?.destroy();
 		previewEditor = null;
+		publicationsPanel?.destroy();
+		publicationsPanel = null;
 		controller.abort();
 		observer.disconnect();
 	}

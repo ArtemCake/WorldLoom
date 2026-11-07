@@ -190,3 +190,14 @@ class GameSystemRulesVersionRead(RulesModel):
 
 class GameSystemRulesPublishedState(RulesModel):
 	version: GameSystemRulesVersionRead | None
+
+class GameSystemRulesVersionSummary(RulesModel):
+	id: TransportUUID
+	system_id: TransportUUID
+	version_number: int = Field(ge=1)
+	rules_engine_version: str
+	published_at: datetime
+
+class GameSystemRulesVersionPage(RulesModel):
+	items: list[GameSystemRulesVersionSummary]
+	next_before: int | None = Field(default=None, ge=1)

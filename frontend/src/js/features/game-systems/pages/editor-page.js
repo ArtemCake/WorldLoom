@@ -225,7 +225,13 @@ function mountBookPage(root) {
         nextState.selectChapter(chapter);
         book?.destroy();
         state = nextState;
-        book = mountRulesBook(host, {state, request: requestGameSystem});
+        book = mountRulesBook(host, {
+            state,
+            request: requestGameSystem,
+            systemId,
+            manager: access?.can_edit === true,
+            getSystemId: () => systemId
+        });
     }
 
     async function load() {

@@ -67,9 +67,7 @@ export function mountBookPublications(host, {request, systemId, manager}) {
 			const link = node('a', `Версия №${item.version_number}`);
 
 			link.href = bookPublicationHref(systemId, item.id);
-			link.target = '_blank';
-			link.rel = 'noopener noreferrer';
-			link.setAttribute('hx-boost', 'false');
+            link.setAttribute('data-publication-version', item.id);
 
 			const date = new Date(item.published_at).toLocaleString('ru-RU', {timeZone: 'UTC'});
 			const metadata = `Опубликована: ${date} UTC. Исполнитель: ${item.rules_engine_version}.`;

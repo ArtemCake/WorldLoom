@@ -64,7 +64,23 @@ class GameSystem(Base):
 		onupdate=text("now()"),
 		server_default=text("now()"),
 	)
-
+	current_rules_version_id: Mapped[UUID | None] = mapped_column(
+		PG_UUID(as_uuid=True),
+		ForeignKey(
+			"game_system_rules_versions.id",
+			ondelete="SET NULL",
+			use_alter=True,
+			name="fk_game_systems_current_rules_version",
+		),
+		nullable=True,
+		index=True,
+	)
+	current_rules_version: Mapped["GameSystemRulesVersion | None"] = relationship(
+		"GameSystemRulesVersion",
+		foreign_keys="GameSystem.current_rules_version_id",
+		back_populates="current_in_system",
+		viewonly=True,
+	)
 	races: Mapped[list["Race"]] = relationship(
 		"Race", back_populates="system", cascade="all, delete-orphan",
 	)
@@ -410,8 +426,16 @@ class GameSystemRulesVersion(Base):
 		nullable=False,
 		server_default=text("now()"),
 	)
-
-	system: Mapped["GameSystem"] = relationship("GameSystem")
+	system: Mapped["GameSystem"] = relationship(
+		"GameSystem",
+		foreign_keys="GameSystemRulesVersion.system_id",
+	)
+	current_in_system: Mapped["GameSystem | None"] = relationship(
+		"GameSystem",
+		foreign_keys="GameSystem.current_rules_version_id",
+		back_populates="current_rules_version",
+		viewonly=True,
+	)
 
 	def __repr__(self) -> str:
 		return _identity_repr(self, label="GameSystemRulesVersion")

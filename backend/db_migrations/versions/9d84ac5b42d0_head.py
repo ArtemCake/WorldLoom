@@ -1,8 +1,8 @@
-"""describe_schema_change
+"""head
 
-Revision ID: 5e49fa4b7183
+Revision ID: 9d84ac5b42d0
 Revises: 
-Create Date: 2026-11-02 22:24:17.112544
+Create Date: 2026-11-07 20:38:39.517159
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '5e49fa4b7183'
+revision: str = '9d84ac5b42d0'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -40,10 +40,13 @@ def upgrade() -> None:
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('current_rules_version_id', sa.UUID(), nullable=True),
+    sa.ForeignKeyConstraint(['current_rules_version_id'], ['game_system_rules_versions.id'], name='fk_game_systems_current_rules_version', ondelete='SET NULL', use_alter=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name'),
     sa.UniqueConstraint('slug')
     )
+    op.create_index(op.f('ix_game_systems_current_rules_version_id'), 'game_systems', ['current_rules_version_id'], unique=False)
     op.create_table('map_deletion_jobs',
     sa.Column('map_id', sa.UUID(), nullable=False),
     sa.Column('game_id', sa.UUID(), nullable=False),
@@ -1786,6 +1789,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_map_deletion_jobs_master_id'), table_name='map_deletion_jobs')
     op.drop_index(op.f('ix_map_deletion_jobs_game_id'), table_name='map_deletion_jobs')
     op.drop_table('map_deletion_jobs')
+    op.drop_index(op.f('ix_game_systems_current_rules_version_id'), table_name='game_systems')
     op.drop_table('game_systems')
     op.drop_index(op.f('ix_game_deletion_jobs_master_id'), table_name='game_deletion_jobs')
     op.drop_index(op.f('ix_game_deletion_jobs_cleanup_complete'), table_name='game_deletion_jobs')

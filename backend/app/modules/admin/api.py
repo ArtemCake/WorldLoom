@@ -352,3 +352,11 @@ async def remove_game_system(system_id: UUID, response: Response, session: Sessi
 
 	async with _rules_operation(session, write=True):
 		return await delete_game_system(session, system_id)
+
+@router.post("/game-systems/{system_id}/rules/current/{version_id}", response_model=GameSystemRulesVersionRead, operation_id="adminSetCurrentGameSystemRulesVersion",
+	dependencies=[Depends(enforce_csrf)])
+async def set_current_rules_version(system_id: UUID, version_id: UUID, response: Response, session: SessionDependency) -> GameSystemRulesVersionRead:
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _rules_operation(session, write=True):
+		return await editor_service.set_current_rules_version(session, system_id, version_id)

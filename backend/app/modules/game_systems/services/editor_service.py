@@ -523,6 +523,42 @@ async def list_publications(session: AsyncSession, system_id: UUID, *, active_on
 	except ValueError as exc:
 		raise GameSystemRulesStorageError("Не удалось прочитать метаданные публикаций") from exc
 
+async def set_current_rules_version(session: AsyncSession, system_id: UUID, version_id: UUID) -> GameSystemRulesVersionRead | None:
+	"""Установить публикацию как активную для системы.
+
+	Возвращает установленную версию или None, если версия не найдена.
+	"""
+	_require_clean_session(session)
+
+	system = await _get_system(
+		session,
+		system_id,
+		write=True,
+		active_only=False,
+	)
+
+	result = await session.execute(
+		select(_VERSIONS)
+		.where(
+			_VERSIONS.c.id == version_id,
+			_VERSIONS.c.system_id == system_id,
+			)
+	)
+	version = result.mappings().one_or_none()
+
+	if version is None:
+		raise GameSystemNotFound(
+			"Публикация не найдена или не принадлежит этой системе"
+		)
+
+	await session.execute(
+		update(_SYSTEMS)
+		.where(_SYSTEMS.c.id == system_id)
+		.values(current_rules_version_id=version_id)
+	)
+
+	return _version_read(version)
+
 def _editor_read(system: Mapping[str, Any], draft: Mapping[str, Any]) -> GameSystemEditorRead:
 	"""Проверить полный ответ до фиксации изменений."""
 	try:
@@ -572,8 +608,8 @@ async def _create_editor_state(session: AsyncSession, data: GameSystemCreate, va
 	draft = await _insert_editor_draft(session, system["id"], values)
 	return _editor_read(system, draft)
 
-async def _lock_editor_state(session: AsyncSession, system_id: UUID, data: GameSystemEditorUpdate | GameSystemEngineEditorUpdate
-                             ) -> tuple[Mapping[str, Any], Mapping[str, Any] | None]:
+async def _lock_editor_state(session: AsyncSession, system_id: UUID,
+	data: GameSystemEditorUpdate | GameSystemEngineEditorUpdate) -> tuple[Mapping[str, Any], Mapping[str, Any] | None]:
 	system = await _get_system(session, system_id, write=True, active_only=False)
 	draft = await _find_draft(session, system_id, write=True)
 	_check_draft_expectation(draft, data.expected_revision)
@@ -584,7 +620,7 @@ async def _lock_editor_state(session: AsyncSession, system_id: UUID, data: GameS
 	return system, draft
 
 async def _save_editor_state(session: AsyncSession, system_id: UUID, data: GameSystemEditorUpdate | GameSystemEngineEditorUpdate,
-                             draft: Mapping[str, Any] | None, values: dict[str, Any]) -> GameSystemEditorRead:
+	draft: Mapping[str, Any] | None, values: dict[str, Any]) -> GameSystemEditorRead:
 	await _check_card_unique(session, data.system, exclude_id=system_id)
 
 	result = await session.execute(

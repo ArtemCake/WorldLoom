@@ -20,6 +20,7 @@ class GameSystemAdminRead(GameSystemRead):
 	is_active: bool
 	created_at: datetime
 	updated_at: datetime
+	current_rules_version_id: UUID | None = None
 
 class GameSystemCreate(BaseModel):
 	model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")

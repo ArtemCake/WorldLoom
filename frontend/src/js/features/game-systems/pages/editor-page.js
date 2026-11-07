@@ -296,7 +296,8 @@ function mountBookPage(root) {
             sourceField.hidden = mode !== 'view' || !manager || selectedVersion !== null;
 
             const draftMode = mode === 'edit'
-            || (selectedVersion === null && manager && source.value === 'draft');
+            && selectedVersion === null
+            && manager && source.value === 'draft';
 
             const result = draftMode
             ? await requestGameSystem(`${adminPath}/rules/draft`)

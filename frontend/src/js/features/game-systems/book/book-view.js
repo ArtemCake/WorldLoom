@@ -8,7 +8,7 @@ import bookTemplatesSource from '../../../../../templates/game_systems/book/book
 import {createBookPageTurn} from './book-page-turn.js';
 import {mountBookDefinitions} from './book-definitions.js';
 import {renderReadableFormula} from '../editor/shared/formula-presentation.js';
-import {mountBookBasisPicker} from './book-basis-picker.js';
+import {mountBookSystemCopy} from './book-basis-picker.js';
 import {mountBookPreview, renderBookPreviewResult} from './book-preview.js';
 import {mountBookPublications} from './book-publications.js';
 import {renderBookBasisChanges} from './book-basis-changes.js';
@@ -237,7 +237,7 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 	let touched = false;
 	let destroyed = false;
 	let itemEditor = null;
-	let basisEditor = null;
+	let basisEditors = [];
 	let previewEditor = null;
 	let publicationsPanel = null;
 	const selectedItems = new Map();
@@ -396,12 +396,21 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 		settings.append(fragment);
 	}
 
+	function basisBusy() {
+		return basisEditors.some((editor) => editor.isDirty());
+	}
+
+	function destroyBasisEditors() {
+		for (const editor of basisEditors) editor.destroy();
+		basisEditors = [];
+	}
+
 	function renderBasis() {
 		const fragment = bookTemplate('basis');
 		const snapshot = state.read();
 
 		if (typeof request === 'function') {
-			basisEditor = mountBookBasisPicker(settings, {
+			const handlers = {
 				state,
 				request,
 
@@ -414,10 +423,15 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 				onPendingChange() {
 					host.dispatchEvent(new Event('change', {bubbles: true}));
 				}
-			});
+			};
+
+			basisEditors = [
+				mountBookSystemCopy(settings, handlers)
+			];
 		} else {
 			paragraph(settings, 'Загрузка опубликованных основ не подключена.', 'rules-book__muted');
 		}
+
 		if (snapshot.document.origin !== null) {
 			const version = snapshot.document.origin.engine_version;
 			const number = version?.version_number;
@@ -506,7 +520,7 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 		report(() => {
 			if (destroyed || state.read().chapter !== 'basis') return;
 
-			if (basisEditor?.isDirty()) {
+			if (basisBusy()) {
 				throw new Error('Сначала дождитесь завершения загрузки или применения основы.');
 			}
 
@@ -542,7 +556,8 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
             publicationsPanel = mountBookPublications(reading, {
                 request,
                 systemId: getSystemId(),
-                manager
+                manager,
+                state: state
             });
             return;
         }
@@ -593,7 +608,7 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
             reading.append(facts);
 			renderBookBasisChanges(reading, document, {
 				onRestore: snapshot.mode === 'view' ? null : restoreBasisItem,
-				canRestore: !snapshot.blocked && snapshot.writePending === null && !basisEditor?.isDirty()
+				canRestore: !snapshot.blocked && snapshot.writePending === null && !basisBusy()
 			});
             paragraph(reading, 'Откройте соответствующую главу, чтобы прочитать загруженные определения.');
             return;
@@ -654,8 +669,7 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 				if (!discard) return;
 			}
 
-			basisEditor?.destroy();
-			basisEditor = null;
+			destroyBasisEditors();
 			itemEditor = null;
 			previewEditor?.destroy();
 			previewEditor = null;
@@ -850,7 +864,7 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 		snapshot.dirty
 		|| snapshot.writePending !== null
 		|| itemEditor?.isDirty() === true
-		|| basisEditor?.isDirty() === true
+		|| basisBusy()
 		);
 
 	}
@@ -876,8 +890,7 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 		if (destroyed) return;
 
 		destroyed = true;
-		basisEditor?.destroy();
-		basisEditor = null;
+		destroyBasisEditors();
 		previewEditor?.destroy();
 		previewEditor = null;
 		publicationsPanel?.destroy();
@@ -896,7 +909,7 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 	return {
 		destroy,
 		hasChanges,
-		hasPendingChanges: () => itemEditor?.isDirty() === true || basisEditor?.isDirty() === true,
+		hasPendingChanges: () => itemEditor?.isDirty() === true || basisBusy(),
 		refresh() {
 			if (itemEditor?.isDirty()) {
 				throw new Error('Сначала примените или отмените правки открытого элемента.');

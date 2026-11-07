@@ -31,6 +31,7 @@ ALLOWED_EXTENSIONS = {
 BLOCKED_NAMES = {
 	"id_rsa", "id_dsa", "id_ecdsa", "id_ed25519",
 	".netrc", ".npmrc", ".pypirc", ".git-credentials",
+	"requirements", "requirements-dev",
 }
 
 def check_components(path):
@@ -490,7 +491,7 @@ def main():
 		help="Включить вложенные каталоги в режиме --directory",
 	)
 	parser.add_argument("--dry-run", action="store_true")
-	parser.add_argument("--max-bytes", type=int, default=2_000_000)
+	parser.add_argument("--max-bytes", type=int, default=120_000_000)
 	args = parser.parse_args()
 
 	if args.recursive and args.directory is None:

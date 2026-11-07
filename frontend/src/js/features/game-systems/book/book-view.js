@@ -12,7 +12,7 @@ import {mountBookBasisPicker} from './book-basis-picker.js';
 import {mountBookPreview, renderBookPreviewResult} from './book-preview.js';
 import {mountBookPublications} from './book-publications.js';
 import {renderBookBasisChanges} from './book-basis-changes.js';
-
+import {restoreBookBasisItem} from './book-basis-restore.js';
 
 function element(tag, text = '', className = '') {
 	const node = document.createElement(tag);
@@ -502,6 +502,29 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 		settings.append(fragment);
 	}
 
+	function restoreBasisItem(group, code) {
+		report(() => {
+			if (destroyed || state.read().chapter !== 'basis') return;
+
+			if (basisEditor?.isDirty()) {
+				throw new Error('Сначала дождитесь завершения загрузки или применения основы.');
+			}
+
+			const question = 'Вернуть элемент к опубликованной основе? Его определение будет заменено целиком.';
+
+			if (!window.confirm(question)) return;
+
+			const changed = state.update((draft) => restoreBookBasisItem(draft, group, code));
+
+			if (!changed) return;
+
+			touched = true;
+			renderReading();
+			refreshStatus();
+			refreshPagination();
+		});
+	}
+
 	function renderReading() {
 		const snapshot = state.read();
 		const {document, chapter} = snapshot;
@@ -568,7 +591,10 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 			pair(facts, 'Ресурсы', Object.keys(rules.resources ?? {}).length);
 
             reading.append(facts);
-            renderBookBasisChanges(reading, document);
+			renderBookBasisChanges(reading, document, {
+				onRestore: snapshot.mode === 'view' ? null : restoreBasisItem,
+				canRestore: !snapshot.blocked && snapshot.writePending === null && !basisEditor?.isDirty()
+			});
             paragraph(reading, 'Откройте соответствующую главу, чтобы прочитать загруженные определения.');
             return;
 		}

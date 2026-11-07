@@ -1,3 +1,5 @@
+// frontend/src/js/features/game-systems/book/book-basis-changes.js
+
 import {collectEngineOverrides, jsonEqual} from '../editor/game-system-engine-origin.js';
 
 function record(value) {
@@ -75,7 +77,7 @@ export function getBookBasisChanges(document) {
     ];
 }
 
-export function renderBookBasisChanges(host, document) {
+export function renderBookBasisChanges(host, document, {onRestore = null, canRestore = false} = {}) {
     const groups = getBookBasisChanges(document);
 
     if (groups === null) return;
@@ -113,7 +115,20 @@ export function renderBookBasisChanges(host, document) {
             section.append(node('h5', group.title));
 
             for (const item of group.items) {
-                list.append(node('li', `${statuses[item.status]}: ${item.label} (${item.code}).`));
+                const entry = node('li', `${statuses[item.status]}: ${item.label} (${item.code}).`);
+
+                if (item.status !== 'added' && typeof onRestore === 'function') {
+                    const action = node('button', 'Вернуть к основе', 'btn btn-outline-primary');
+
+                    action.type = 'button';
+                    action.disabled = !canRestore;
+                    action.setAttribute('aria-label', `Вернуть к основе: ${item.label}`);
+                    action.addEventListener('click', () => onRestore(group.code, item.code));
+
+                    entry.append(ownerDocument.createTextNode(' '), action);
+                }
+
+                list.append(entry);
             }
 
             section.append(list);
@@ -125,6 +140,14 @@ export function renderBookBasisChanges(host, document) {
         'Сравнение учитывает определения и начальные значения характеристик. Исходная публикация не изменяется.',
         'rules-book__muted'
     ));
+
+    if (typeof onRestore === 'function') {
+        section.append(node(
+            'p',
+            'Возврат заменяет выбранное определение целиком, а у характеристики — также начальное значение. Затем сохраните книгу.',
+            'rules-book__muted'
+        ));
+    }
 
     host.append(section);
 }

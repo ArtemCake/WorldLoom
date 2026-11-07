@@ -322,6 +322,7 @@ WorldLoom/
 │   │   │   │   │   │   └── game-system-api.js
 │   │   │   │   │   ├── book/
 │   │   │   │   │   │   ├── book-attributes.js
+│   │   │   │   │   │   ├── book-basis-changes.js
 │   │   │   │   │   │   ├── book-basis-data.js
 │   │   │   │   │   │   ├── book-basis-picker.js
 │   │   │   │   │   │   ├── book-definition-data.js
@@ -330,7 +331,10 @@ WorldLoom/
 │   │   │   │   │   │   ├── book-pagination.js
 │   │   │   │   │   │   ├── book-preview-data.js
 │   │   │   │   │   │   ├── book-preview.js
+│   │   │   │   │   │   ├── book-publication-source.js
 │   │   │   │   │   │   ├── book-publication.js
+│   │   │   │   │   │   ├── book-publications-data.js
+│   │   │   │   │   │   ├── book-publications.js
 │   │   │   │   │   │   ├── book-state.js
 │   │   │   │   │   │   └── book-view.js
 │   │   │   │   │   ├── editor/
@@ -506,11 +510,8 @@ WorldLoom/
 │           └── maps/
 ├── logs/
 │   ├── worldloom.log
-│   ├── worldloom.log.2026-11-03
-│   ├── worldloom.log.2026-11-04
-│   ├── worldloom.log.2026-11-05
-│   ├── worldloom_error.log
-│   └── worldloom_error.log.2026-11-03
+│   ├── worldloom.log.2026-11-06
+│   └── worldloom_error.log
 ├── staging/
 ├── tests/
 │   ├── js/
@@ -519,12 +520,15 @@ WorldLoom/
 │   │   ├── engine-presets.test.mjs
 │   │   ├── resource-contract.test.mjs
 │   │   ├── rules-book-attributes.test.mjs
+│   │   ├── rules-book-basis-changes.test.mjs
 │   │   ├── rules-book-basis.test.mjs
 │   │   ├── rules-book-engine-origin.test.mjs
 │   │   ├── rules-book-formula-presentation.test.mjs
 │   │   ├── rules-book-pagination.test.mjs
 │   │   ├── rules-book-preview.test.mjs
+│   │   ├── rules-book-publication-source.test.mjs
 │   │   ├── rules-book-publication.test.mjs
+│   │   ├── rules-book-publications.test.mjs
 │   │   ├── rules-book-short-label.test.mjs
 │   │   └── rules-book-state.test.mjs
 │   ├── python/
@@ -532,6 +536,7 @@ WorldLoom/
 │   │   ├── test_dnd5e_2014_preset.py
 │   │   ├── test_engine_numeric_contract.py
 │   │   ├── test_engine_resource_storage.py
+│   │   ├── test_game_system_draft_validation.py
 │   │   ├── test_profile_resources.py
 │   │   ├── test_resource_engine.py
 │   │   └── test_web_assets.py

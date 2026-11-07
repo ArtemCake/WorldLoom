@@ -17,7 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.infrastructure.database.session import get_async_session
 from backend.app.modules.admin.dependencies import require_content_manager
-from backend.app.modules.game_systems.errors import GameSystemError, GameSystemNotFound, GameSystemRulesConflict, GameSystemRulesStorageError, InvalidGameSystemRules
+from backend.app.modules.game_systems.errors import GameSystemError, GameSystemDeletionBlocked, GameSystemNotFound, GameSystemRulesConflict, GameSystemRulesStorageError, InvalidGameSystemRules
 from backend.app.modules.game_systems.schemas.game_rules import (GameSystemRulesDraftCreate, GameSystemRulesDraftRead, GameSystemRulesDraftState, GameSystemRulesDraftUpdate,
 	GameSystemRulesPublish, GameSystemRulesPublishedState, GameSystemRulesVersionRead)
 from backend.app.modules.game_systems.schemas.game_system_origin import (GameSystemDraftEngineSet, GameSystemEngineEditorUpdate,
@@ -79,6 +79,13 @@ def _rules_http_error(error: GameSystemError) -> HTTPException:
 	if isinstance(error, GameSystemNotFound):
 		return _http_error(404, "Игровая система, основа или публикация не найдена")
 
+	if isinstance(error, GameSystemDeletionBlocked):
+		return _http_error(
+			409,
+			"Удаление блокируют связанные данные: "
+			+ ", ".join(error.blockers)
+			+ ". Сначала удалите их или деактивируйте систему",
+			)
 	if isinstance(error, GameSystemRulesConflict):
 		return _http_error(
 			409,

@@ -20,8 +20,8 @@ from typing import Any
 from uuid import UUID
 from sqlalchemy import and_, column, delete, select, table, text
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.app.modules.game_systems.errors import GameSystemNotFound, GameSystemRulesConflict, GameSystemRulesStorageError, InvalidGameSystemRules
-from backend.app.modules.game_systems.models.game_systems import GameSystem, GameSystemRulesDraft, GameSystemRulesVersion
+from backend.app.modules.game_systems.errors import GameSystemNotFound, GameSystemDeletionBlocked, GameSystemRulesConflict, GameSystemRulesStorageError, InvalidGameSystemRules
+from backend.app.modules.game_systems.models.game_systems import GameSystem, GameSystemRulesDraft, HomebrewRule, GameSystemRulesVersion
 from backend.app.modules.games.models.lobby import Game
 
 
@@ -29,6 +29,7 @@ _SYSTEMS = GameSystem.__table__
 _DRAFTS = GameSystemRulesDraft.__table__
 _VERSIONS = GameSystemRulesVersion.__table__
 _GAMES = Game.__table__
+_HOME_BREW_RULES = HomebrewRule.__table__
 
 _INCOMING_KEYS = text("""
     SELECT
@@ -131,7 +132,7 @@ def _is_handled_reference(reference: Mapping[str, Any], source_columns: list[str
 	if _SYSTEMS.schema is not None and target_schema != _SYSTEMS.schema:
 		return False
 
-	handled = (_DRAFTS, _VERSIONS, _GAMES) if removal_chain else (_DRAFTS,)
+	handled = (_DRAFTS, _VERSIONS, _GAMES) if removal_chain else (_DRAFTS, _VERSIONS)
 
 	return any(
 		reference["source_schema"] == (item.schema or target_schema)
@@ -164,6 +165,7 @@ async def _reject_references(session: AsyncSession, system_ids: list[UUID], *, r
 	bind = _postgresql_bind(session)
 	target = bind.dialect.identifier_preparer.format_table(_SYSTEMS)
 	result = await session.execute(_INCOMING_KEYS, {"target": target})
+	blockers: list[str] = []
 
 	for reference in result.mappings().all():
 		source_columns, target_columns = _reference_parts(reference)
@@ -175,10 +177,14 @@ async def _reject_references(session: AsyncSession, system_ids: list[UUID], *, r
 		used = await session.execute(statement)
 
 		if used.first() is not None:
-			raise GameSystemRulesConflict(
-				"У игровой системы есть связанные данные, удаление которых "
-				"не предусмотрено этой операцией. Используйте деактивацию"
-			)
+			blockers.append(f'{reference["source_schema"]}.{reference["source_table"]}')
+
+	if blockers:
+		raise GameSystemDeletionBlocked(
+			"У игровой системы есть связанные данные, удаление которых "
+			"не предусмотрено этой операцией. Используйте деактивацию",
+			blockers=tuple(dict.fromkeys(blockers)),
+		)
 
 async def assert_no_extra_system_content(session: AsyncSession, system_ids: list[UUID]) -> None:
 	"""Проверить прямые зависимости перед будущим удалением цепочки.
@@ -217,6 +223,7 @@ async def delete_game_system(session: AsyncSession, system_id: UUID) -> dict[str
 	await _reject_references(session, [system_id], removal_chain=False)
 
 	await session.execute(delete(_DRAFTS).where(_DRAFTS.c.system_id == system_id))
+	await session.execute(delete(_VERSIONS).where(_VERSIONS.c.system_id == system_id))
 	deleted = await session.execute(
 		delete(_SYSTEMS)
 		.where(_SYSTEMS.c.id == system_id)

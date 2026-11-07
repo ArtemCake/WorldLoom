@@ -11,6 +11,13 @@ class GameSystemNotFound(GameSystemError):
 class GameSystemRulesConflict(GameSystemError):
 	"""Состояние системы не соответствует ожидаемому."""
 
+class GameSystemDeletionBlocked(GameSystemRulesConflict):
+	"""Удаление блокируют связанные данные; содержат перечень связей."""
+
+	def __init__(self, message: str, blockers: tuple[str, ...]) -> None:
+		super().__init__(message)
+		self.blockers = blockers
+
 class InvalidGameSystemRules(GameSystemError):
 	"""Переданный профиль правил недопустим."""
 

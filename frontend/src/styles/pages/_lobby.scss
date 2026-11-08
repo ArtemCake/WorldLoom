@@ -1,122 +1,135 @@
 /* frontend/src/styles/pages/_lobby.scss */
 
 .lobby-page {
-  padding: 1.5rem;
+    padding: 1.5rem;
 }
 
 .lobby-page__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
 }
 
 .lobby-join {
-  margin: 1.5rem 0;
+    margin: 1.5rem 0;
 
-  h2 {
-    font-size: 1rem;
-    color: var(--color-text-secondary);
-    margin-bottom: 0.5rem;
-  }
+    h2 {
+        margin-bottom: 0.5rem;
+        color: var(--color-text-secondary);
+        font-size: 1rem;
+        text-align: left;
+    }
 }
 
+// Строка «токен + кнопка»: остаётся горизонтальной на всех ширинах,
+// пока хватает места, и переносится только при нехватке
 .lobby-join__row {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
 
-  input {
-    flex: 1 1 24px;
-  }
+    label {
+        flex: 0 0 auto;
+        color: var(--color-text-secondary);
+        font-size: 0.9rem;
+    }
+
+    input {
+        flex: 1 1 220px;
+        width: auto;
+    }
 }
 
 .lobby-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
 }
 
 .lobby-empty {
-  color: var(--color-text-secondary);
-  text-align: center;
-  padding: 2rem 0;
-  grid-column: 1 / -1;
+    grid-column: 1 / -1;
+    padding: 2rem 0;
+    color: var(--color-text-secondary);
+    text-align: center;
 }
 
-// Та же "стеклянная панель", что у .admin-card / .auth-container / .profile-section —
-// единый стиль карточек по всему проекту, а не новый вариант под лобби
+// Та же «стеклянная панель», что у .admin-card / .auth-container /
+// .profile-section — единый стиль карточек по всему проекту
 .lobby-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  background: linear-gradient(145deg, var(--color-panel-glass), var(--color-panel-glass-alt));
-  backdrop-filter: blur(14px) saturate(150%);
-  -webkit-backdrop-filter: blur(14px) saturate(150%);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-xl);
-  padding: 1rem 1.25rem;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(145deg, var(--color-panel-glass), var(--color-panel-glass-alt));
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
 }
 
 .lobby-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
 
-  h3 {
-    margin: 0;
-  }
+    h3 {
+        margin: 0;
+        text-align: left;
+    }
 }
 
 .lobby-card__description {
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
-  margin: 0;
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
 }
 
 .lobby-card__badges {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 .lobby-card__actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-top: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: auto;
 }
 
 // Нейтральный бейдж статуса/приватности; отдельный акцентный модификатор —
 // только там, где бейдж правда должен выделяться (роль ведущего)
 .lobby-badge {
-  display: inline-block;
-  padding: 0.15rem 0.6rem;
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-panel-alt);
-  border: 1px solid var(--border-subtle);
-  color: var(--color-text-secondary);
-  font-size: 0.8rem;
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-panel-alt);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
 
-  &--master {
-    background: transparent;
-    border-color: var(--color-border-accent);
-    color: var(--color-text-accent);
-  }
+    &--master {
+        color: var(--color-text-accent);
+        background: transparent;
+        border-color: var(--color-border-accent);
+    }
 }
 
 .lobby-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-text-primary);
+    cursor: pointer;
 
-  input {
-    width: auto;
-    accent-color: var(--accent-magic);
-  }
+    input {
+        width: auto;
+        accent-color: var(--accent-magic);
+    }
 }

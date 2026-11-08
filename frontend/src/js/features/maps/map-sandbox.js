@@ -48,7 +48,48 @@ export function initMapSandbox(root, image) {
     const reset = root.querySelector('[data-preview-reset]');
     const generate = root.querySelector('[data-preview-generate]');
 
-    if (!canvas || !message || !mode || !radius || !memory || !rowsInput || !colsInput || !grid || !fog || !reset) {
+    const requiredElements = [
+        ['поле карты', canvas],
+        ['сообщение предпросмотра', message],
+        ['режим просмотра', mode],
+        ['радиус обзора', radius],
+        ['память исследованных клеток', memory],
+        ['число строк', rowsInput],
+        ['число столбцов', colsInput],
+        ['переключатель сетки', grid],
+        ['переключатель тумана', fog],
+        ['сброс тестовой прогулки', reset]
+    ];
+
+    const missingElements = requiredElements.filter(([, element]) => !element).map(([label]) => label);
+
+    if (missingElements.length > 0) {
+        const text = `Не удалось подключить карту. Внутри блока предпросмотра не найдены: ${missingElements.join(', ')}.`;
+
+        if (message) {
+            message.textContent = text;
+        } else {
+            const notice = document.createElement('p');
+
+            notice.dataset.previewMessage = '';
+            notice.setAttribute('role', 'alert');
+            notice.textContent = text;
+            root.append(notice);
+        }
+
+        console.error(text, root);
+        return () => {};
+    }
+
+    if (!(canvas instanceof HTMLCanvasElement)) {
+        message.textContent = 'Не удалось подключить карту: поле предпросмотра должно быть элементом canvas.';
+        console.error(message.textContent, canvas);
+        return () => {};
+    }
+
+    if (!root.dataset.previewUrl || !root.dataset.gameId) {
+        message.textContent = 'Не удалось подключить карту: не задан адрес расчёта предпросмотра или игра.';
+        console.error(message.textContent, root);
         return () => {};
     }
 
@@ -82,30 +123,33 @@ export function initMapSandbox(root, image) {
     function geometry() {
         const widthUnits = Math.sqrt(3) * (cols + (rows > 1 ? 0.5 : 0));
         const heightUnits = 2 + 1.5 * (rows - 1);
-        const size = Math.min(canvas.width / widthUnits, canvas.height / heightUnits);
 
         return {
-            size,
-            left: (canvas.width - widthUnits * size) / 2,
-            top: (canvas.height - heightUnits * size) / 2
+            sizeX: canvas.width / widthUnits,
+            sizeY: canvas.height / heightUnits,
+            left: 0,
+            top: 0
         };
     }
 
     function center(cell, geometryValue) {
+        const { left, top, sizeX, sizeY } = geometryValue;
+
         return {
-            x: geometryValue.left + Math.sqrt(3) * geometryValue.size * (cell.col + 0.5 * (cell.row & 1) + 0.5),
-            y: geometryValue.top + geometryValue.size * (1 + 1.5 * cell.row)
+            x: left + Math.sqrt(3) * sizeX * (cell.col + 0.5 * (cell.row & 1) + 0.5),
+            y: top + sizeY * (1 + 1.5 * cell.row)
         };
     }
 
     function polygon(context, cell, geometryValue) {
         const point = center(cell, geometryValue);
+
         context.beginPath();
 
         for (let index = 0; index < 6; index += 1) {
             const angle = Math.PI / 180 * (60 * index - 30);
-            const x = point.x + geometryValue.size * Math.cos(angle);
-            const y = point.y + geometryValue.size * Math.sin(angle);
+            const x = point.x + geometryValue.sizeX * Math.cos(angle);
+            const y = point.y + geometryValue.sizeY * Math.sin(angle);
 
             if (index === 0) context.moveTo(x, y);
             else context.lineTo(x, y);
@@ -182,7 +226,8 @@ export function initMapSandbox(root, image) {
         if (current) {
             const point = center(current, geometryValue);
             ctx.beginPath();
-            ctx.arc(point.x, point.y, Math.max(3, geometryValue.size * 0.35), 0, 2 * Math.PI);
+            const markerRadius = Math.max(3, Math.min(geometryValue.sizeX, geometryValue.sizeY) * 0.35);
+            ctx.arc(point.x, point.y, markerRadius, 0, 2 * Math.PI);
             ctx.fillStyle = '#27a9ff';
             ctx.fill();
             ctx.strokeStyle = '#fff';

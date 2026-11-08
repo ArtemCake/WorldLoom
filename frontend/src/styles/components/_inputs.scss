@@ -1,117 +1,149 @@
 /* frontend/src/styles/components/_inputs.scss */
 
+/*
+ * Формы по умолчанию — вертикальный стек. Горизонтальные раскладки
+ * (строка приглашения в лобби, тулбары) задают `flex-direction: row`
+ * у себя: иначе унаследованный column ломал им строку.
+ */
 form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
-input, select  {
-  width: 100%;
-  padding: 12px 16px;
-  background: var(--color-bg-panel);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  font-size: 16px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+/* Подпись поля: раньше стиля не было вовсе, и label выглядел как текст */
+form > label {
+    display: block;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
 }
 
-input:focus, select:focus {
-  outline: none;
-  border-color: var(--color-border-accent);
-  box-shadow: 0 0 0 3px var(--heading-glow);
+.form-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 
-.auth-container input:focus {
-  border-color: var(--accent-magic);
-  box-shadow: 0 0 0 3px var(--glow-color-2);
+/*
+ * Чекбоксы и радиокнопки исключены: иначе они получали ширину 100 %
+ * и отступы текстового поля.
+ */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]),
+select,
+textarea {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    color: var(--text-primary);
+    background: var(--color-bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
+
+textarea {
+    min-height: 6rem;
+    resize: vertical;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]):focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--color-border-accent);
+    box-shadow: 0 0 0 3px var(--heading-glow);
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    flex: 0 0 auto;
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--accent-magic);
+}
+
+.auth-container input:not([type="checkbox"]):focus {
+    border-color: var(--accent-magic);
+    box-shadow: 0 0 0 3px var(--glow-color-2);
+}
+
+/* ── Строка статуса под формой ──────────────────────────── */
 
 .message-box {
-  margin-top: 1rem;
-  min-height: 24px;
-  text-align: center;
-  font-size: 14px;
+    margin-top: 1rem;
+    min-height: 24px;
+    text-align: center;
+    font-size: 0.875rem;
 }
 
 .message-box .error {
-  color: var(--color-text-error);
+    color: var(--color-text-error);
 }
 
 .message-box .success {
-  color: var(--color-text-success);
+    color: var(--color-text-success);
 }
 
-.form-error-message {
-    display: block;
-    margin-top: 0.25rem;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    font-weight: 500;
-
-    color: var(--color-text-error);
-    background-color: var(--color-panel-glass-alt);
-    border-left: 4px solid var(--color-text-error);
-    padding: 0.5rem 0.75rem;
-    border-radius: var(--radius-md);
-
-}
+/* ── Поле пароля с кнопкой показа ───────────────────────── */
 
 .password-field {
-  position: relative;
-  display: flex;
-  align-items: center;
+    position: relative;
+    display: flex;
+    align-items: center;
 
-  input {
-    padding-right: 44px; // место под кнопку, чтобы текст пароля не залезал под неё
-  }
+    input {
+        padding-right: 44px; // место под кнопку, чтобы текст не залезал под неё
+    }
 }
 
 .password-toggle {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
-  padding: 0;
-  color: var(--text-secondary, #a0a0b0);
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    transform: translateY(-50%);
+
+    &:hover {
+        color: var(--accent-magic);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--accent-magic);
+        outline-offset: 2px;
+    }
 }
 
-.password-toggle:hover {
-  color: var(--accent-magic);
-}
-
-.password-toggle:focus-visible {
-  outline: 2px solid var(--accent-magic);
-  outline-offset: 2px;
-}
+/* ── Чекбокс с подписью ─────────────────────────────────── */
 
 .form-check {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  margin: 0.75rem 0;
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin: 0.75rem 0;
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    line-height: 1.5;
 
-  input[type="checkbox"] {
-    margin-top: 0.2rem;
-    width: auto;
-    accent-color: var(--accent-magic);
-  }
+    input[type="checkbox"] {
+        margin-top: 0.2rem;
+    }
 
-  a {
-    color: var(--accent-magic);
-    text-decoration: underline;
-  }
+    a {
+        color: var(--accent-magic);
+        text-decoration: underline;
+    }
 }

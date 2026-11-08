@@ -1,10 +1,18 @@
 /* frontend/src/styles/pages/game-system-editor/_formula.scss */
 
+/*
+ * Читаемое представление формулы и вспомогательные поля конструктора.
+ *
+ * Разметку создают модули frontend/src/js/features/game-systems/editor/shared/:
+ * formula-presentation.js, formula-input.js и short-label-field.js.
+ * Стили карточек показателей — в _indicators.scss.
+ */
+
+/* ── Читаемая формула ───────────────────────────────────── */
+
 .readable-formula {
-    box-sizing: border-box;
     width: 100%;
     min-width: 0;
-    max-width: 100%;
     margin: 0.75rem 0 1rem;
     color: var(--color-text-primary);
 
@@ -16,34 +24,27 @@
     }
 
     &__viewport {
-        box-sizing: border-box;
         width: 100%;
         min-width: 0;
-        max-width: 100%;
         padding: 0.8rem 0.25rem;
         overflow: visible;
     }
 
     &__expression {
-        box-sizing: border-box;
         width: 100%;
         min-width: 0;
-        max-width: 100%;
         font-size: 1.1rem;
         line-height: 1.9;
-        white-space: normal;
+        text-align: start;
         overflow-wrap: anywhere;
         word-break: normal;
-        text-align: start;
     }
 
     &__group {
         display: inline;
-        white-space: normal;
     }
 
     &__parameter {
-        white-space: normal;
         overflow-wrap: anywhere;
         word-break: normal;
     }
@@ -52,6 +53,7 @@
         white-space: nowrap;
     }
 
+    // Знаки операций можно переносить, иначе длинная формула вылезает за лист
     &__operator {
         white-space: normal;
     }
@@ -59,9 +61,7 @@
     &__fraction {
         display: inline-grid;
         grid-template-columns: minmax(0, 1fr);
-        box-sizing: border-box;
         width: max-content;
-        min-width: 0;
         max-width: 100%;
         margin: 0.15em 0.2em;
         vertical-align: middle;
@@ -72,11 +72,9 @@
     &__numerator,
     &__denominator {
         display: block;
-        box-sizing: border-box;
         min-width: 0;
         max-width: 100%;
         padding: 0.15em 0.35em;
-        white-space: normal;
         overflow-wrap: anywhere;
     }
 
@@ -91,6 +89,7 @@
         line-height: 1.6;
         overflow-wrap: anywhere;
     }
+
     &__legend {
         min-width: 0;
         max-width: 100%;
@@ -108,14 +107,13 @@
     &__legend-list {
         margin: 0;
         padding: 0;
-        list-style: none;
         color: var(--color-text-secondary);
         font-size: 0.85rem;
         line-height: 1.6;
+        list-style: none;
 
         > li {
             min-width: 0;
-            white-space: normal;
             overflow-wrap: anywhere;
         }
 
@@ -129,17 +127,21 @@
     }
 }
 
+/* ── Блок предпросмотра в конструкторе формулы ──────────── */
+
 .formula-input__preview {
     width: 100%;
     min-width: 0;
-    max-width: 100%;
     margin-bottom: 1rem;
 
     > h4 {
         margin: 0 0 0.5rem;
         font-size: 1rem;
+        text-align: left;
     }
 }
+
+/* ── Поле краткого названия ─────────────────────────────── */
 
 .short-label-field {
     min-width: 0;

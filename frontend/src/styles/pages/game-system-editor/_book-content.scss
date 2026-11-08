@@ -1,105 +1,29 @@
 /* frontend/src/styles/pages/game-system-editor/_book-content.scss */
 
 /*
- * Содержимое книги правил.
+ * Содержимое книги правил: настройки главы слева, статья справа.
  * Не меняет высоту листов, прокрутку, переплёт и анимацию.
  */
 
 .rules-book {
-    --rules-book-heading-font: Georgia, "Times New Roman", serif;
+    --rules-book-heading-font: Georgia, 'Times New Roman', serif;
     --rules-book-content-line: var(--color-border-subtle);
     --rules-book-content-accent: var(--color-border-accent);
     --rules-book-content-text: var(--color-text-primary);
     --rules-book-content-muted: var(--color-text-secondary);
     --rules-book-control-bg: var(--color-bg-panel-alt);
 
-    &__definition-form {
-        min-width: 0;
-        margin: 0;
-        padding: 0;
-        border: 0;
-        background: transparent;
+    /* ── Заголовки листов ───────────────────────────────── */
 
-        label:not([hidden]) {
-            display: grid;
-            gap: 0.4rem;
-            min-width: 0;
-            margin-bottom: 1rem;
-        }
-
-        label > span {
-            color: var(--color-text-secondary);
-            font-size: 0.85rem;
-            line-height: 1.5;
-        }
-
-        label > input,
-        label > select,
-        label > textarea {
-            box-sizing: border-box;
-            width: 100%;
-            min-width: 0;
-            max-width: 100%;
-            padding: 0.65rem 0.75rem;
-            color: var(--color-text-primary);
-            background: var(--color-bg-panel-alt);
-            border: 1px solid var(--color-border-subtle);
-            border-radius: 0.2rem;
-            font: inherit;
-        }
-
-        label > textarea {
-            min-height: 7rem;
-            resize: vertical;
-        }
-
-        .engine-attributes-grid {
-            display: block;
-        }
-
-        .engine-rule-card {
-            display: block;
-            min-width: 0;
-            margin: 0;
-            padding: 0;
-            border: 0;
-            background: transparent;
-            box-shadow: none;
-        }
-
-        .engine-rule-card__identity,
-        .engine-rule-card__values {
-            display: block;
-            min-width: 0;
-        }
-
-        .engine-rule-card > legend {
-            margin-bottom: 1rem;
-            color: var(--color-text-secondary);
-            font-size: 0.85rem;
-        }
-
-        details > summary {
-            cursor: pointer;
-        }
-
-        details > :not(summary) {
-            margin-top: 0.85rem;
-        }
+    &__page > &__eyebrow {
+        margin-bottom: 0.5rem;
+        color: var(--rules-book-content-muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1.5;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
     }
-
-    &__formula-settings {
-        min-width: 0;
-        margin: 1.25rem 0;
-        padding: 0.85rem 0;
-        border-top: 1px solid var(--color-border-subtle);
-        border-bottom: 1px solid var(--color-border-subtle);
-    }
-
-    /*
-     * Названия глав.
-     * Книжный шрифт применяется к заголовкам, а не ко всем полям.
-     */
 
     &__page > h2 {
         margin: 0 0 1.5rem;
@@ -114,27 +38,7 @@
         overflow-wrap: anywhere;
     }
 
-    &__page > &__eyebrow {
-        margin-bottom: 0.5rem;
-        color: var(--rules-book-content-muted);
-        font-size: 0.75rem;
-        font-weight: 600;
-        line-height: 1.5;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-    }
-
-    /*
-     * Выбор элемента остаётся над сворачиваемыми настройками.
-     */
-
-    &__element-navigation:empty {
-        display: none;
-    }
-
-    &__element-navigation:not(:empty) {
-        margin-bottom: 1.5rem;
-    }
+    /* ── Выбор элемента ─────────────────────────────────── */
 
     &__element-picker {
         display: flex;
@@ -159,9 +63,7 @@
         }
     }
 
-    /*
-     * Раскрываемый элемент — раздел книги, а не отдельная карточка.
-     */
+    /* ── Раскрываемые настройки главы ───────────────────── */
 
     &__parameters {
         min-width: 0;
@@ -194,7 +96,7 @@
         cursor: pointer;
 
         &::marker {
-            content: "";
+            content: '';
         }
 
         &::-webkit-details-marker {
@@ -209,7 +111,7 @@
             height: 0.5rem;
             border-right: 2px solid currentColor;
             border-bottom: 2px solid currentColor;
-            content: "";
+            content: '';
             transform: rotate(45deg);
         }
 
@@ -233,32 +135,7 @@
         padding-top: 1.25rem;
     }
 
-    /*
-     * Формы встроены в страницу.
-     * Поля не получают самостоятельных внешних карточек.
-     */
-
-    &__form,
-    &__attribute-form {
-        min-width: 0;
-        margin: 0;
-        padding: 0;
-        background: transparent;
-        border: 0;
-        box-shadow: none;
-    }
-
-    &__attribute-form > legend {
-        float: none;
-        width: 100%;
-        margin: 0 0 1.25rem;
-        padding: 0;
-        color: var(--rules-book-content-muted);
-        font-family: inherit;
-        font-size: 0.8rem;
-        font-weight: 500;
-        line-height: 1.5;
-    }
+    /* ── Поля форм ──────────────────────────────────────── */
 
     &__field {
         display: grid;
@@ -276,11 +153,9 @@
         > input,
         > select,
         > textarea {
-            box-sizing: border-box;
             display: block;
             width: 100%;
             min-width: 0;
-            max-width: 100%;
             min-height: 2.75rem;
             margin: 0;
             padding: 0.65rem 0.75rem;
@@ -328,16 +203,12 @@
     }
 
     &__field--code > input {
-        font-family: ui-monospace, Consolas, monospace;
+        font-family: var(--font-family-mono);
         font-size: 0.9rem;
         letter-spacing: 0.02em;
     }
 
-    /*
-     * Связанные числовые параметры.
-     * Сетка зависит от доступного места внутри листа.
-     */
-
+    /* Связанные числовые параметры: сетка зависит от места внутри листа */
     &__value-fields {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
@@ -355,10 +226,7 @@
         }
     }
 
-    /*
-     * Варианты выбора разделяются линиями, а не рамками-карточками.
-     */
-
+    /* Варианты выбора разделяются линиями, а не рамками-карточками */
     &__choice {
         min-width: 0;
         margin: 0 0 1.25rem;
@@ -392,9 +260,112 @@
         }
     }
 
+    &__formula-settings {
+        min-width: 0;
+        margin: 1.25rem 0;
+        padding: 0.85rem 0;
+        border-top: 1px solid var(--rules-book-content-line);
+        border-bottom: 1px solid var(--rules-book-content-line);
+
+        > summary {
+            cursor: pointer;
+        }
+
+        > :not(summary) {
+            margin-top: 0.85rem;
+        }
+    }
+
     /*
-     * Правая страница — статья правил.
+     * Редактор показателей внутри листа: карточки не получают
+     * собственных рамок, чтобы не спорить с оформлением страницы.
      */
+    &__definition-form {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        border: 0;
+
+        label:not([hidden]) {
+            display: grid;
+            gap: 0.4rem;
+            min-width: 0;
+            margin-bottom: 1rem;
+        }
+
+        label > span {
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        label > input,
+        label > select,
+        label > textarea {
+            width: 100%;
+            min-width: 0;
+            padding: 0.65rem 0.75rem;
+            color: var(--color-text-primary);
+            background: var(--color-bg-panel-alt);
+            border: 1px solid var(--color-border-subtle);
+            border-radius: 0.2rem;
+            font: inherit;
+        }
+
+        label > textarea {
+            min-height: 7rem;
+            resize: vertical;
+        }
+
+        .engine-attributes-grid {
+            display: block;
+        }
+
+        .engine-rule-card {
+            display: block;
+            min-width: 0;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+        }
+
+        .engine-rule-card__identity,
+        .engine-rule-card__values {
+            display: block;
+            min-width: 0;
+        }
+
+        .engine-rule-card > legend {
+            margin-bottom: 1rem;
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+        }
+    }
+
+    &__field > .engine-rule-card__code-hint,
+    &__field > .engine-rule-card__code-error {
+        font-size: 0.85rem;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+    }
+
+    &__field > .engine-rule-card__code-hint {
+        display: block;
+        margin-top: 0.35rem;
+        color: var(--color-text-secondary);
+    }
+
+    &__field > .engine-rule-card__code-error:not([hidden]) {
+        display: block;
+        margin-top: 0.35rem;
+        color: var(--color-text-primary);
+        font-weight: 600;
+    }
+
+    /* ── Правая страница — статья правил ────────────────── */
 
     &__reading {
         min-width: 0;
@@ -461,7 +432,7 @@
             border: 0;
             border-left: 3px solid var(--rules-book-content-accent);
             border-radius: 0;
-            font-family: ui-monospace, Consolas, monospace;
+            font-family: var(--font-family-mono);
             font-size: 0.95rem;
             line-height: 1.7;
             white-space: pre-wrap;
@@ -510,10 +481,7 @@
     }
 
     @media (max-width: 480px) {
-        &__element-picker > .btn {
-            flex: 1 1 100%;
-        }
-
+        &__element-picker > .btn,
         &__attribute-actions > .btn {
             flex: 1 1 100%;
         }
@@ -529,6 +497,11 @@
         }
     }
 }
+
+/* ═══════════════════════════════════════════════════════════
+ * Страница книги: панель управления и выбор источника правил.
+ * ═══════════════════════════════════════════════════════════ */
+
 .game-system-book-page {
     [hidden] {
         display: none !important;
@@ -540,6 +513,11 @@
         align-items: flex-end;
         gap: 0.75rem;
         margin-bottom: 1rem;
+
+        // Панель не должна растягивать кнопки на всю ширину строки
+        > .btn {
+            flex: 0 0 auto;
+        }
     }
 
     &__source {
@@ -558,6 +536,7 @@
             color: var(--color-text-primary);
             background: var(--color-bg-panel);
             border: 1px solid var(--color-border-subtle);
+            border-radius: var(--radius-sm);
             font: inherit;
         }
     }

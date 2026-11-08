@@ -11,3 +11,23 @@
     display: block;
     touch-action: none;
 }
+
+[data-map-sandbox] .game-map__viewport {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: auto;
+    overflow: visible;
+}
+
+[data-map-sandbox] canvas[data-preview-canvas] {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    max-width: 100%;
+    aspect-ratio: auto;
+}

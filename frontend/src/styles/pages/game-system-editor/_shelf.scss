@@ -10,7 +10,6 @@
     --book-shelf-board: 0.85rem;
     --book-shelf-gap: 0.5rem;
 
-    box-sizing: border-box;
     width: 100%;
     min-width: 0;
     margin-top: 0.5rem;
@@ -23,6 +22,8 @@
     [hidden] {
         display: none !important;
     }
+
+    /* ── Полка ──────────────────────────────────────────── */
 
     &__shelf {
         position: relative;
@@ -41,8 +42,9 @@
             margin-top: 1.1rem;
         }
 
+        // Доска полки — отдельный слой под рядом книг
         &::after {
-            content: "";
+            content: '';
             position: absolute;
             right: -0.15rem;
             bottom: calc(-1 * var(--book-shelf-board));
@@ -66,6 +68,8 @@
         padding-bottom: 0.15rem;
     }
 
+    /* ── Книга ──────────────────────────────────────────── */
+
     &__book {
         position: relative;
         flex: 0 0 auto;
@@ -78,12 +82,15 @@
             z-index: 6;
         }
 
-        &:first-child &__panel {
+        // Панель крайних книг прижимается к краю полки, чтобы не уезжать
+        // за пределы страницы. Полное имя класса указано явно: внутри
+        // вложенного &__book сокращение &__panel даёт неверный селектор.
+        &:first-child > .book-shelf__panel {
             left: 0;
             transform: none;
         }
 
-        &:last-child &__panel {
+        &:last-child > .book-shelf__panel {
             right: 0;
             left: auto;
             transform: none;
@@ -113,8 +120,8 @@
         box-shadow:
             inset -0.35rem 0 0.5rem rgba(0, 0, 0, 0.35),
             0.15rem 0.25rem 0.5rem rgba(0, 0, 0, 0.35);
-        transition: transform 160ms ease, box-shadow 160ms ease;
         overflow: hidden;
+        transition: transform 160ms ease, box-shadow 160ms ease;
 
         &:focus-visible {
             outline: 2px solid var(--color-border-accent);
@@ -133,14 +140,14 @@
     &__title {
         max-height: 100%;
         overflow: hidden;
-        font-family: Georgia, "Times New Roman", serif;
+        font-family: Georgia, 'Times New Roman', serif;
         font-size: 0.95rem;
         line-height: 1.1;
         letter-spacing: 0.06em;
         text-align: center;
         text-overflow: ellipsis;
-        white-space: nowrap;
         text-shadow: 0 0.1rem 0.2rem rgba(0, 0, 0, 0.6);
+        white-space: nowrap;
     }
 
     &__mark {
@@ -154,34 +161,23 @@
         pointer-events: none;
     }
 
-    &__book[data-tone="0"] &__spine {
-        background-color: color-mix(in srgb, var(--color-border-accent) 8%, var(--color-bg-panel));
-    }
-
-    &__book[data-tone="1"] &__spine {
-        background-color: color-mix(in srgb, var(--color-border-accent) 16%, var(--color-bg-panel));
-    }
-
-    &__book[data-tone="2"] &__spine {
-        background-color: color-mix(in srgb, var(--color-border-accent) 24%, var(--color-bg-panel));
-    }
-
-    &__book[data-tone="3"] &__spine {
-        background-color: color-mix(in srgb, var(--color-border-accent) 32%, var(--color-bg-panel));
-    }
-
-    &__book[data-tone="4"] &__spine {
-        background-color: color-mix(in srgb, var(--color-border-accent) 40%, var(--color-bg-panel));
-    }
-
-    &__book[data-tone="5"] &__spine {
-        background-color: color-mix(in srgb, var(--color-border-accent) 48%, var(--color-bg-panel));
+    /* Оттенки корешков: детерминированы по id системы в JS */
+    @each $tone, $mix in (0: 8%, 1: 16%, 2: 24%, 3: 32%, 4: 40%, 5: 48%) {
+        &__book[data-tone="#{$tone}"] &__spine {
+            background-color: color-mix(
+                in srgb,
+                var(--color-border-accent) $mix,
+                var(--color-bg-panel)
+            );
+        }
     }
 
     &__book[data-inactive="true"] &__spine {
         filter: grayscale(0.65) brightness(0.78);
         opacity: 0.85;
     }
+
+    /* ── Панель с описанием ─────────────────────────────── */
 
     &__panel {
         position: absolute;
@@ -196,16 +192,17 @@
         border-top: 3px solid var(--color-border-accent);
         border-radius: 0.4rem;
         box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.5);
-        transform: translateX(-50%);
         visibility: hidden;
         opacity: 0;
+        transform: translateX(-50%);
         transition: opacity 140ms ease, visibility 140ms ease;
 
         h3 {
             margin: 0;
-            font-family: Georgia, "Times New Roman", serif;
+            font-family: Georgia, 'Times New Roman', serif;
             font-size: 1.15rem;
             line-height: 1.3;
+            text-align: left;
             overflow-wrap: anywhere;
         }
     }
@@ -237,11 +234,11 @@
         border-radius: 0.25rem;
         font-size: 0.75rem;
         line-height: 1.4;
-    }
 
-    &__badge--active {
-        color: var(--color-text-primary);
-        border-color: var(--color-border-accent);
+        &--active {
+            color: var(--color-text-primary);
+            border-color: var(--color-border-accent);
+        }
     }
 
     &__description {
@@ -271,6 +268,8 @@
         border-top: 1px solid var(--color-border-subtle);
     }
 
+    /* ── Узкий экран: книги становятся списком ──────────── */
+
     @media (max-width: 640px) {
         &__row {
             display: grid;
@@ -294,8 +293,8 @@
 
         &__title {
             max-height: none;
-            white-space: normal;
             text-align: left;
+            white-space: normal;
         }
 
         &__mark {
@@ -306,10 +305,10 @@
             position: static;
             width: 100%;
             margin-top: 0.5rem;
-            transform: none;
             visibility: visible;
             opacity: 1;
             box-shadow: none;
+            transform: none;
         }
     }
 }

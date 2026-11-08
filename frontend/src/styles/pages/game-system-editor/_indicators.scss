@@ -1,0 +1,205 @@
+/* frontend/src/styles/pages/game-system-editor/_indicators.scss */
+
+/*
+ * Показатели правил: сетка карточек, поля внутри них и проверка кода.
+ *
+ * Разметку создают frontend/src/js/features/game-systems/editor/shared/
+ * (resource-editor.js, indicator-code.js, formula-editor.js).
+ * Подключается до _book-content.scss: книга переопределяет эти
+ * карточки под оформление листа.
+ */
+
+/* ── Поле формы ─────────────────────────────────────────── */
+
+.system-editor__field {
+    display: grid;
+    gap: 0.4rem;
+    min-width: 0;
+    margin: 0 0 1rem;
+
+    > span {
+        color: var(--color-text-secondary);
+        font-size: 0.85rem;
+        line-height: 1.5;
+    }
+}
+
+/* Строка «операция + аргумент» в конструкторе формулы */
+.system-editor__operand {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+
+    label {
+        flex: 1 1 12rem;
+        min-width: 0;
+        margin: 0;
+    }
+}
+
+/* Блок одного уровня формулы */
+.system-editor__formula {
+    min-width: 0;
+    margin: 1rem 0;
+    padding: 1rem;
+    background: var(--color-bg-panel);
+    border: 1px solid var(--color-border-subtle);
+    border-left: 3px solid var(--color-border-accent);
+    border-radius: var(--radius-sm);
+
+    > h4 {
+        margin: 0 0 1rem;
+        font-size: 1rem;
+        text-align: left;
+    }
+}
+
+.system-editor__formula-argument {
+    min-width: 0;
+    margin: 1rem 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border-subtle);
+
+    > .system-editor__operand {
+        margin-bottom: 0;
+    }
+
+    > .system-editor__formula {
+        margin-left: 0.75rem;
+    }
+}
+
+/* ── Сетка и карточки показателей ───────────────────────── */
+
+.engine-attributes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+    align-items: start;
+    gap: 1rem;
+    min-width: 0;
+    margin-bottom: 1rem;
+}
+
+.engine-rule-card {
+    min-width: 0;
+    margin: 0 0 1rem;
+    padding: 0.85rem;
+    color: var(--color-text-primary);
+    background: var(--color-bg-panel-alt);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    container-name: engine-rule;
+    container-type: inline-size;
+
+    > legend {
+        width: auto;
+        max-width: 100%;
+        margin: 0;
+        padding: 0 0.35rem;
+        color: var(--color-text-secondary);
+        font-size: 0.8rem;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+}
+
+.engine-rule-card__identity,
+.engine-rule-card__values {
+    display: grid;
+    align-items: start;
+    gap: 0.65rem;
+    min-width: 0;
+
+    > * {
+        min-width: 0;
+        margin: 0;
+    }
+
+    .system-editor__field {
+        gap: 0.3rem;
+        margin-bottom: 0;
+    }
+}
+
+.engine-rule-card__identity {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+
+.engine-rule-card__values {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.7rem;
+
+    input {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.engine-rule-card__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.7rem;
+
+    > .btn {
+        margin: 0;
+        padding: 0.3rem 0.6rem;
+        font-size: 0.8rem;
+        line-height: 1.4;
+    }
+}
+
+/* ── Проверка кода показателя ───────────────────────────── */
+
+.engine-rule-card__code-hint,
+.engine-rule-card__code-error {
+    display: block;
+    min-width: 0;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.engine-rule-card__code-hint {
+    color: var(--color-text-secondary);
+}
+
+.engine-rule-card__code-error {
+    padding: 0.4rem 0.55rem;
+    color: var(--color-text-primary);
+    background: var(--color-bg-panel);
+    border-left: 3px solid var(--color-border-accent);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+}
+
+.engine-rule-card__identity input[aria-invalid="true"] {
+    border-color: var(--color-border-accent);
+    box-shadow: inset 0 0 0 1px var(--color-border-accent);
+}
+
+.engine-rule-card__identity input[readonly] {
+    color: var(--color-text-secondary);
+    background: var(--color-bg-panel);
+    border-style: dashed;
+    cursor: default;
+}
+
+/* На узкой карточке поля перестраиваются вертикально */
+@container engine-rule (max-width: 16rem) {
+    .engine-rule-card__identity,
+    .engine-rule-card__values {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Запасное поведение для браузеров без container queries */
+@supports not (container-type: inline-size) {
+    @media (max-width: 420px) {
+        .engine-rule-card__identity,
+        .engine-rule-card__values {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+}

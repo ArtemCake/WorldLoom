@@ -159,7 +159,7 @@ async def get_map_background(map_id: UUID, actor_id: ActorId, session: Operation
 		headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"},
 	)
 
-@router.get("/{map_id}", response_model=MapRead, operation_id="getMap")
+@router.get("/{map_id:uuid}", response_model=MapRead, operation_id="getMap")
 async def get_map(map_id: UUID, actor_id: ActorId, session: OperationSession) -> MapRead:
 	campaign_map = await management.get_map(session, map_id, actor_id)
 	return MapRead.model_validate(campaign_map)

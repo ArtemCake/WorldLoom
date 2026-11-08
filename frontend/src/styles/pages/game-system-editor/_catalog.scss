@@ -1,12 +1,21 @@
-/*  frontend/src/styles/pages/game-system-editor/_catalog.scss */
+/* frontend/src/styles/pages/game-system-editor/_catalog.scss */
+
+/*
+ * Страница каталога игровых систем: шапка, фильтры и пояснение.
+ * Сами книги и их панели — в _shelf.scss.
+ */
 
 .system-catalog {
-    box-sizing: border-box;
     width: 100%;
     max-width: 90rem;
     margin: 0 auto;
     padding: clamp(1rem, 3vw, 2.5rem);
     color: var(--color-text-primary);
+
+    &,
+    * {
+        box-sizing: border-box;
+    }
 
     [hidden] {
         display: none !important;
@@ -27,9 +36,10 @@
 
         h1 {
             margin: 0;
-            font-family: Georgia, "Times New Roman", serif;
+            font-family: var(--font-family-heading);
             font-size: clamp(2rem, 4vw, 3rem);
             line-height: 1.15;
+            text-align: left;
         }
     }
 
@@ -58,6 +68,8 @@
         }
     }
 
+    /* ── Панель фильтров ────────────────────────────────── */
+
     &__toolbar {
         display: flex;
         flex-wrap: wrap;
@@ -68,6 +80,10 @@
         background: var(--color-bg-panel);
         border: 1px solid var(--color-border-subtle);
         border-radius: 0.4rem;
+
+        > .btn {
+            flex: 0 0 auto;
+        }
     }
 
     &__filters {
@@ -95,7 +111,6 @@
 
         > input,
         > select {
-            box-sizing: border-box;
             width: 100%;
             min-width: 0;
             min-height: 2.75rem;
@@ -107,8 +122,7 @@
             font: inherit;
         }
 
-        > input:focus-visible,
-        > select:focus-visible {
+        > :is(input, select):focus-visible {
             outline: 2px solid var(--color-border-accent);
             outline-offset: 2px;
         }
@@ -121,117 +135,7 @@
         line-height: 1.6;
     }
 
-    &__list {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(100%, 23rem), 1fr));
-        align-items: stretch;
-        gap: 1.25rem;
-    }
-
-    &__card {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        padding: clamp(1rem, 2vw, 1.5rem);
-        background: var(--color-bg-panel);
-        border: 1px solid var(--color-border-subtle);
-        border-top: 3px solid var(--color-border-accent);
-        border-radius: 0.4rem;
-    }
-
-    &__card-heading {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 0.75rem;
-
-        > h2 {
-            flex: 1 1 12rem;
-            min-width: 0;
-            margin: 0;
-            font-family: Georgia, "Times New Roman", serif;
-            font-size: 1.5rem;
-            line-height: 1.3;
-            overflow-wrap: anywhere;
-        }
-    }
-
-    &__badge {
-        display: inline-block;
-        padding: 0.3rem 0.6rem;
-        color: var(--color-text-secondary);
-        border: 1px solid var(--color-border-subtle);
-        border-radius: 0.25rem;
-        font-size: 0.8rem;
-        line-height: 1.4;
-    }
-
-    &__badge--active {
-        color: var(--color-text-primary);
-        border-color: var(--color-border-accent);
-    }
-
-    &__description {
-        margin: 1rem 0 1.25rem;
-        line-height: 1.7;
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-    }
-
-    &__metadata {
-        display: grid;
-        gap: 0.65rem;
-        margin: 0 0 1.25rem;
-
-        > div {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-            gap: 0.5rem;
-        }
-
-        dt {
-            color: var(--color-text-secondary);
-            font-size: 0.85rem;
-            font-weight: 400;
-        }
-
-        dd {
-            min-width: 0;
-            margin: 0;
-            font-size: 0.9rem;
-            overflow-wrap: anywhere;
-        }
-    }
-
-    &__actions,
-    &__management {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.65rem;
-
-        > .btn {
-            max-width: 100%;
-            margin: 0;
-            white-space: normal;
-            overflow-wrap: anywhere;
-        }
-    }
-
-    &__actions {
-        margin-top: auto;
-        padding-top: 0.5rem;
-    }
-
-    &__management {
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--color-border-subtle);
-    }
-
-    &__delete {
-        margin-left: auto !important;
-    }
+    /* ── Пустое состояние ───────────────────────────────── */
 
     &__empty {
         grid-column: 1 / -1;
@@ -243,7 +147,7 @@
 
         h2 {
             margin: 0 0 0.75rem;
-            font-family: Georgia, "Times New Roman", serif;
+            font-family: var(--font-family-heading);
         }
 
         p {
@@ -253,6 +157,8 @@
         }
     }
 
+    /* ── Пояснение под шкафом ───────────────────────────── */
+
     &__note {
         margin-top: 1.5rem;
         padding: 1rem 1.25rem;
@@ -261,6 +167,7 @@
         h2 {
             margin: 0 0 0.5rem;
             font-size: 1rem;
+            text-align: left;
         }
 
         p {
@@ -273,15 +180,6 @@
     @media (max-width: 540px) {
         &__toolbar > .btn {
             width: 100%;
-        }
-
-        &__actions > .btn {
-            flex: 1 1 100%;
-        }
-
-        &__metadata > div {
-            grid-template-columns: minmax(0, 1fr);
-            gap: 0.15rem;
         }
     }
 }

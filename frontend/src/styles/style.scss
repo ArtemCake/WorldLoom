@@ -1,49 +1,48 @@
 /* frontend/src/styles/style.scss */
 
-/* Сохраняем порядок подключения исходных модулей. */
+/*
+ * Порядок подключения = порядок каскада.
+ *
+ *  1. Переменные и сброс — задают значения, на которые ссылаются все модули.
+ *  2. Типографика — шрифты и базовые размеры заголовков.
+ *  3. Каркас: навигация и контейнер страницы.
+ *  4. Компоненты — кнопки, поля, уведомления, модалки.
+ *  5. Страницы — собственные правила конкретных экранов.
+ *  6. Адаптив — последним, чтобы уточнения перебивали базовые правила.
+ */
+
+@use 'base/variables';
 @use 'base/reset';
 @use 'base/typography';
-@use 'base/variables';
+
 @use 'layout/navbar';
 @use 'layout/container';
+
+@use 'components/buttons';
+@use 'components/inputs';
+@use 'components/toast';
+@use 'components/cookie-banner';
+@use 'components/delete-modal';
+
+@use 'pages/auth';
 @use 'pages/profile';
 @use 'pages/legal';
 @use 'pages/landing';
 @use 'pages/admin';
 @use 'pages/lobby';
 @use 'pages/session-dice';
-@use 'components/cookie-banner';
-@use 'components/delete-modal';
-@use 'components/inputs';
-@use 'components/buttons';
-@use 'pages/auth';
-@use 'components/toast';
-@use 'base/responsive';
+@use 'pages/game-map';
 @use 'pages/game-system-editor';
-@use "pages/game-map";
 
-.flex {
-    display: flex;
-}
+@use 'base/responsive';
 
+/*
+ * Служебные утилиты. Оставлены только те, что реально встречаются
+ * в разметке или собираются в JS: `.hidden` переключают скрипты,
+ * `[hidden]` нужен как страховка от переопределения display.
+ */
 .hidden {
-    display: none;
-}
-
-.text-center {
-    text-align: center;
-}
-
-.mt-1 {
-    margin-top: 0.25rem;
-}
-
-.mt-2 {
-    margin-top: 0.5rem;
-}
-
-.mb-1 {
-    margin-bottom: 0.25rem;
+    display: none !important;
 }
 
 [hidden] {

@@ -245,7 +245,7 @@ WorldLoom/
 │   │   └── migrate.py
 │   ├── db_migrations/
 │   │   ├── versions/
-│   │   │   └── 5e49fa4b7183_describe_schema_change.py
+│   │   │   └── 9d84ac5b42d0_head.py
 │   │   ├── __init__.py
 │   │   ├── env.py
 │   │   ├── README
@@ -325,6 +325,7 @@ WorldLoom/
 │   │   │   │   │   │   ├── book-basis-changes.js
 │   │   │   │   │   │   ├── book-basis-data.js
 │   │   │   │   │   │   ├── book-basis-picker.js
+│   │   │   │   │   │   ├── book-basis-restore.js
 │   │   │   │   │   │   ├── book-definition-data.js
 │   │   │   │   │   │   ├── book-definitions.js
 │   │   │   │   │   │   ├── book-page-turn.js
@@ -439,11 +440,10 @@ WorldLoom/
 │   │       │   │   ├── _book-interactions.scss
 │   │       │   │   ├── _book.scss
 │   │       │   │   ├── _catalog.scss
-│   │       │   │   ├── _editor.scss
-│   │       │   │   ├── _engine.scss
 │   │       │   │   ├── _formula.scss
+│   │       │   │   ├── _indicators.scss
 │   │       │   │   ├── _mixins.scss
-│   │       │   │   └── _view.scss
+│   │       │   │   └── _shelf.scss
 │   │       │   ├── _admin.scss
 │   │       │   ├── _auth.scss
 │   │       │   ├── _game-map.scss
@@ -511,6 +511,7 @@ WorldLoom/
 ├── logs/
 │   ├── worldloom.log
 │   ├── worldloom.log.2026-11-06
+│   ├── worldloom.log.2026-11-07
 │   └── worldloom_error.log
 ├── staging/
 ├── tests/
@@ -546,6 +547,10 @@ WorldLoom/
 │   ├── context_pack.py
 │   ├── delete_empty_files.py
 │   └── project_tree.py
+├── uploads/
+│   └── master-admin-4fcc4c7b-c3dd-4b08-a0bc-70b88554aa00/
+│       └── game-тест-76a57e6b-e1c7-439b-98a0-02c8acded9c4/
+│           └── map-1.png
 ├── .env.example
 ├── .gitignore
 ├── alembic.ini

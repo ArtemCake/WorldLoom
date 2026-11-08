@@ -4,53 +4,73 @@
     @return '/' + $path;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-h2 {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  letter-spacing: 0.5px;
-  color: var(--accent-magic);
-}
-p {
-  margin-bottom: 1rem;
-  color: var(--text-secondary);
-}
-
- @font-face {
-     font-family: 'FantasyHeader';
-     src: url(asset('fonts/Cinzel-Bold.woff2')) format('woff2'),
-          url(asset('fonts/Cinzel-Bold.woff')) format('woff');
-     font-weight: 700;
-     font-style: normal;
- }
+/* ── Шрифты ─────────────────────────────────────────────── */
 
 @font-face {
     font-family: 'FantasyHeader';
     src: url(asset('fonts/Cinzel-Regular.woff2')) format('woff2'),
-        url(asset('fonts/Cinzel-Regular.woff')) format('woff');
+         url(asset('fonts/Cinzel-Regular.woff')) format('woff');
     font-weight: 400;
     font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'FantasyHeader';
+    src: url(asset('fonts/Cinzel-Bold.woff2')) format('woff2'),
+         url(asset('fonts/Cinzel-Bold.woff')) format('woff');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
     font-family: 'FantasyHeader';
     src: url(asset('fonts/Cinzel-Black.woff2')) format('woff2'),
-        url(asset('fonts/Cinzel-Black.woff')) format('woff');
+         url(asset('fonts/Cinzel-Black.woff')) format('woff');
     font-weight: 900;
     font-style: normal;
+    font-display: swap;
 }
 
- body {
-   font-family: var(--font-family-base);
+/* ── Базовые правила ────────────────────────────────────── */
+
+/*
+ * Выравнивание и цвет заголовков здесь не задаются: страницы и
+ * компоненты сами решают, где заголовок центрируется, а где стоит
+ * слева. Иначе глобальное text-align: center перебивало раскладку
+ * карточек и книги правил.
+ */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
 }
 
-h1, h2, h3, .section-title {
-    font-family: 'FantasyHeader', serif;
+h1,
+h2,
+h3,
+.section-title {
+    font-family: var(--font-family-heading);
     font-weight: var(--font-weight-heading);
     letter-spacing: var(--letter-spacing-heading);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 10px var(--heading-glow);
+}
+
+/* Цвет основного текста задаёт родитель — так параграфы внутри
+   карточек и книги наследуют нужный оттенок, а не серый по умолчанию. */
+p {
+    margin-bottom: 1rem;
+}
+
+code,
+kbd,
+samp,
+pre {
+    font-family: var(--font-family-mono);
 }

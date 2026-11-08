@@ -3,16 +3,14 @@
 @use './mixins' as *;
 
 /*
- * Новая книга правил.
- * Самостоятельная область оформления, не зависящая
- * от разметки старых редакторов.
+ * Книга правил: каркас разворота, страницы и вкладки глав.
+ * Содержимое листов — в _book-content.scss,
+ * перелистывание и прокрутка — в _book-interactions.scss.
  */
 
 .rules-book {
     --rules-book-page-height: 44rem;
-    min-width: 0;
-    color: var(--color-text-primary);
-    font-family: var(--font-family-base);
+
     min-width: 0;
     color: var(--color-text-primary);
     font-family: var(--font-family-base);
@@ -25,6 +23,8 @@
     [hidden] {
         display: none !important;
     }
+
+    /* ── Заголовки и текст внутри книги ─────────────────── */
 
     h1,
     h2,
@@ -56,8 +56,8 @@
 
     p {
         margin: 0 0 1rem;
-        text-align: left;
         line-height: 1.65;
+        text-align: left;
     }
 
     button,
@@ -69,16 +69,18 @@
 
     button {
         cursor: pointer;
-    }
 
-    button:disabled {
-        cursor: default;
-        opacity: 0.55;
+        &:disabled {
+            opacity: 0.55;
+            cursor: default;
+        }
     }
 
     :is(button, input, textarea, select):focus-visible {
         @include gs-editor-focus;
     }
+
+    /* ── Шапка, служебные подписи, сообщения ────────────── */
 
     &__header {
         display: flex;
@@ -106,6 +108,12 @@
         border-left: 3px solid var(--color-border-accent);
     }
 
+    &__error {
+        border-left-color: var(--color-text-error);
+    }
+
+    /* ── Разворот и вкладки глав ────────────────────────── */
+
     &__workspace {
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(10rem, 13rem);
@@ -115,22 +123,22 @@
 
     &__spread {
         @include gs-editor-surface($radius: 0.6rem);
+        position: relative;
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         min-width: 0;
+        isolation: isolate;
+        perspective: 1800px;
         box-shadow: 0 0.3rem 0 var(--color-bg-panel-alt);
     }
 
     &__page {
+        position: relative;
         min-width: 0;
         height: var(--rules-book-page-height);
-        min-height: 0;
         max-height: var(--rules-book-page-height);
-        padding: clamp(1.25rem, 2.6vw, 3rem);
-        overflow-x: auto;
-        overflow-y: scroll;
-        overscroll-behavior-y: contain;
-        scrollbar-gutter: stable;
+        // нижний отступ — место под загнутые уголки страниц
+        padding: clamp(1.25rem, 2.6vw, 3rem) clamp(1.25rem, 2.6vw, 3rem) 4.5rem;
         overflow-wrap: anywhere;
     }
 
@@ -161,35 +169,16 @@
         border-radius: 0 0.5rem 0.5rem 0;
         text-align: left;
         overflow-wrap: anywhere;
-    }
 
-    &__tab[aria-current="page"] {
-        color: var(--color-text-primary);
-        background: var(--color-bg-panel);
-        border-color: var(--color-border-accent);
-        font-weight: 700;
-    }
-
-    &__field {
-        display: grid;
-        gap: 0.5rem;
-        margin-bottom: 1.25rem;
-
-        > span {
-            font-weight: 600;
-        }
-
-        input,
-        textarea,
-        select {
-            @include gs-editor-control(0.7rem 0.8rem, 0.4rem);
-            min-width: 0;
-        }
-
-        textarea {
-            resize: vertical;
+        &[aria-current="page"] {
+            color: var(--color-text-primary);
+            background: var(--color-bg-panel);
+            border-color: var(--color-border-accent);
+            font-weight: 700;
         }
     }
+
+    /* ── Поля ввода внутри листов ───────────────────────── */
 
     &__check {
         display: flex;
@@ -205,53 +194,60 @@
         }
     }
 
-    &__prose {
-        white-space: pre-wrap;
-    }
-
-    &__facts {
-        margin: 1.25rem 0;
-    }
-
-    &__fact {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 0.5rem 1rem;
-        padding-block: 0.55rem;
-        border-bottom: 1px solid var(--color-border-subtle);
-
-        dt {
-            color: var(--color-text-secondary);
-            font-weight: 400;
-        }
-
-        dd {
-            margin: 0;
-        }
-    }
-
-    &__entry {
-        padding-block: 1.25rem;
-        border-bottom: 1px solid var(--color-border-subtle);
-
-        &:first-child {
-            padding-top: 0;
-        }
-
-        code {
-            display: block;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
-            color: inherit;
-            line-height: 1.7;
-        }
-    }
-
     &__footer {
         @include gs-editor-row(1rem);
         justify-content: space-between;
         margin-top: 1.5rem;
     }
+
+    /* ── Формы книги ────────────────────────────────────── */
+
+    &__form,
+    &__attribute-form {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+    }
+
+    &__attribute-form {
+        margin-top: 1.5rem;
+
+        > legend {
+            width: 100%;
+            margin-bottom: 1.25rem;
+            padding: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+    }
+
+    &__basis-note {
+        margin-top: 1rem;
+    }
+
+    &__description-input {
+        display: block;
+        width: 100%;
+        min-height: 8rem;
+        padding: 0.75rem;
+        color: var(--color-text-primary);
+        background: var(--color-bg-panel);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 0.35rem;
+        font: inherit;
+        line-height: 1.5;
+        resize: vertical;
+
+        &:focus-visible {
+            outline: 2px solid var(--color-border-accent);
+            outline-offset: 2px;
+        }
+    }
+
+    /* ── Адаптив ────────────────────────────────────────── */
 
     @media (max-width: 1100px) {
         &__workspace {
@@ -279,8 +275,9 @@
         }
 
         &__page {
-            min-height: 0;
-            padding: 1.25rem;
+            height: auto;
+            max-height: none;
+            padding: 1.25rem 1.25rem 3.5rem;
         }
 
         &__page--settings {
@@ -299,81 +296,5 @@
         &__footer > button {
             flex: 1 1 auto;
         }
-    }
-
-    /*
-     * Формы показателей.
-     * Положение после адаптивных правил сохранено.
-     */
-
-    &__attribute-form {
-        min-width: 0;
-        margin: 1.5rem 0 0;
-        padding: 0;
-        border: 0;
-
-        > legend {
-            width: 100%;
-            margin-bottom: 1.25rem;
-            padding: 0;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-    }
-
-    &__attribute-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        margin-top: 1.5rem;
-    }
-
-    &__choice {
-        margin-bottom: 1rem;
-        padding: 1rem;
-        border: 1px solid var(--color-border-subtle);
-        border-radius: 0.4rem;
-    }
-}
-
-/* Порядок отдельного блока сохранён относительно исходного файла. */
-
-.rules-book {
-    &__form {
-        min-width: 0;
-        margin: 0;
-        padding: 0;
-        border: 0;
-    }
-
-    &__basis-note {
-        margin-top: 1rem;
-    }
-    &__description {
-        margin: 0.75rem 0 1.25rem;
-        color: var(--color-text-primary);
-        line-height: 1.65;
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-    }
-
-    &__description-input {
-        display: block;
-        box-sizing: border-box;
-        width: 100%;
-        min-height: 8rem;
-        padding: 0.75rem;
-        color: var(--color-text-primary);
-        background: var(--color-bg-panel);
-        border: 1px solid var(--color-border-subtle);
-        border-radius: 0.35rem;
-        font: inherit;
-        line-height: 1.5;
-        resize: vertical;
-    }
-
-    &__description-input:focus-visible {
-        outline: 2px solid var(--color-border-accent);
-        outline-offset: 2px;
     }
 }

@@ -1,13 +1,20 @@
 /* frontend/src/styles/pages/_game-system-editor.scss */
 
-/* Единая точка подключения стилей редактора игровых систем. */
+/*
+ * Единая точка подключения стилей редактора игровых систем.
+ *
+ * Порядок важен:
+ *   1. каркас книги;
+ *   2. общие карточки показателей — книга их переопределяет под лист;
+ *   3. содержимое и взаимодействия книги;
+ *   4. каталог и книжный шкаф;
+ *   5. формулы.
+ */
 
-@use './game-system-editor/editor';
-@use './game-system-editor/view';
-@use './game-system-editor/engine';
 @use './game-system-editor/book';
-@use './game-system-editor/book-interactions';
+@use './game-system-editor/indicators';
 @use './game-system-editor/book-content';
-@use './game-system-editor/_formula.scss';
+@use './game-system-editor/book-interactions';
 @use './game-system-editor/catalog';
 @use './game-system-editor/shelf';
+@use './game-system-editor/formula';

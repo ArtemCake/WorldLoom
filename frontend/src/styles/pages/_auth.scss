@@ -1,11 +1,20 @@
 /* frontend/src/styles/pages/_auth.scss */
 
-/* Ссылки-переключатели между формами */
+/* Ссылки-переключатели между формами внутри «стеклянной» панели */
 .auth-container p a {
-  color: var(--accent-magic);
-  text-decoration: none;
-  font-size: 14px;
+    color: var(--accent-magic);
+    font-size: 0.9rem;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
 }
-.auth-container p a:hover {
-  text-decoration: underline;
+
+/* Блок повторной отправки письма на странице регистрации */
+.resend-section__text {
+    margin-bottom: 0.5rem;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    text-align: left;
 }

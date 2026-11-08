@@ -337,10 +337,13 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 
 	function refreshStatus() {
 		const snapshot = state.read();
-
+		const publication = snapshot.document.publication ?? null;
 		title.textContent = snapshot.document.system.name.trim() || 'Новая игровая система';
 
-		if (snapshot.mode === 'view') {
+		if (publication) {
+			const date = new Date(publication.published_at).toLocaleString('ru-RU', {timeZone: 'UTC'});
+			status.textContent = `Публикация №${publication.version_number} · ${date} UTC · исполнитель ${publication.rules_engine_version}`;
+		} else if (snapshot.mode === 'view') {
 			status.textContent = 'Просмотр — изменение правил отключено';
 		} else if (snapshot.blocked) {
 			status.textContent = 'Запись заблокирована. Загрузите и сверьте сохранённые данные.';

@@ -321,15 +321,22 @@ function mountBookPage(root) {
 
             checkSnapshot(snapshot, systemId, key);
 
-            const origin = mode === 'edit' ? await loadOrigin(snapshot, adminPath) : null;
+            const origin = draftMode ? await loadOrigin(snapshot, adminPath) : null;
             const revision = draftMode ? snapshot.revision : null;
             const card = cardValues(system);
 
             if (!draftMode) {
                 card.rules_engine_version = snapshot.rules_engine_version;
             }
-            replaceBook({system: card, rules: snapshot.rules, origin}, revision);
+            const publication = draftMode
+            ? null
+            : {
+                version_number: snapshot.version_number,
+                published_at: snapshot.published_at,
+                rules_engine_version: snapshot.rules_engine_version
+            };
 
+            replaceBook({system: card, rules: snapshot.rules, origin, publication}, revision);
 
             message.textContent = draftMode
             ? `Сохранённый черновик · ревизия ${snapshot.revision}.`

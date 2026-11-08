@@ -146,7 +146,7 @@ async def update_user_profile(session: AsyncSession, user: User, nickname: str, 
 			current.profile_settings = profile_settings
 
 		if avatar_content is not None:
-			new_avatar_url = await asyncio.to_thread(save_avatar, user_id, avatar_content)
+			new_avatar_url = await asyncio.to_thread(save_avatar,nickname,  user_id, avatar_content)
 			current.avatar_url = new_avatar_url
 
 		if changed:
@@ -163,7 +163,7 @@ async def update_user_profile(session: AsyncSession, user: User, nickname: str, 
 	except IntegrityError:
 		await session.rollback()
 		if not commit_started and new_avatar_url is not None:
-			await asyncio.to_thread(remove_owned_avatar, new_avatar_url, user_id)
+			await asyncio.to_thread(remove_owned_avatar, new_avatar_url, nickname, user_id)
 
 		try:
 			conflict = await _find_profile_conflict(session, user_id, nickname, requested_email_hash)
@@ -176,11 +176,11 @@ async def update_user_profile(session: AsyncSession, user: User, nickname: str, 
 	except Exception:
 		await session.rollback()
 		if not commit_started and new_avatar_url is not None:
-			await asyncio.to_thread(remove_owned_avatar, new_avatar_url, user_id)
+			await asyncio.to_thread(remove_owned_avatar, new_avatar_url, nickname, user_id)
 		raise
 
 	if new_avatar_url is not None and old_avatar_url != new_avatar_url:
-		await asyncio.to_thread(remove_owned_avatar, old_avatar_url, user_id)
+		await asyncio.to_thread(remove_owned_avatar, old_avatar_url, nickname, user_id)
 
 	mail_sent: bool | None = None
 	if verification_token is not None:

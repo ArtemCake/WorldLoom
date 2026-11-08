@@ -126,7 +126,7 @@ class WebAppSettings(BaseSettings):
 	)
 
 	# Изображения карт.
-	MAP_IMAGES_DIR: Path | None = Path("uploads")
+	MAP_IMAGES_DIR: Path | None = Path("frontend/uploads")
 	MAP_IMAGE_MAX_BYTES: int = Field(
 		default=10 * 1024 * 1024,
 		gt=0,

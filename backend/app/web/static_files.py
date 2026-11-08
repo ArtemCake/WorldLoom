@@ -9,7 +9,7 @@ from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 from backend.app.core.paths import FRONTEND_DIST_DIR
-from backend.app.web.assets import STATIC_URL_PREFIX
+from backend.app.web.assets import PUBLIC_URL_PREFIX
 
 
 def _blocked_parts(parts: tuple[str, ...]) -> bool:
@@ -49,7 +49,7 @@ class PublicStaticFiles(StaticFiles):
 def mount_static_files(app: FastAPI) -> None:
 	"""Подключить готовый dist один раз при сборке приложения."""
 	app.mount(
-		STATIC_URL_PREFIX.rstrip("/"),
+		PUBLIC_URL_PREFIX.rstrip("/"),
 		PublicStaticFiles(directory=str(FRONTEND_DIST_DIR), html=False, check_dir=True, follow_symlink=False),
 		name="static",
 	)

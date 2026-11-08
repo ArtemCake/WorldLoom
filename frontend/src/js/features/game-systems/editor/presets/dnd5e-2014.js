@@ -335,3 +335,137 @@ export function createDnd5e2014NumericProfile() {
 
 	return profile;
 }
+
+function addFeatureSwitch(profile, code, label) {
+    const choices = [
+        {value: 0, label: 'Не применяется'},
+        {value: 1, label: 'Применяется'}
+    ];
+
+    addChoiceAttribute(profile, code, label, choices, 0);
+}
+
+function halfCheckProficiency(abilityCode) {
+    const jack = operation('multiply', attributeReference('jack_of_all_trades'), statReference('half_proficiency_floor'));
+    const physical = ['strength', 'dexterity', 'constitution'].includes(abilityCode);
+
+    if (!physical) return jack;
+
+    const athlete = operation('multiply', attributeReference('remarkable_athlete'), statReference('half_proficiency_ceil'));
+
+    // Несколько способов добавить часть бонуса мастерства не складываются.
+    return operation('max', jack, athlete);
+}
+
+function untrainedCheckProficiency(abilityCode, rankCode) {
+    const trained = operation('min', 1, attributeReference(rankCode));
+    const untrained = operation('subtract', 1, trained);
+
+    return operation('multiply', untrained, halfCheckProficiency(abilityCode));
+}
+
+function addCheckFeatures(profile) {
+    addFeatureSwitch(profile, 'jack_of_all_trades', 'Мастер на все руки: особенность получена');
+    addFeatureSwitch(profile, 'remarkable_athlete', 'Выдающийся атлет: особенность получена');
+
+    profile.calculations.attributes.jack_of_all_trades.description =
+        'Числовое применение полученной особенности. Требования класса и уровня проверяются отдельно.';
+
+    profile.calculations.attributes.remarkable_athlete.description =
+        'Бонус к проверкам Силы, Ловкости и Телосложения без владения. Дополнительная дальность прыжка сюда не входит.';
+
+    const proficiency = statReference('proficiency_bonus');
+
+    addDerived(profile, 'half_proficiency_floor', 'Половина бонуса мастерства вниз', operation('floor_div', proficiency, 2));
+    addDerived(profile, 'half_proficiency_ceil', 'Половина бонуса мастерства вверх', operation('ceil_div', proficiency, 2));
+
+    for (const [abilityCode, label] of ABILITIES) {
+        const code = `check_${abilityCode}_untrained_base`;
+        const modifier = statReference(`${abilityCode}_modifier`);
+        const formula = operation('sum', modifier, halfCheckProficiency(abilityCode));
+
+        addDerived(profile, code, `Проверка без владения: ${label}`, formula);
+
+        profile.calculations.derived[code].description =
+            'Проверка без владения с учётом включённых особенностей, без прочих ситуативных модификаторов.';
+    }
+}
+
+function addSavingThrowTotals(profile) {
+    for (const [abilityCode, label] of ABILITIES) {
+        const bonusCode = `save_${abilityCode}_bonus`;
+        const totalCode = `save_${abilityCode}_total`;
+
+        addAttribute(profile, bonusCode, `Дополнительный бонус спасброска: ${label}`, -1000, 1000, 0);
+
+        const formula = operation('sum', statReference(`save_${abilityCode}`), attributeReference(bonusCode));
+
+        addDerived(profile, totalCode, `Итоговый бонус спасброска: ${label}`, formula);
+
+        profile.calculations.attributes[bonusCode].description =
+            'Только применимый числовой модификатор. Дополнительные кости и преимущество этим полем не моделируются.';
+    }
+}
+
+function addSkillTotals(profile) {
+    const passiveModes = [
+        {value: -1, label: 'Помеха'},
+        {value: 0, label: 'Обычная проверка'},
+        {value: 1, label: 'Преимущество'}
+    ];
+
+    for (const [skillCode, label, abilityCode] of SKILLS) {
+        const bonusCode = `skill_${skillCode}_bonus`;
+        const modeCode = `passive_${skillCode}_mode`;
+        const totalCode = `skill_${skillCode}_total`;
+        const passiveCode = `passive_${skillCode}_total`;
+        const rankCode = `skill_${skillCode}_rank`;
+
+        addAttribute(profile, bonusCode, `Дополнительный бонус навыка: ${label}`, -1000, 1000, 0);
+        addChoiceAttribute(profile, modeCode, `Условия пассивной проверки: ${label}`, passiveModes, 0);
+
+        const base = statReference(`skill_${skillCode}`);
+        const partialProficiency = untrainedCheckProficiency(abilityCode, rankCode);
+        const bonus = attributeReference(bonusCode);
+        const total = operation('sum', base, partialProficiency, bonus);
+
+        addDerived(profile, totalCode, `Итоговый бонус навыка: ${label}`, total);
+
+        const passiveAdjustment = operation('multiply', 5, attributeReference(modeCode));
+        const passive = operation('sum', 10, statReference(totalCode), passiveAdjustment);
+
+        addDerived(profile, passiveCode, `Итоговая пассивная проверка: ${label}`, passive);
+
+        profile.calculations.attributes[modeCode].description =
+            'Итоговые условия конкретной проверки. При одновременных преимуществе и помехе выберите обычную проверку.';
+
+        profile.calculations.attributes[bonusCode].description =
+            'Применимый постоянный числовой модификатор. Не заменяет дополнительные кости и ситуативные эффекты.';
+    }
+}
+
+function addInitiativeTotal(profile) {
+    const choices = [
+        {value: 0, label: 'Нет владения'},
+        {value: 1, label: 'Бонус мастерства применяется'}
+    ];
+
+    addChoiceAttribute(profile, 'initiative_trained', 'Применение бонуса мастерства к инициативе', choices, 0);
+    addAttribute(profile, 'initiative_bonus', 'Дополнительный бонус инициативы', -1000, 1000, 0);
+
+    profile.calculations.attributes.initiative_trained.description =
+        'Включается только при наличии правила, добавляющего бонус мастерства к инициативе.';
+
+    const trained = operation('multiply', attributeReference('initiative_trained'), statReference('proficiency_bonus'));
+    const untrained = untrainedCheckProficiency('dexterity', 'initiative_trained');
+    const formula = operation('sum', statReference('initiative_base'), trained, untrained, attributeReference('initiative_bonus'));
+
+    addDerived(profile, 'initiative_total', 'Итоговый бонус инициативы', formula);
+}
+
+function addExtendedChecks(profile) {
+    addCheckFeatures(profile);
+    addSavingThrowTotals(profile);
+    addSkillTotals(profile);
+    addInitiativeTotal(profile);
+}

@@ -10,7 +10,7 @@ from urllib.parse import quote
 from backend.app.core.paths import VITE_MANIFEST_FILE
 
 
-STATIC_URL_PREFIX = "/frontend/static/"
+PUBLIC_URL_PREFIX = "/frontend/public/"
 
 _ENTRY_ALIASES = {
 	"js/main.min.js": ("src/js/main.js", ".js"),
@@ -41,7 +41,7 @@ def _relative_asset_name(value: object) -> str:
 def static_url(filename: str) -> str:
 	"""Сформировать адрес обычного публичного ресурса без чтения manifest."""
 	relative = _relative_asset_name(filename)
-	return f"{STATIC_URL_PREFIX}{quote(relative, safe='/')}"
+	return f"{PUBLIC_URL_PREFIX}{quote(relative, safe='/')}"
 
 def create_static_url(manifest_file: Path = VITE_MANIFEST_FILE) -> Callable[[str], str]:
 	"""Прочитать manifest один раз при создании окружения HTML-шаблонов."""

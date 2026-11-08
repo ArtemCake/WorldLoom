@@ -13,15 +13,15 @@ from typing import Protocol
 from uuid import UUID, uuid4
 from PIL import Image, ImageOps, UnidentifiedImageError
 from backend.app.core.logging import get_logger
-from backend.app.core.paths import DATA_DIR
+from backend.app.core.paths import UPLOADS_DIR
 from backend.app.core.settings import WebAppSettings
 from backend.app.modules.users.errors import AvatarTooLarge, InvalidAvatar
 
 
 log = get_logger(__name__)
 
-AVATARS_ROOT = DATA_DIR / "avatars"
-AVATAR_URL_PREFIX = "/profile/avatars/"
+AVATARS_ROOT = UPLOADS_DIR / "private" / "avatars"
+AVATAR_URL_PREFIX = "frontend/uploads/private/avatars"
 _REPARSE_POINT = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 
 class AvatarUpload(Protocol):
@@ -81,12 +81,13 @@ async def prepare_avatar(upload: AvatarUpload | None, *, settings: WebAppSetting
 
 	return await asyncio.to_thread(_normalize_avatar, contents, settings)
 
-def _checked_avatar_path(user_id: UUID, filename: str) -> Path:
+def _checked_avatar_path(nickname, user_id: UUID, filename: str) -> Path:
 	"""Разрешить только серверное имя PNG внутри каталога указанного пользователя."""
-	if not isinstance(user_id, UUID) or re.fullmatch(r"[0-9a-f]{32}\.png", filename) is None:
+	pattern = re.compile(r".*[0-9a-f]{32}\.png$")
+	if not isinstance(user_id, UUID) or pattern.fullmatch(filename) is None:
 		raise ValueError("Некорректный адрес аватара")
-
-	path = AVATARS_ROOT / str(user_id) / filename
+	name_catalog = f"{nickname}_{user_id}"
+	path = AVATARS_ROOT / name_catalog / filename
 
 	for component in (*reversed(path.parents), path):
 		try:
@@ -99,12 +100,12 @@ def _checked_avatar_path(user_id: UUID, filename: str) -> Path:
 
 	return path
 
-def save_avatar(user_id: UUID, contents: bytes) -> str:
+def save_avatar(nickname, user_id: UUID, contents: bytes) -> str:
 	"""Записать подготовленный PNG под новым именем, не заменяя существующий файл."""
-	filename = f"{uuid4().hex}.png"
-	path = _checked_avatar_path(user_id, filename)
+	filename = f"{nickname}_{uuid4().hex}{uuid4().hex}.png"
+	path = _checked_avatar_path(nickname, user_id, filename)
 	path.parent.mkdir(parents=True, exist_ok=True)
-	path = _checked_avatar_path(user_id, filename)
+	path = _checked_avatar_path(nickname, user_id, filename)
 	created = False
 
 	try:
@@ -119,11 +120,11 @@ def save_avatar(user_id: UUID, contents: bytes) -> str:
 				log.warning("Не удалось убрать незавершённый файл аватара.")
 		raise
 
-	return f"{AVATAR_URL_PREFIX}{user_id}/{filename}"
+	return f"{AVATAR_URL_PREFIX}/{nickname}_{user_id}/{filename}"
 
-def remove_owned_avatar(url: str | None, user_id: UUID) -> None:
+def remove_owned_avatar(nickname, url: str | None, user_id: UUID) -> None:
 	"""Удалить только новый управляемый файл этого пользователя; старые адреса не трогать."""
-	prefix = f"{AVATAR_URL_PREFIX}{user_id}/"
+	prefix = f"{AVATAR_URL_PREFIX}/{nickname}_{user_id}/"
 	if not isinstance(url, str) or not url.startswith(prefix):
 		return
 

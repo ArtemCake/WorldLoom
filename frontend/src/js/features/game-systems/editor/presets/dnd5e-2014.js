@@ -331,9 +331,10 @@ export function createDnd5e2014NumericProfile() {
 			statReference('dexterity_modifier')
 		)
 	);
-	addHitPoints(profile);
+    addHitPoints(profile);
+    addExtendedChecks(profile);
 
-	return profile;
+    return profile;
 }
 
 function addFeatureSwitch(profile, code, label) {

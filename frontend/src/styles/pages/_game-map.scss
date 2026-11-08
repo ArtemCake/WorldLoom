@@ -12,22 +12,39 @@
     touch-action: none;
 }
 
+/* Источник фона продолжает загружаться, но отдельно не показывается. */
+.map-source-image {
+    display: none !important;
+}
+
 [data-map-sandbox] .game-map__viewport {
     display: block;
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    max-height: none;
+    box-sizing: border-box;
+    width: 960px;
+    min-width: 960px;
+    max-width: 960px;
+    height: 560px;
+    min-height: 560px;
+    max-height: 560px;
+    margin-inline: auto;
+    padding: 0;
     aspect-ratio: auto;
-    overflow: visible;
+    overflow: hidden;
+    background: #171b22;
 }
 
 [data-map-sandbox] canvas[data-preview-canvas] {
     display: block;
+    box-sizing: border-box;
     width: 100%;
-    height: auto;
+    height: 100%;
+    min-width: 0;
     min-height: 0;
+    max-width: none;
     max-height: none;
-    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
     aspect-ratio: auto;
+    object-fit: fill;
 }

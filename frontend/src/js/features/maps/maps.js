@@ -80,7 +80,7 @@ export function initMaps() {
         if (!objectUrl || disposed) return;
 
         input.setCustomValidity('');
-        image.hidden = false;
+        image.hidden = true;
         previewMessage.textContent = 'Выбранный фон. Изображение ещё не загружено на сервер.';
     }, options);
 

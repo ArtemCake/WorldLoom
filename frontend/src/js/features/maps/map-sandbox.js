@@ -119,6 +119,52 @@ export function initMapSandbox(root, image) {
     let generating = false;
 
     const key = (cell) => `${cell.q}:${cell.r}`;
+    const fogTexture = document.createElement('canvas');
+    let fogTextureReady = false;
+
+    function paintFog(context, width, height) {
+        if (!fogTextureReady || fogTexture.width !== width || fogTexture.height !== height) {
+            fogTexture.width = width;
+            fogTexture.height = height;
+
+            const textureContext = fogTexture.getContext('2d');
+
+            if (!textureContext) {
+                context.fillStyle = '#303b47';
+                context.fillRect(0, 0, width, height);
+                return;
+            }
+
+            const background = textureContext.createLinearGradient(0, 0, width, height);
+
+            background.addColorStop(0, '#26313d');
+            background.addColorStop(0.5, '#485563');
+            background.addColorStop(1, '#283440');
+
+            textureContext.fillStyle = background;
+            textureContext.fillRect(0, 0, width, height);
+
+            const cloudRadius = Math.max(width, height) * 0.28;
+
+            for (let index = 0; index < 36; index += 1) {
+                const x = ((index * 137 + 43) % 997) / 997 * width;
+                const y = ((index * 251 + 97) % 991) / 991 * height;
+                const radiusValue = cloudRadius * (0.65 + (index % 5) * 0.12);
+                const cloud = textureContext.createRadialGradient(x, y, 0, x, y, radiusValue);
+
+                cloud.addColorStop(0, 'rgba(188, 201, 210, 0.18)');
+                cloud.addColorStop(0.55, 'rgba(149, 168, 184, 0.08)');
+                cloud.addColorStop(1, 'rgba(149, 168, 184, 0)');
+
+                textureContext.fillStyle = cloud;
+                textureContext.fillRect(x - radiusValue, y - radiusValue, radiusValue * 2, radiusValue * 2);
+            }
+
+            fogTextureReady = true;
+        }
+
+        context.drawImage(fogTexture, 0, 0);
+    }
 
     function geometry() {
         const widthUnits = Math.sqrt(3) * (cols + (rows > 1 ? 0.5 : 0));
@@ -185,8 +231,9 @@ export function initMapSandbox(root, image) {
         if (fog.checked) {
             mask.width = width;
             mask.height = height;
-            maskCtx.fillStyle = '#000';
-            maskCtx.fillRect(0, 0, width, height);
+            maskCtx.globalAlpha = 1;
+            maskCtx.globalCompositeOperation = 'source-over';
+            paintFog(maskCtx, width, height);
             maskCtx.globalCompositeOperation = 'destination-out';
 
             for (const cell of cells) {

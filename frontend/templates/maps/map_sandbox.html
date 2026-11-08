@@ -73,7 +73,23 @@
 		<canvas class="game-map__canvas" data-preview-canvas tabindex="0"
 		        aria-label="Предпросмотр карты и тестовой видимости"></canvas>
 	</div>
+	<p>
+		<label for="maps-create-background">Изображение карты — необязательно</label>
+		<input id="maps-create-background" name="background_image" type="file"
+		       accept="image/png,image/jpeg,image/webp" data-max-bytes="{{ map_image_max_bytes }}"
+		       aria-describedby="maps-create-background-help">
+	</p>
 	
+	<p id="maps-create-background-help">
+		Выберите PNG, JPEG или WebP без анимации.
+		Файл отправляется на сервер только при создании карты.
+		Без изображения будет создана карта с пустым фоном.
+	</p>
+	
+	<p data-map-create-preview-message role="status" aria-live="polite"></p>
+	
+	<img data-map-create-preview alt="Предпросмотр выбранного изображения"
+	     style="max-width: 100%; height: auto;" hidden>
 	<p data-preview-message role="status" aria-live="polite"></p>
 	
 	<p>

@@ -134,7 +134,7 @@ context_files.txt
 structure_ignore.txt
 vite_command.txt
 requirements-dev.txt
-check_deps.py
+/audit/
 
 # ------------------------------------------------------------
 # Редакторы и операционная система

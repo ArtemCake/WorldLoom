@@ -1,0 +1,315 @@
+/* frontend/src/styles/pages/game-system-editor/_shelf.scss */
+
+/*
+ * Книжный шкаф каталога игровых систем.
+ * Корешок книги — ссылка на систему, панель с описанием
+ * и управлением появляется при наведении или фокусе.
+ */
+
+.book-shelf {
+    --book-shelf-board: 0.85rem;
+    --book-shelf-gap: 0.5rem;
+
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    margin-top: 0.5rem;
+
+    &,
+    * {
+        box-sizing: border-box;
+    }
+
+    [hidden] {
+        display: none !important;
+    }
+
+    &__shelf {
+        position: relative;
+        padding: 1.25rem 1.25rem 0;
+        background-color: var(--color-bg-panel-alt);
+        background-image: linear-gradient(
+            180deg,
+            rgba(0, 0, 0, 0.45),
+            rgba(0, 0, 0, 0.18) 55%,
+            rgba(0, 0, 0, 0.04)
+        );
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 0.4rem 0.4rem 0 0;
+
+        &:not(:first-child) {
+            margin-top: 1.1rem;
+        }
+
+        &::after {
+            content: "";
+            position: absolute;
+            right: -0.15rem;
+            bottom: calc(-1 * var(--book-shelf-board));
+            left: -0.15rem;
+            height: var(--book-shelf-board);
+            background-image: linear-gradient(
+                180deg,
+                var(--color-border-accent),
+                var(--color-bg-panel)
+            );
+            border-radius: 0.2rem;
+            box-shadow: 0 0.5rem 0.9rem rgba(0, 0, 0, 0.45);
+        }
+    }
+
+    &__row {
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-start;
+        gap: var(--book-shelf-gap);
+        padding-bottom: 0.15rem;
+    }
+
+    &__book {
+        position: relative;
+        flex: 0 0 auto;
+        width: var(--spine-width, 2.8rem);
+        height: var(--spine-height, 16rem);
+        z-index: 1;
+
+        &:hover,
+        &:focus-within {
+            z-index: 6;
+        }
+
+        &:first-child &__panel {
+            left: 0;
+            transform: none;
+        }
+
+        &:last-child &__panel {
+            right: 0;
+            left: auto;
+            transform: none;
+        }
+    }
+
+    &__spine {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        padding: 0.75rem 0.2rem;
+        color: var(--color-text-primary);
+        text-decoration: none;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        background-color: var(--color-bg-panel);
+        background-image: linear-gradient(
+            90deg,
+            rgba(0, 0, 0, 0.45),
+            rgba(255, 255, 255, 0.07) 32%,
+            rgba(0, 0, 0, 0.4)
+        );
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 0.15rem 0.35rem 0.35rem 0.15rem;
+        box-shadow:
+            inset -0.35rem 0 0.5rem rgba(0, 0, 0, 0.35),
+            0.15rem 0.25rem 0.5rem rgba(0, 0, 0, 0.35);
+        transition: transform 160ms ease, box-shadow 160ms ease;
+        overflow: hidden;
+
+        &:focus-visible {
+            outline: 2px solid var(--color-border-accent);
+            outline-offset: 3px;
+        }
+    }
+
+    &__book:hover &__spine,
+    &__book:focus-within &__spine {
+        transform: translateY(-0.6rem);
+        box-shadow:
+            inset -0.35rem 0 0.5rem rgba(0, 0, 0, 0.35),
+            0.35rem 0.9rem 1.2rem rgba(0, 0, 0, 0.5);
+    }
+
+    &__title {
+        max-height: 100%;
+        overflow: hidden;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 0.95rem;
+        line-height: 1.1;
+        letter-spacing: 0.06em;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-shadow: 0 0.1rem 0.2rem rgba(0, 0, 0, 0.6);
+    }
+
+    &__mark {
+        position: absolute;
+        top: 0.9rem;
+        right: 0.35rem;
+        left: 0.35rem;
+        height: 0.15rem;
+        background-color: var(--color-border-accent);
+        opacity: 0.75;
+        pointer-events: none;
+    }
+
+    &__book[data-tone="0"] &__spine {
+        background-color: color-mix(in srgb, var(--color-border-accent) 8%, var(--color-bg-panel));
+    }
+
+    &__book[data-tone="1"] &__spine {
+        background-color: color-mix(in srgb, var(--color-border-accent) 16%, var(--color-bg-panel));
+    }
+
+    &__book[data-tone="2"] &__spine {
+        background-color: color-mix(in srgb, var(--color-border-accent) 24%, var(--color-bg-panel));
+    }
+
+    &__book[data-tone="3"] &__spine {
+        background-color: color-mix(in srgb, var(--color-border-accent) 32%, var(--color-bg-panel));
+    }
+
+    &__book[data-tone="4"] &__spine {
+        background-color: color-mix(in srgb, var(--color-border-accent) 40%, var(--color-bg-panel));
+    }
+
+    &__book[data-tone="5"] &__spine {
+        background-color: color-mix(in srgb, var(--color-border-accent) 48%, var(--color-bg-panel));
+    }
+
+    &__book[data-inactive="true"] &__spine {
+        filter: grayscale(0.65) brightness(0.78);
+        opacity: 0.85;
+    }
+
+    &__panel {
+        position: absolute;
+        bottom: calc(100% + 0.85rem);
+        left: 50%;
+        z-index: 2;
+        width: min(20rem, 78vw);
+        padding: 1rem;
+        color: var(--color-text-primary);
+        background: var(--color-bg-panel);
+        border: 1px solid var(--color-border-subtle);
+        border-top: 3px solid var(--color-border-accent);
+        border-radius: 0.4rem;
+        box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.5);
+        transform: translateX(-50%);
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 140ms ease, visibility 140ms ease;
+
+        h3 {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 1.15rem;
+            line-height: 1.3;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    &__book:hover &__panel,
+    &__book:focus-within &__panel {
+        visibility: visible;
+        opacity: 1;
+    }
+
+    &__panel-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.5rem;
+
+        > h3 {
+            flex: 1 1 10rem;
+            min-width: 0;
+        }
+    }
+
+    &__badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        color: var(--color-text-secondary);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        line-height: 1.4;
+    }
+
+    &__badge--active {
+        color: var(--color-text-primary);
+        border-color: var(--color-border-accent);
+    }
+
+    &__description {
+        margin: 0.75rem 0 1rem;
+        line-height: 1.65;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    &__actions,
+    &__management {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+
+        > .btn {
+            max-width: 100%;
+            margin: 0;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    &__management {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--color-border-subtle);
+    }
+
+    @media (max-width: 640px) {
+        &__row {
+            display: grid;
+            gap: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+
+        &__book {
+            width: 100%;
+            height: auto;
+        }
+
+        &__spine {
+            flex-direction: row;
+            justify-content: flex-start;
+            width: 100%;
+            height: auto;
+            padding: 0.85rem 1rem;
+            writing-mode: horizontal-tb;
+        }
+
+        &__title {
+            max-height: none;
+            white-space: normal;
+            text-align: left;
+        }
+
+        &__mark {
+            display: none;
+        }
+
+        &__panel {
+            position: static;
+            width: 100%;
+            margin-top: 0.5rem;
+            transform: none;
+            visibility: visible;
+            opacity: 1;
+            box-shadow: none;
+        }
+    }
+}

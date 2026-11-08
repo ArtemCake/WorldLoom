@@ -4,6 +4,29 @@ import {requestGameSystem} from '../api/game-system-api.js';
 
 const initializedRoots = new WeakSet();
 
+const SHELF_CAPACITY = 8;
+const SPINE_TONES = 6;
+
+function seedOf(text) {
+	let value = 7;
+
+	for (let index = 0; index < text.length; index += 1) {
+		value = (value * 31 + text.charCodeAt(index)) % 100003;
+	}
+
+	return value;
+}
+
+function spineMetrics(system) {
+	const seed = seedOf(system.id);
+
+	return {
+		tone: seed % SPINE_TONES,
+		height: 14 + (seed % 6),
+		width: 2.4 + ((seed % 5) * 0.2)
+	};
+}
+
 function node(tag, text = '', className = '') {
 	const result = document.createElement(tag);
 
@@ -45,7 +68,7 @@ export function mountSystemsCatalog(root) {
 	const login = root.querySelector('[data-page-login]');
 	const reload = root.querySelector('[data-page-reload]');
 	const content = root.querySelector('[data-page-content]');
-	const list = root.querySelector('[data-systems-list]');
+	const list = root.querySelector('[data-systems-shelf]');
 	const create = root.querySelector('[data-system-create]');
 	const search = root.querySelector('[data-catalog-search]');
 	const status = root.querySelector('[data-catalog-status]');
@@ -67,6 +90,69 @@ export function mountSystemsCatalog(root) {
 		login.hidden = error?.status !== 401;
 	}
 
+	function renderBook(system) {
+		const id = encodeURIComponent(system.id);
+		const metrics = spineMetrics(system);
+		const book = node('article', '', 'book-shelf__book');
+
+		book.dataset.tone = String(metrics.tone);
+		book.dataset.inactive = String(system.is_active !== true);
+		book.style.setProperty('--spine-height', `${metrics.height}rem`);
+		book.style.setProperty('--spine-width', `${metrics.width.toFixed(1)}rem`);
+
+		const spine = node('a', '', 'book-shelf__spine');
+
+		spine.href = `/game-systems/catalog/${id}`;
+		spine.setAttribute('hx-boost', 'false');
+		spine.append(node('span', system.name, 'book-shelf__title'));
+		book.append(spine, node('span', '', 'book-shelf__mark'));
+
+		const panel = node('div', '', 'book-shelf__panel');
+		const head = node('header', '', 'book-shelf__panel-head');
+		const badge = node('span', system.is_active === true ? 'Активна' : 'Неактивна', 'book-shelf__badge');
+
+		badge.classList.toggle('book-shelf__badge--active', system.is_active === true);
+		head.append(node('h3', system.name), badge);
+
+		panel.append(
+			head,
+			node('p', system.description || 'Описание пока не добавлено.', 'book-shelf__description')
+		);
+
+		const actions = node('div', '', 'book-shelf__actions');
+
+		actions.append(link('Посмотреть', `/game-systems/catalog/${id}`));
+
+		if (access?.can_edit === true) {
+			actions.append(link('Редактировать', `/game-systems/catalog/${id}/edit`));
+		}
+
+		panel.append(actions);
+
+		const management = node('div', '', 'book-shelf__management');
+
+		for (const action of ['toggle', 'delete']) {
+			const allowed = action === 'toggle' ? access?.can_toggle === true : access?.can_delete === true;
+
+			if (!allowed) continue;
+			if (action === 'toggle' && typeof system.is_active !== 'boolean') continue;
+
+			const text = action === 'delete' ? 'Удалить' : system.is_active ? 'Деактивировать' : 'Активировать';
+			const button = node('button', text, 'btn btn-outline-primary');
+
+			button.type = 'button';
+			button.dataset.catalogAction = action;
+			button.dataset.systemId = system.id;
+			button.disabled = busy || !ready || blocked.has(system.id);
+			management.append(button);
+		}
+
+		if (management.childElementCount) panel.append(management);
+
+		book.append(panel);
+		return book;
+	}
+
 	function render() {
 		const query = (search?.value ?? '').trim().toLocaleLowerCase('ru');
 		const activity = status?.value ?? 'all';
@@ -86,48 +172,16 @@ export function mountSystemsCatalog(root) {
 
 		const fragment = document.createDocumentFragment();
 
-		for (const system of visible) {
-			const id = encodeURIComponent(system.id);
-			const card = node('article', '', 'system-catalog__card');
-			const heading = node('header', '', 'system-catalog__card-heading');
-			const badge = node('span', '', 'system-catalog__badge');
+		for (let start = 0; start < visible.length; start += SHELF_CAPACITY) {
+			const shelf = node('div', '', 'book-shelf__shelf');
+			const row = node('div', '', 'book-shelf__row');
 
-			badge.textContent = system.is_active === true ? 'Активна' : 'Неактивна';
-			badge.classList.toggle('system-catalog__badge--active', system.is_active === true);
-			heading.append(node('h2', system.name), badge);
-
-			const description = node('p', system.description || 'Описание пока не добавлено.', 'system-catalog__description');
-			const actions = node('div', '', 'system-catalog__actions');
-
-			actions.append(link('Посмотреть', `/game-systems/catalog/${id}`));
-
-			if (access?.can_edit === true) {
-				actions.append(link('Редактировать', `/game-systems/catalog/${id}/edit`));
+			for (const system of visible.slice(start, start + SHELF_CAPACITY)) {
+				row.append(renderBook(system));
 			}
 
-			const management = node('div', '', 'system-catalog__management');
-
-			for (const action of ['toggle', 'delete']) {
-				const allowed = action === 'toggle' ? access?.can_toggle === true : access?.can_delete === true;
-
-				if (!allowed) continue;
-				if (action === 'toggle' && typeof system.is_active !== 'boolean') continue;
-
-				const text = action === 'delete' ? 'Удалить' : system.is_active ? 'Деактивировать' : 'Активировать';
-				const button = node('button', text, 'btn btn-outline-primary');
-
-				button.type = 'button';
-				button.dataset.catalogAction = action;
-				button.dataset.systemId = system.id;
-				button.disabled = busy || !ready || blocked.has(system.id);
-				management.append(button);
-			}
-
-			card.append(heading, description, actions);
-
-			if (management.childElementCount) card.append(management);
-
-			fragment.append(card);
+			shelf.append(row);
+			fragment.append(shelf);
 		}
 
 		if (!visible.length) {

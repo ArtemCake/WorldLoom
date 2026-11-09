@@ -344,6 +344,8 @@ WorldLoom/
 │   │   │   │   │   │   ├── book-publication.js
 │   │   │   │   │   │   ├── book-publications-data.js
 │   │   │   │   │   │   ├── book-publications.js
+│   │   │   │   │   │   ├── book-section-editor.js
+│   │   │   │   │   │   ├── book-sections.js
 │   │   │   │   │   │   ├── book-state.js
 │   │   │   │   │   │   └── book-view.js
 │   │   │   │   │   ├── editor/
@@ -360,6 +362,7 @@ WorldLoom/
 │   │   │   │   │   │   │   ├── indicator-code.js
 │   │   │   │   │   │   │   ├── resource-contract.js
 │   │   │   │   │   │   │   ├── resource-editor.js
+│   │   │   │   │   │   │   ├── rule-sections.js
 │   │   │   │   │   │   │   ├── short-label-field.js
 │   │   │   │   │   │   │   └── short-label.js
 │   │   │   │   │   │   ├── engine-formula-text.js
@@ -524,14 +527,17 @@ WorldLoom/
 │   ├── worldloom.log
 │   ├── worldloom.log.2026-11-06
 │   ├── worldloom.log.2026-11-07
+│   ├── worldloom.log.2026-11-08
 │   └── worldloom_error.log
 ├── staging/
 ├── tests/
 │   ├── js/
+│   │   ├── book-semantic-sections.test.mjs
 │   │   ├── dnd5e-2014-resources.test.mjs
 │   │   ├── engine-formula-text.test.mjs
 │   │   ├── engine-presets.test.mjs
 │   │   ├── resource-contract.test.mjs
+│   │   ├── rule-sections.test.mjs
 │   │   ├── rules-book-attributes.test.mjs
 │   │   ├── rules-book-basis-changes.test.mjs
 │   │   ├── rules-book-basis.test.mjs

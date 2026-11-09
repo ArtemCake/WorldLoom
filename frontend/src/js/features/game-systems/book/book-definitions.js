@@ -8,6 +8,7 @@ import {getBookChapterItems} from './book-pagination.js';
 import {bookFormulaSources, editableBookRules, removeBookDefinition, writeBookDefinition} from './book-definition-data.js';
 import {createShortLabelField} from '../editor/shared/short-label-field.js';
 import {bookFormulaDefinition} from './book-definition-data.js';
+import {appendGroupedRuleOptions, createRuleSectionField} from '../editor/shared/rule-sections.js';
 
 const TITLES = {
 	modifiers: ['Модификатор', 'Новый модификатор', 'Добавить модификатор'],
@@ -48,6 +49,8 @@ function field(parent, title, value = '', tag = 'input') {
 }
 
 export function mountBookDefinitions(host, options) {
+
+    const defaultSection = options.defaultSection ?? '';
 	const {state, chapter, initialCode = null, navigationHost = null} = options;
 	const {onCommit = () => {}, onSelectionChange = () => {}, onTitleChange = () => {}, onCreate = () => {}} = options;
 
@@ -115,7 +118,7 @@ export function mountBookDefinitions(host, options) {
 
 		if (selected !== null && !items.includes(selected)) selected = null;
 
-		const definition = selected === null ? {} : collection[selected];
+        const definition = selected === null ? {section: defaultSection} : collection[selected];
 		const navigation = node('div', '', 'rules-book__element-picker');
 
 		if (items.length) {
@@ -125,12 +128,8 @@ export function mountBookDefinitions(host, options) {
 			empty.value = '';
 			picker.append(empty);
 
-			for (const code of items) {
-				const option = node('option', collection[code].label || code);
-
-				option.value = code;
-				picker.append(option);
-			}
+			const kind = resourceMode ? 'resources' : 'derived';
+            appendGroupedRuleOptions(picker, rules, kind, items);
 
 			picker.value = selected ?? '';
 			picker.addEventListener('change', () => {
@@ -174,7 +173,10 @@ export function mountBookDefinitions(host, options) {
 			});
 
 			if (selected === null) {
-				resource.createItem();
+                resource.createItem();
+                const sectionInput = resource.element.querySelector('input[list^="rule-section-options-"]');
+                if (sectionInput) sectionInput.value = defaultSection;
+
 			} else {
 				resource.load({[selected]: definition}, {lockCodes: true});
 			}
@@ -192,6 +194,7 @@ export function mountBookDefinitions(host, options) {
 		} else {
 			const title = field(editor, 'Название', definition.label ?? '');
 			const description = field(editor, 'Описание', definition.description ?? '', 'textarea');
+            const ruleSection = createRuleSectionField(editor, definition, rules);
 			const shortLabel = createShortLabelField({labelInput: title, definition, onChange: markChanged});
 			editor.append(shortLabel.element);
 			const code = field(editor, 'Код для ссылок в формулах', selected ?? '');
@@ -251,6 +254,7 @@ export function mountBookDefinitions(host, options) {
 						label: title.value,
 						short_label: shortLabel.collect(),
 						description: description.value,
+						section: ruleSection.collect(),
 						formula: formula.collect()
 					}
 				};

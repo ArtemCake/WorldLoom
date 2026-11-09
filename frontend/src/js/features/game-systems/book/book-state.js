@@ -1,16 +1,17 @@
 // frontend/src/js/features/game-systems/book/book-state.js
 
-export const BOOK_CHAPTERS = Object.freeze([
-	Object.freeze({code: 'main', title: 'Об игровой системе'}),
-	Object.freeze({code: 'basis', title: 'Основа правил'}),
-	Object.freeze({code: 'attributes', title: 'Характеристики'}),
-	Object.freeze({code: 'modifiers', title: 'Модификаторы'}),
-	Object.freeze({code: 'derived', title: 'Вычисляемые показатели'}),
-	Object.freeze({code: 'resources', title: 'Ресурсы'}),
-	Object.freeze({code: 'preview', title: 'Проверка правил'}),
-	Object.freeze({code: 'publications', title: 'Публикации'}),
-	Object.freeze({code: 'access', title: 'Доступ и управление'})
-]);
+import {BOOK_RULE_SECTIONS} from './book-sections.js';
+
+const chapters = [
+    {code: 'main', title: 'Об игровой системе'},
+    {code: 'basis', title: 'Основа правил'},
+    ...BOOK_RULE_SECTIONS,
+    {code: 'preview', title: 'Проверка правил'},
+    {code: 'publications', title: 'Публикации'},
+    {code: 'access', title: 'Доступ и управление'}
+];
+
+export const BOOK_CHAPTERS = Object.freeze(chapters.map((chapter) => Object.freeze(chapter)));
 
 const MODES = new Set(['create', 'edit', 'view']);
 const CHAPTER_CODES = new Set(BOOK_CHAPTERS.map((chapter) => chapter.code));

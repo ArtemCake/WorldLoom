@@ -2,25 +2,33 @@
 
 import {BOOK_CHAPTERS} from './book-state.js';
 import {isBookModifierCode} from './book-definition-data.js';
+import {groupedRuleEntries} from '../editor/shared/rule-sections.js';
+import {getBookSectionEntries, isBookRuleSection} from './book-sections.js';
 
 export function getBookChapterItems(document, chapter) {
-	const rules = document.rules;
+    const rules = document.rules;
 
-	if (!rules) return [];
+    if (!rules) return [];
 
-	if (chapter === 'modifiers' || chapter === 'derived') {
-		const modifiers = chapter === 'modifiers';
+    if (isBookRuleSection(chapter)) {
+        return getBookSectionEntries(rules, chapter).map((entry) => entry.id);
+    }
 
-		return Object.keys(rules.calculations?.derived ?? {})
-			.filter((code) => isBookModifierCode(code) === modifiers);
-	}
+    // Технические коллекции используются внутренними редакторами.
+    // В оглавление они больше не включаются.
+    if (chapter === 'modifiers' || chapter === 'derived') {
+        const modifiers = chapter === 'modifiers';
 
-	const collections = {
-		attributes: rules.calculations?.attributes,
-		resources: rules.resources
-	};
+        return Object.keys(rules.calculations?.derived ?? {})
+            .filter((code) => isBookModifierCode(code) === modifiers);
+    }
 
-	return Object.keys(collections[chapter] ?? {});
+    const collections = {
+        attributes: rules.calculations?.attributes,
+        resources: rules.resources
+    };
+
+    return Object.keys(collections[chapter] ?? {});
 }
 
 export function getBookTurn(document, chapter, selectedCode, direction) {

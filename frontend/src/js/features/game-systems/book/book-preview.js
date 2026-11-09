@@ -2,6 +2,7 @@
 
 import {FORMULA_VALUE_LIMIT as LIMIT} from '../editor/shared/formula-contract.js';
 import {previewBookRules} from './book-preview-data.js';
+import {groupedRuleEntries, ruleSectionTitles, ruleSectionTitle} from '../editor/shared/rule-sections.js';
 
 function element(ownerDocument, tag, text = '', className = '') {
 	const node = ownerDocument.createElement(tag);
@@ -30,39 +31,54 @@ export function renderBookPreviewResult(host, snapshot) {
 		return;
 	}
 
-	function values(title, data, definitions) {
-		const section = node('section');
-		const facts = node('dl', '', 'rules-book__facts');
+    const sectionHosts = new Map();
 
-		section.append(node('h4', title));
+    for (const title of ruleSectionTitles(rules)) {
+        const section = node('section', '', 'rules-book__parameter-section');
+        const facts = node('dl', '', 'rules-book__facts');
 
-		for (const [code, value] of Object.entries(data)) {
-			facts.append(node('dt', definitions[code]?.label || code), node('dd', String(value)));
-		}
+        section.append(node('h4', title), facts);
+        sectionHosts.set(title, {section, facts, count: 0});
+    }
 
-		section.append(Object.keys(data).length ? facts : node('p', 'Не заданы.', 'rules-book__muted'));
-		host.append(section);
-	}
+    function appendValues(data, definitions, kind) {
+        for (const [code, value] of Object.entries(data)) {
+            const definition = definitions[code] ?? {};
+            const group = sectionHosts.get(ruleSectionTitle(definition));
 
-	values('Исходные характеристики', result.attributes, rules.calculations.attributes);
-	values('Вычисляемые показатели', result.derived, rules.calculations.derived);
+            if (!group) {
+                throw new Error(`Не найден раздел результата: ${code}.`);
+            }
 
-	const resources = node('section');
+            const label = `${definition.label || code} · ${kind}`;
 
-	resources.append(node('h4', 'Ресурсы'));
+            group.facts.append(node('dt', label), node('dd', String(value)));
+            group.count += 1;
+        }
+    }
 
-	for (const [code, maximum] of Object.entries(result.resource_limits)) {
-		const label = rules.resources?.[code]?.label || code;
-		const initial = result.resource_initial[code];
+    appendValues(result.attributes, rules.calculations.attributes, 'исходное значение');
+    appendValues(result.derived, rules.calculations.derived, 'расчёт');
 
-		resources.append(node('p', `${label}: начальный запас ${initial}, максимум ${maximum}.`));
-	}
+    for (const [code, maximum] of Object.entries(result.resource_limits)) {
+        const definition = rules.resources?.[code] ?? {};
+        const group = sectionHosts.get(ruleSectionTitle(definition));
 
-	if (!Object.keys(result.resource_limits).length) {
-		resources.append(node('p', 'Ресурсы не заданы.', 'rules-book__muted'));
-	}
+        if (!group) {
+            throw new Error(`Не найден раздел ресурса: ${code}.`);
+        }
 
-	host.append(resources);
+        const initial = result.resource_initial[code];
+        const label = `${definition.label || code} · ресурс`;
+        const value = `Начальный запас: ${initial}; максимум: ${maximum}`;
+
+        group.facts.append(node('dt', label), node('dd', value));
+        group.count += 1;
+    }
+
+    for (const group of sectionHosts.values()) {
+        if (group.count) host.append(group.section);
+    }
 
 	const details = node('details');
 	const steps = node('ol');
@@ -154,6 +170,16 @@ export function mountBookPreview(host, {state, request, onChange = () => {}}) {
 		onChange();
 	}
 
+    const sectionHosts = new Map();
+
+    for (const group of groupedRuleEntries(rules, 'attributes')) {
+        const section = node('fieldset', '', 'rules-book__parameter-section');
+
+        section.append(node('legend', group.title));
+        sectionHosts.set(group.title, section);
+        form.append(section);
+    }
+
 	for (const [code, definition] of Object.entries(definitions)) {
 		const label = node('label', '', 'rules-book__field');
 		const input = node(definition.field_type === 'choice' ? 'select' : 'input');
@@ -185,7 +211,7 @@ export function mountBookPreview(host, {state, request, onChange = () => {}}) {
 
 		controls.set(code, input);
 		label.append(input);
-		form.append(label);
+        sectionHosts.get(ruleSectionTitle(definition)).append(label);
 	}
 
 	reset.addEventListener('click', () => {

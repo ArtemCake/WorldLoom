@@ -541,3 +541,28 @@
         }
     }
 }
+
+.rules-book__parameter-section {
+    min-width: 0;
+    margin: 0 0 1.5rem;
+    padding: 1rem 0 0;
+    border: 0;
+    border-top: 1px solid var(--rules-book-content-line);
+
+    > legend,
+    > h4 {
+        max-width: 100%;
+        margin: 0 0 1rem;
+        padding: 0;
+        color: var(--rules-book-content-text);
+        font-family: var(--rules-book-heading-font);
+        font-size: 1.2rem;
+        font-weight: 700;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
+    > .rules-book__facts {
+        margin-top: 0;
+    }
+}

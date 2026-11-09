@@ -334,7 +334,7 @@ export function createDnd5e2014NumericProfile() {
     addHitPoints(profile);
     addExtendedChecks(profile);
 
-    return profile;
+    return assignDnd2014Sections(profile);
 }
 
 function addFeatureSwitch(profile, code, label) {
@@ -469,4 +469,60 @@ function addExtendedChecks(profile) {
     addSavingThrowTotals(profile);
     addSkillTotals(profile);
     addInitiativeTotal(profile);
+}
+
+export function assignDnd2014Sections(profile) {
+    const attributes = profile.calculations?.attributes ?? {};
+    const derived = profile.calculations?.derived ?? {};
+    const resources = profile.resources ?? {};
+
+    function assign(collection, code, section) {
+        const definition = collection[code];
+
+        if (definition && !definition.section) {
+            definition.section = section;
+        }
+    }
+
+    for (const [abilityCode] of ABILITIES) {
+        assign(attributes, abilityCode, 'Характеристики');
+        assign(derived, `${abilityCode}_modifier`, 'Характеристики');
+
+        assign(attributes, `save_${abilityCode}_trained`, 'Спасброски');
+        assign(attributes, `save_${abilityCode}_bonus`, 'Спасброски');
+        assign(derived, `save_${abilityCode}`, 'Спасброски');
+        assign(derived, `save_${abilityCode}_total`, 'Спасброски');
+
+        assign(derived, `check_${abilityCode}_untrained_base`, 'Проверки характеристик');
+    }
+
+    for (const [skillCode] of SKILLS) {
+        assign(attributes, `skill_${skillCode}_rank`, 'Навыки');
+        assign(attributes, `skill_${skillCode}_bonus`, 'Навыки');
+        assign(derived, `skill_${skillCode}`, 'Навыки');
+        assign(derived, `skill_${skillCode}_total`, 'Навыки');
+
+        assign(attributes, `passive_${skillCode}_mode`, 'Пассивные проверки');
+        assign(derived, `passive_${skillCode}_base`, 'Пассивные проверки');
+        assign(derived, `passive_${skillCode}_total`, 'Пассивные проверки');
+    }
+
+    assign(attributes, 'level', 'Уровень и мастерство');
+    assign(derived, 'proficiency_bonus', 'Уровень и мастерство');
+    assign(derived, 'half_proficiency_floor', 'Уровень и мастерство');
+    assign(derived, 'half_proficiency_ceil', 'Уровень и мастерство');
+
+    assign(attributes, 'jack_of_all_trades', 'Особенности');
+    assign(attributes, 'remarkable_athlete', 'Особенности');
+
+    assign(attributes, 'initiative_trained', 'Инициатива');
+    assign(attributes, 'initiative_bonus', 'Инициатива');
+    assign(derived, 'initiative_base', 'Инициатива');
+    assign(derived, 'initiative_total', 'Инициатива');
+
+    assign(derived, 'armor_class_unarmored_base', 'Защита');
+    assign(attributes, 'hit_points_max', 'Хиты и ресурсы');
+    assign(resources, 'hit_points', 'Хиты и ресурсы');
+
+    return profile;
 }

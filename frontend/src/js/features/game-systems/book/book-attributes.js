@@ -5,6 +5,7 @@ import {createIndicatorCodeController} from '../editor/shared/indicator-code.js'
 import {createShortLabelField} from '../editor/shared/short-label-field.js';
 import {normalizeShortLabel} from '../editor/shared/short-label.js';
 import {collectEngineOverrides} from '../editor/game-system-engine-origin.js';
+import {createRuleSectionField, groupedRuleEntries, normalizeRuleSection} from '../editor/shared/rule-sections.js';
 
 const MAX_ATTRIBUTES = 128;
 const MAX_CHOICES = 128;
@@ -93,6 +94,9 @@ export function writeBookAttribute(document, previousCode, input) {
 	const definition = {...(creating ? {} : definitions[code])};
 	definition.label = label(input.label, 'Характеристика');
 
+    if (Object.hasOwn(input, 'section')) {
+        definition.section = normalizeRuleSection(input.section);
+    }
 	if (Object.hasOwn(input, 'short_label')) {
 		definition.short_label = normalizeShortLabel(input.short_label);
 	}
@@ -244,20 +248,37 @@ function descriptionField(parent, value = '') {
 }
 
 function select(parent, title, options, value) {
-	const wrapper = node('label', '', 'rules-book__field');
-	const input = node('select');
+    const wrapper = node('label', '', 'rules-book__field');
+    const input = node('select');
 
-	for (const [code, text] of options) {
-		const option = node('option', text);
-		option.value = String(code);
-		input.append(option);
-	}
+    for (const [code, text] of options) {
+        if (Array.isArray(text)) {
+            const group = node('optgroup');
 
-	input.value = String(value);
-	wrapper.append(node('span', title), input);
-	parent.append(wrapper);
+            group.label = code;
 
-	return input;
+            for (const [optionCode, optionText] of text) {
+                const option = node('option', optionText);
+
+                option.value = String(optionCode);
+                group.append(option);
+            }
+
+            input.append(group);
+            continue;
+        }
+
+        const option = node('option', text);
+
+        option.value = String(code);
+        input.append(option);
+    }
+
+    input.value = String(value);
+    wrapper.append(node('span', title), input);
+    parent.append(wrapper);
+
+    return input;
 }
 
 function readNumber(control, title) {
@@ -271,6 +292,7 @@ function readNumber(control, title) {
 }
 
 export function mountBookAttributes(host, options) {
+	const defaultSection = options.defaultSection ?? '';
 	const {
 		state,
 		onCommit,
@@ -347,8 +369,13 @@ export function mountBookAttributes(host, options) {
 		const navigation = node('div', '', 'rules-book__element-picker');
 
 		if (entries.length) {
-			const options = [['', 'Новая характеристика'], ...entries.map(([code, item]) => [code, item.label || code])];
-			const picker = select(navigation, 'Характеристика', options, selected ?? '');
+            const groups = groupedRuleEntries(rules, 'attributes');
+            const groupedOptions = groups.map((group) => {
+                return [group.title, group.entries.map(([code, item]) => [code, item.label || code])];
+            });
+
+            const options = [['', 'Новый исходный параметр'], ...groupedOptions];
+            const picker = select(navigation, 'Исходный параметр', options, selected ?? '');
 
 			picker.addEventListener('change', () => {
 				if (!open(picker.value || null)) picker.value = selected ?? '';
@@ -371,7 +398,7 @@ export function mountBookAttributes(host, options) {
 			content.append(navigation);
 		}
 
-		const definition = selected === null ? {} : definitions[selected];
+        const definition = selected === null ? {section: defaultSection} : definitions[selected];
 		const type = definition.field_type ?? 'integer';
 
 		if (!['integer', 'choice'].includes(type)) {
@@ -410,6 +437,7 @@ export function mountBookAttributes(host, options) {
 		});
 
 		const description = descriptionField(editor, definition.description ?? '');
+		const ruleSection = createRuleSectionField(editor, definition, rules);
 
 		title.parentElement.classList.add('rules-book__field--title');
 		code.parentElement.classList.add('rules-book__field--code');
@@ -532,6 +560,7 @@ export function mountBookAttributes(host, options) {
 				label: title.value,
 				short_label: shortLabel.collect(),
 				description: description.value,
+				section: ruleSection.collect(),
 				field_type: kind.value,
 				min_value: choice ? null : readNumber(minimum, 'Минимум'),
 				max_value: choice ? null : readNumber(maximum, 'Максимум'),

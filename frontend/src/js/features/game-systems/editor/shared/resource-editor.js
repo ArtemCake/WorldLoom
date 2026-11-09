@@ -4,6 +4,7 @@ import {CODE_PATTERN, FORMULA_VALUE_LIMIT as LIMIT} from './formula-contract.js'
 import {createIndicatorCodeController} from './indicator-code.js';
 import {validateResources} from './resource-contract.js';
 import {createShortLabelField} from './short-label-field.js';
+import {createRuleSectionField} from './rule-sections.js';
 
 
 function node(tag, text = '', className = '') {
@@ -210,6 +211,7 @@ export function createResourceEditor(options) {
 		description.rows = 5;
 		description.value = definition.description ?? '';
 		row.description = field(identity, 'Описание', description);
+		row.ruleSection = createRuleSectionField(identity, definition);
 
 		const maximumModes = [['number', 'Заданное число'], ['reference', 'Из показателя']];
 		const initialModes = [['full', 'До максимума'], ['number', 'Заданный запас']];
@@ -341,6 +343,7 @@ export function createResourceEditor(options) {
 				label,
 				short_label: row.shortLabel.collect(),
 				description: description.trim() ? description : '',
+				section: row.ruleSection.collect(),
 				maximum,
 				initial,
 				recovery

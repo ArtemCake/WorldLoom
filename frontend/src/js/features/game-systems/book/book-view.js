@@ -2,17 +2,19 @@
 
 import {BOOK_CHAPTERS} from './book-state.js';
 import {createEnginePreset, listEnginePresets} from '../editor/engine-presets.js';
-import {mountBookAttributes} from './book-attributes.js';
 import {getBookChapterItems, getBookTurn} from './book-pagination.js';
 import bookTemplatesSource from '../../../../../templates/game_systems/book/book-templates.html?raw';
 import {createBookPageTurn} from './book-page-turn.js';
-import {mountBookDefinitions} from './book-definitions.js';
 import {renderReadableFormula} from '../editor/shared/formula-presentation.js';
 import {mountBookSystemCopy} from './book-basis-picker.js';
 import {mountBookPreview, renderBookPreviewResult} from './book-preview.js';
 import {mountBookPublications} from './book-publications.js';
 import {renderBookBasisChanges} from './book-basis-changes.js';
 import {restoreBookBasisItem} from './book-basis-restore.js';
+import {appendGroupedRuleOptions, ruleSectionTitle} from '../editor/shared/rule-sections.js';
+import {assignDnd2014Sections} from '../editor/presets/dnd5e-2014.js';
+import {mountBookSection} from './book-section-editor.js';
+import {bookParameterLabel, findBookSectionEntry, getBookSectionEntries, isBookRuleSection} from './book-sections.js';
 
 function element(tag, text = '', className = '') {
 	const node = document.createElement(tag);
@@ -75,6 +77,7 @@ function readAttributes(parent, rules, selectedCode) {
 
 	for (const [code, definition] of entries) {
 		const section = entry(parent, definition.label, code, definition.description);
+		paragraph(section, `Раздел: ${ruleSectionTitle(definition)}`, 'rules-book__muted');
 		const facts = element('dl', '', 'rules-book__facts');
 
 		pair(facts, 'Начальное значение', rules.initial_attributes?.[code]);
@@ -123,6 +126,7 @@ function readDerived(parent, rules, selectedCode) {
 
 	for (const [code, definition] of entries) {
 		const section = entry(parent, definition.label, code, definition.description);
+		paragraph(section, `Раздел: ${ruleSectionTitle(definition)}`, 'rules-book__muted');
 		const expression = element('div');
 
 		paragraph(section, 'Правило вычисления:');
@@ -171,6 +175,7 @@ function readResources(parent, rules, selectedCode) {
 
 	for (const [code, definition] of entries) {
 		const section = entry(parent, definition.label, code, definition.description);
+		paragraph(section, `Раздел: ${ruleSectionTitle(definition)}`, 'rules-book__muted');
 		const facts = element('dl', '', 'rules-book__facts');
 
 		pair(facts, 'Максимум', referenceText(definition.maximum, rules));
@@ -267,6 +272,13 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 	const next = bookPart(layout, 'next');
 
 	const error = bookPart(layout, 'error');
+    previous.classList.add('rules-book__corner', 'rules-book__corner--previous');
+    next.classList.add('rules-book__corner', 'rules-book__corner--next');
+
+    previous.setAttribute('aria-label', 'Предыдущая страница');
+    next.setAttribute('aria-label', 'Следующая страница');
+
+    spread.append(previous, next);
 
 	host.replaceChildren(layout);
 
@@ -281,46 +293,29 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 		}
 	}, {signal});
 
-	function refreshParameters() {
-		const snapshot = state.read();
-		const chapter = snapshot.chapter;
-		const selectedCode = selectedItems.get(chapter) ?? null;
-		const nextKey = JSON.stringify([chapter, selectedCode]);
+    function refreshParameters() {
+        const snapshot = state.read();
+        const chapter = snapshot.chapter;
+        const selectedId = selectedItems.get(chapter) ?? null;
+        const nextKey = JSON.stringify([chapter, selectedId]);
 
-		if (parameterKey === nextKey) return;
+        if (parameterKey === nextKey) return;
 
-		if (parameterKey !== null) {
-			parameterStates.set(parameterKey, parameters.open);
-		}
+        if (parameterKey !== null) {
+            parameterStates.set(parameterKey, parameters.open);
+        }
 
-		const rules = snapshot.document.rules;
-		const collections = {
-			attributes: rules?.calculations?.attributes,
-			derived: rules?.calculations?.derived,
-			modifiers: rules?.calculations?.derived,
-			resources: rules?.resources
-		};
+        const chapterTitle = BOOK_CHAPTERS.find((item) => item.code === chapter)?.title ?? 'Настройки';
+        const entry = findBookSectionEntry(snapshot.document.rules, chapter, selectedId);
+        const definitionTitle = entry?.definition.label?.trim();
 
-		const newTitles = {
-			attributes: 'Новая характеристика',
-			derived: 'Новый показатель',
-			modifiers: 'Новый модификатор',
-			resources: 'Новый ресурс'
-		};
+        parametersTitle.textContent = isBookRuleSection(chapter)
+            ? definitionTitle || entry?.code || 'Новый параметр'
+            : chapterTitle;
 
-		const definition = selectedCode === null ? null : collections[chapter]?.[selectedCode];
-		const definitionTitle = typeof definition?.label === 'string' ? definition.label.trim() : '';
-		const chapterTitle = BOOK_CHAPTERS.find((item) => item.code === chapter)?.title ?? 'Настройки';
-
-		if (Object.hasOwn(newTitles, chapter)) {
-			parametersTitle.textContent = definitionTitle || selectedCode || newTitles[chapter];
-		} else {
-			parametersTitle.textContent = chapterTitle;
-		}
-
-		parameterKey = nextKey;
-		parameters.open = parameterStates.get(nextKey) ?? false;
-	}
+        parameterKey = nextKey;
+        parameters.open = parameterStates.get(nextKey) ?? false;
+    }
 
 	function report(action) {
 		error.hidden = true;
@@ -411,6 +406,31 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 	function renderBasis() {
 		const fragment = bookTemplate('basis');
 		const snapshot = state.read();
+
+        if (snapshot.document.rules && snapshot.mode !== 'view') {
+            const distribute = button('Распределить параметры D&D 2014 по разделам');
+
+            distribute.disabled = snapshot.blocked || snapshot.writePending !== null;
+
+            distribute.addEventListener('click', () => report(() => {
+                if (basisBusy()) {
+                    throw new Error('Сначала завершите выбор или загрузку основы.');
+                }
+
+                const question = 'Применить разделы D&D 2014? Уже назначенные разделы и значения сохранятся.';
+
+                if (!window.confirm(question)) return;
+
+                const changed = state.update((draft) => {
+                    assignDnd2014Sections(draft.rules);
+                });
+
+                touched = touched || changed;
+                openChapter('basis', false);
+            }), {signal});
+
+            settings.append(distribute);
+        }
 
 		if (typeof request === 'function') {
 			const handlers = {
@@ -603,7 +623,7 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 
 			const facts = element('dl', '', 'rules-book__facts');
 
-			pair(facts, 'Характеристики', Object.keys(rules.calculations?.attributes ?? {}).length);
+            pair(facts, 'Исходные значения', Object.keys(rules.calculations?.attributes ?? {}).length);
 			pair(facts, 'Модификаторы', getBookChapterItems(document, 'modifiers').length);
 			pair(facts, 'Вычисляемые показатели', getBookChapterItems(document, 'derived').length);
 			pair(facts, 'Ресурсы', Object.keys(rules.resources ?? {}).length);
@@ -617,22 +637,35 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
             return;
 		}
 
-		if (['attributes', 'modifiers', 'derived', 'resources'].includes(chapter)) {
-			if (!rules) {
-				paragraph(reading, 'Сначала загрузите правила в главе «Основа правил».');
-				return;
-			}
+        if (isBookRuleSection(chapter)) {
+            if (!rules) {
+                paragraph(reading, 'Сначала загрузите правила в главе «Основа правил».');
+                return;
+            }
 
-			const selectedCode = selectedItems.get(chapter) ?? null;
+            const selectedId = selectedItems.get(chapter) ?? null;
+            const entry = findBookSectionEntry(rules, chapter, selectedId);
 
-			if (chapter === 'attributes') readAttributes(reading, rules, selectedCode);
-			if (chapter === 'modifiers' || chapter === 'derived') {
-				readDerived(reading, rules, selectedCode);
-			}
-			if (chapter === 'resources') readResources(reading, rules, selectedCode);
+            if (!entry) {
+                const hasEntries = getBookSectionEntries(rules, chapter).length > 0;
+                const message = hasEntries
+                    ? 'Выберите параметр раздела или добавьте новый на левой странице.'
+                    : 'В этом разделе пока нет параметров. Добавьте первый на левой странице.';
 
-			return;
-		}
+                paragraph(reading, message);
+                return;
+            }
+
+            if (entry.kind === 'attributes') {
+                readAttributes(reading, rules, entry.code);
+            } else if (entry.kind === 'resources') {
+                readResources(reading, rules, entry.code);
+            } else {
+                readDerived(reading, rules, entry.code);
+            }
+
+            return;
+        }
 
 		const notes = {
 			access: 'Управление видимостью, правами и удалением ещё не подключено.'
@@ -657,12 +690,28 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 
 		if (itemIndex >= 0) {
 			detail = ` · правило ${itemIndex + 1} из ${items.length}`;
-		} else if (['attributes', 'modifiers', 'derived', 'resources'].includes(chapter)) {
+		        } else if (isBookRuleSection(chapter)) {
 			detail = ' · новый элемент';
 		}
 
 		position.textContent = `Страница ${chapterIndex + 1} из ${BOOK_CHAPTERS.length}${detail}`;
 	}
+    function revealChapterTab(tab) {
+        const container = navigation.getBoundingClientRect();
+        const target = tab.getBoundingClientRect();
+
+        if (target.top < container.top) {
+            navigation.scrollTop -= container.top - target.top;
+        } else if (target.bottom > container.bottom) {
+            navigation.scrollTop += target.bottom - container.bottom;
+        }
+
+        if (target.left < container.left) {
+            navigation.scrollLeft -= container.left - target.left;
+        } else if (target.right > container.right) {
+            navigation.scrollLeft += target.right - container.right;
+        }
+    }
 
 	function openChapter(code, focus = true, itemCode = undefined) {
 		report(() => {
@@ -672,8 +721,9 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 				if (!discard) return;
 			}
 
-			destroyBasisEditors();
-			itemEditor = null;
+            destroyBasisEditors();
+            itemEditor?.destroy?.();
+            itemEditor = null;
 			previewEditor?.destroy();
 			previewEditor = null;
 			state.selectChapter(code);
@@ -708,92 +758,91 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 			} else if (snapshot.mode === 'view') {
 				paragraph(settings, 'Книга открыта для чтения. Изменение данных отключено.');
 
-				if (items.length) {
-					const picker = element('select');
-					const label = element('label', '', 'rules-book__field');
-					const rules = snapshot.document.rules;
+                if (items.length && isBookRuleSection(code)) {
+                    const picker = element('select');
+                    const label = element('label', '', 'rules-book__field');
+                    const entries = getBookSectionEntries(snapshot.document.rules, code);
 
-					const definitions = code === 'attributes'
-					? rules.calculations?.attributes
-					: code === 'resources' ? rules.resources : rules.calculations?.derived;
+                    label.append(element('span', 'Параметр раздела'));
 
-					label.append(element('span', 'Выбранный элемент'));
+                    for (const entry of entries) {
+                        const option = element('option', bookParameterLabel(entry));
 
-					for (const item of items) {
-						const option = element('option', definitions?.[item]?.label || item);
+                        option.value = entry.id;
+                        picker.append(option);
+                    }
 
-						option.value = item;
-						picker.append(option);
-					}
+                    picker.value = selectedCode ?? '';
 
-					picker.value = selectedCode ?? '';
+                    picker.addEventListener('change', () => {
+                        selectedItems.set(code, picker.value);
+                        renderReading();
+                        refreshPagination();
+                    }, {signal});
 
-					picker.addEventListener('change', () => {
-						selectedItems.set(code, picker.value);
-						renderReading();
-						refreshPagination();
-					}, {signal});
-
-					label.append(picker);
-					settingsNavigation.append(label);
-				}
+                    label.append(picker);
+                    settingsNavigation.append(label);
+                }
 			} else if (code === 'main') {
 				renderMetadata();
 			} else if (code === 'basis') {
 				renderBasis();
-			} else if (['attributes', 'modifiers', 'derived', 'resources'].includes(code)) {
-				const mountEditor = code === 'attributes' ? mountBookAttributes : mountBookDefinitions;
-				itemEditor = mountEditor(settings, {
-					state,
-					chapter: code,
-					initialCode: selectedCode,
-					navigationHost: settingsNavigation,
-					onTitleChange: (title) => {
-						if (destroyed || state.read().chapter !== code) return;
-						parametersTitle.textContent = title;
-					},
-					onCreate: () => {
-						parameters.open = true;
+            } else if (isBookRuleSection(code)) {
+                const editorOptions = {
+                    state,
+                    chapter: code,
+                    initialCode: selectedCode,
+                    navigationHost: settingsNavigation,
 
-						if (parameterKey !== null) {
-							parameterStates.set(parameterKey, true);
-						}
+                    onTitleChange(title) {
+                        if (destroyed || state.read().chapter !== code) return;
 
-						const input = settings.querySelector('input:not([disabled]):not([readonly])');
+                        parametersTitle.textContent = title;
+                    },
 
-						input?.focus();
-					},
-					onSelectionChange: (selected) => {
-						selectedItems.set(code, selected);
-						renderReading();
-						refreshPagination();
-					},
-					onCommit: () => {
-						touched = true;
-						refreshStatus();
-					}
-				});
+                    onCreate() {
+                        parameters.open = true;
+
+                        if (parameterKey !== null) {
+                            parameterStates.set(parameterKey, true);
+                        }
+
+                        const input = settings.querySelector('input:not([disabled]):not([readonly])');
+
+                        input?.focus();
+                    },
+
+                    onSelectionChange(selected) {
+                        selectedItems.set(code, selected);
+                        renderReading();
+                        refreshPagination();
+                    },
+
+                    onCommit() {
+                        touched = true;
+                        refreshStatus();
+                    }
+                };
+
+                itemEditor = mountBookSection(settings, editorOptions);
 			} else {
 				paragraph(settings, 'Редактирование этой главы подключим следующим этапом.');
-
-				if (['derived', 'resources'].includes(code)) {
-					paragraph(settings, 'Справа показано выбранное правило. Для перехода используйте перелистывание.');
-				}
 			}
 
-			for (const tab of navigation.querySelectorAll('button')) {
-				if (tab.dataset.chapter === code) {
-					tab.setAttribute('aria-current', 'page');
-				} else {
-					tab.removeAttribute('aria-current');
-				}
-			}
+            for (const tab of navigation.querySelectorAll('button')) {
+                if (tab.dataset.chapter === code) {
+                    tab.setAttribute('aria-current', 'page');
+                    revealChapterTab(tab);
+                } else {
+                    tab.removeAttribute('aria-current');
+                }
+            }
 
 			renderReading();
 			refreshStatus();
 			refreshPagination();
 
-			if (focus) leftTitle.focus();
+			if (focus) leftTitle.focus({preventScroll: true});
 		});
 	}
 
@@ -839,14 +888,14 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 
 					if (!changed) return false;
 
-					leftTitle.focus();
+					leftTitle.focus({preventScroll: true});
 					return before !== pageIdentity();
 				}
 
 				selectedItems.set(target.chapter, target.itemCode);
 				renderReading();
 				refreshPagination();
-				rightTitle.focus();
+				rightTitle.focus({preventScroll: true});
 
 				return before !== pageIdentity();
 			});
@@ -893,6 +942,8 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 		if (destroyed) return;
 
 		destroyed = true;
+        itemEditor?.destroy?.();
+        itemEditor = null;
 		destroyBasisEditors();
 		previewEditor?.destroy();
 		previewEditor = null;

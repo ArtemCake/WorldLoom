@@ -19,25 +19,37 @@
 
     /* ── Загнутые уголки страниц ────────────────────────── */
 
-    &__corner {
+    &__spread > &__corner {
         position: absolute;
+        top: auto;
         bottom: 0;
-        z-index: 2;
+        z-index: 8;
         display: grid;
         place-items: center;
         width: 3.75rem;
         height: 3.75rem;
+        min-width: 0;
+        min-height: 0;
+        margin: 0;
         padding: 0;
         color: var(--color-text-secondary);
         background: var(--color-bg-panel-alt);
         border: 0;
-        font-size: 2rem;
+        box-shadow: 0 0 1rem rgb(0 0 0 / 15%);
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 1.75rem;
         line-height: 1;
-        transition: color 160ms ease, box-shadow 160ms ease;
+        transform: none;
+        transition: color 160ms ease, background-color 160ms ease;
 
         &:hover:not(:disabled) {
             color: var(--color-text-primary);
-            box-shadow: 0 0 0 1px var(--color-border-accent);
+            background: var(--color-bg-panel);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--color-border-accent);
+            outline-offset: -4px;
         }
 
         &:disabled {
@@ -45,23 +57,23 @@
         }
     }
 
-    &__corner--previous {
+    &__spread > &__corner--previous {
+        right: auto;
         left: 0;
-        border-bottom-left-radius: 0.6rem;
-        border-top-right-radius: 100%;
+        border-radius: 0 100% 0 0.5rem;
 
         > span {
-            transform: translate(-0.3rem, 0.3rem);
+            transform: translate(-0.25rem, 0.25rem);
         }
     }
 
-    &__corner--next {
+    &__spread > &__corner--next {
         right: 0;
-        border-top-left-radius: 100%;
-        border-bottom-right-radius: 0.6rem;
+        left: auto;
+        border-radius: 100% 0 0.5rem 0;
 
         > span {
-            transform: translate(0.3rem, 0.3rem);
+            transform: translate(0.25rem, 0.25rem);
         }
     }
 
@@ -115,7 +127,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-        &__corner {
+        &__spread > &__corner {
             transition: none;
         }
     }
@@ -136,6 +148,30 @@
     --rules-book-binding-thread: var(--color-text-secondary);
     --rules-book-binding-highlight: var(--color-text-primary);
     --rules-book-binding-control: var(--color-border-accent);
+
+    &__page {
+        min-width: 0;
+        min-height: 0;
+        overscroll-behavior: contain;
+    }
+
+    &__page :is(fieldset, details, form, section) {
+        min-width: 0;
+    }
+
+    &__page :is(input, select, textarea, button) {
+        max-width: 100%;
+    }
+
+    &__page :is(pre, .rules-book__description, .rules-book__prose) {
+        max-width: 100%;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    &__page :is(img, svg, canvas) {
+        max-width: 100%;
+    }
 
     &__page--settings {
         overflow-x: auto;

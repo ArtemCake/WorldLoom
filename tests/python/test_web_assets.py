@@ -46,11 +46,11 @@ class WebAssetsTests(unittest.TestCase):
 
         self.assertEqual(
             resolve("js/main.min.js"),
-            f"/frontend/static/{self.js_path}",
+            f"/frontend/src/{self.js_path}",
         )
         self.assertEqual(
             resolve("css/style.min.css"),
-            f"/frontend/static/{self.css_path}",
+            f"/frontend/src/{self.css_path}",
         )
 
     def test_renaming_entry_without_manifest_update_is_rejected(self) -> None:

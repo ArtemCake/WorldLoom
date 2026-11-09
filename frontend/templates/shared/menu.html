@@ -82,7 +82,7 @@
 			{% if menu_user %}
 			<span class="nav-nickname">{{ menu_user.nickname }}</span>
 			<a href="/profile" class="avatar-sm" aria-label="Открыть профиль">
-				<img alt="Аватар" src="{{ menu_user.avatar_url or static_url('images/default-avatar.jpg') }}">
+				<img alt="Аватар" src="{{ menu_user.avatar_url | normalize_avatar_url or static_url('images/default-avatar.jpg') }}">
 			</a>
 			<form action="/auth/logout" method="post" hx-post="/auth/logout" hx-swap="none">
 				<button type="submit" class="btn btn-danger btn-sm">Выйти</button>

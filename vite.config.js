@@ -57,7 +57,7 @@ function buildMessages() {
 export default defineConfig({
     root: projectPath('./frontend/'),
 
-    base: '/frontend/static/',
+    base: '/frontend/src/',
 
     publicDir: projectPath('./frontend/public/'),
 

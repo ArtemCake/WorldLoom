@@ -44,7 +44,7 @@ async def _commit_account_deletion(session: AsyncSession, user: User, *, permane
 
 	if permanent:
 		try:
-			await asyncio.to_thread(remove_owned_avatar, avatar_url, user.nickname, user_id)
+			await asyncio.to_thread(remove_owned_avatar, avatar_url, user_id)
 		except Exception as exc:
 			# Удаление БД уже подтверждено: сбой очистки файла не должен выглядеть как его откат.
 			log.error("Аккаунт удалён, очистка аватара не завершена. Тип ошибки: %s", type(exc).__name__)

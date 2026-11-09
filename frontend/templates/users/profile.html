@@ -31,7 +31,7 @@
 				<form data-profile-form="details" action="/profile/update" method="post" enctype="multipart/form-data">
 					<div class="profile-avatar-row">
 						<div class="profile-avatar-wrap">
-							<img src="{{ user.avatar_url or static_url('images/default-avatar.jpg') }}"
+							<img src="{{ user.avatar_url | normalize_avatar_url or static_url('images/default-avatar.jpg') }}"
 							     alt="Аватар" class="profile-avatar-img" data-avatar-preview>
 							<input type="file" id="avatar-input" name="avatar" accept="image/jpeg,image/png,image/webp" class="hidden">
 							<button type="button" class="btn btn-outline-primary profile-avatar-edit-btn" data-avatar-select>

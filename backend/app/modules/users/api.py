@@ -20,11 +20,10 @@ from backend.app.modules.users.models.user import User
 from backend.app.modules.users.schemas import ProfileResponseDTO, ProfileSettingsDTO, UpdateThemeDTO
 from backend.app.web.csrf import enforce_csrf
 import asyncio
-from uuid import UUID
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from pydantic import EmailStr
 from starlette.responses import FileResponse, JSONResponse, Response
-from backend.app.modules.users.services.avatars import get_avatar_path, prepare_avatar
+from backend.app.modules.users.services.avatars import get_avatar_path, normalize_avatar_url, prepare_avatar
 from backend.app.modules.users.services.profile import change_password, update_own_roles, update_theme, update_user_profile
 
 
@@ -49,7 +48,8 @@ async def _limit_sensitive_action(request: Request, settings: WebAppSettings, ac
 @router.get("/data", response_model=ProfileResponseDTO, operation_id="getCurrentUserProfile")
 async def get_profile_data(user: CurrentUser) -> ProfileResponseDTO:
 	return ProfileResponseDTO(
-		id=user.id, nickname=user.nickname, email=user.email, avatar_url=user.avatar_url, is_email_verified=user.is_email_verified,
+		id=user.id, nickname=user.nickname, email=user.email, avatar_url=normalize_avatar_url(user.avatar_url),
+		is_email_verified=user.is_email_verified,
 		profile_settings=ProfileSettingsDTO(**(user.profile_settings or {})),
 	)
 
@@ -115,10 +115,15 @@ async def mfa_disable(request: Request, session: ProfileSession, user: CurrentUs
 
 	return JSONResponse(content={"message": "Двухфакторная аутентификация отключена."})
 
-@router.get("/avatars/{user_id}/{filename}", response_class=FileResponse, name="user_avatar")
-async def user_avatar(user_id: UUID, filename: str) -> Response:
+@router.get("/avatars/{catalog}/{filename}", response_class=FileResponse, name="user_avatar")
+async def user_avatar(catalog: str, filename: str) -> Response:
+	"""Выдать PNG из закрытого каталога аватаров по серверному адресу.
+
+	Имя каталога содержит идентификатор владельца, а имя файла — два
+	hex-отпечатка uuid4, поэтому доступ разрешён без отдельной проверки сессии.
+	"""
 	try:
-		path = await asyncio.to_thread(get_avatar_path, user_id, filename)
+		path = await asyncio.to_thread(get_avatar_path, catalog, filename)
 	except (FileNotFoundError, ValueError):
 		raise HTTPException(status_code=404, detail="Аватар не найден.") from None
 
@@ -141,6 +146,6 @@ async def api_update_profile(
 	else:
 		message = "Профиль обновлён, но письмо с подтверждением не отправлено. Запросите его повторно из настроек аккаунта."
 
-	return JSONResponse(content={"message": message, "avatar_url": result.avatar_url, "mail_sent": result.mail_sent})
+	return JSONResponse(content={"message": message, "avatar_url": normalize_avatar_url(result.avatar_url), "mail_sent": result.mail_sent})
 
 router.include_router(mutations)

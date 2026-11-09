@@ -1,4 +1,12 @@
 WorldLoom/
+├── .pytest_cache/
+│   ├── v/
+│   │   └── cache/
+│   │       ├── lastfailed
+│   │       └── nodeids
+│   ├── .gitignore
+│   ├── CACHEDIR.TAG
+│   └── README.md
 ├── backend/
 │   ├── app/
 │   │   ├── core/
@@ -505,8 +513,12 @@ WorldLoom/
 │   │   │   └── profile.html
 │   │   └── base.html
 │   └── uploads/
-│       ├── avatars/
 │       └── private/
+│           ├── avatars/
+│           │   ├── Admin_b499dabd-5858-4622-b883-f7d9625373b6/
+│           │   │   └── Admin_5d193db7151142678f88c10f488b53b1ff8c8481ac5f45b184333dd2b3e9d264.png
+│           │   ├── Тест-Юзер_0831baf6-3f56-440f-a6a2-e2ff54c0ba9b/
+│           │   └── Тест-Юзер_3dfd4ad3-420c-49b2-8806-7fb3ffebb8ec/
 │           └── maps/
 ├── logs/
 │   ├── worldloom.log
@@ -534,6 +546,7 @@ WorldLoom/
 │   │   └── rules-book-state.test.mjs
 │   ├── python/
 │   │   ├── test_attribute_choices.py
+│   │   ├── test_dnd5e_2014_checks_extension.py
 │   │   ├── test_dnd5e_2014_preset.py
 │   │   ├── test_engine_numeric_contract.py
 │   │   ├── test_engine_resource_storage.py
@@ -547,10 +560,6 @@ WorldLoom/
 │   ├── context_pack.py
 │   ├── delete_empty_files.py
 │   └── project_tree.py
-├── uploads/
-│   └── master-admin-4fcc4c7b-c3dd-4b08-a0bc-70b88554aa00/
-│       └── game-тест-76a57e6b-e1c7-439b-98a0-02c8acded9c4/
-│           └── map-1.png
 ├── .env.example
 ├── .gitignore
 ├── alembic.ini

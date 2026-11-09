@@ -13,6 +13,7 @@ from starlette.responses import HTMLResponse
 from backend.app.core.settings import WebAppSettings
 from backend.app.web.assets import b64encode_filter, create_static_url
 from backend.app.web.csrf import apply_csrf_tokens, ensure_csrf_tokens
+from backend.app.modules.users.services.avatars import normalize_avatar_url
 
 
 def create_templates(settings: WebAppSettings, *, directory: Path | None = None) -> Jinja2Templates:
@@ -28,6 +29,7 @@ def create_templates(settings: WebAppSettings, *, directory: Path | None = None)
 	templates.env.filters["static_url"] = asset_url
 	templates.env.globals["static_url"] = asset_url
 	templates.env.filters["b64encode"] = b64encode_filter
+	templates.env.filters["normalize_avatar_url"] = normalize_avatar_url
 	return templates
 
 def get_page_settings(request: Request) -> WebAppSettings:

@@ -6,6 +6,7 @@ import {createShortLabelField} from '../editor/shared/short-label-field.js';
 import {normalizeShortLabel} from '../editor/shared/short-label.js';
 import {collectEngineOverrides} from '../editor/game-system-engine-origin.js';
 import {createRuleSectionField, groupedRuleEntries, normalizeRuleSection} from '../editor/shared/rule-sections.js';
+import {button, element} from '../../../shared/dom/elements.js';
 
 const MAX_ATTRIBUTES = 128;
 const MAX_CHOICES = 128;
@@ -196,27 +197,9 @@ export function removeBookAttribute(document, code) {
 	delete rules.initial_attributes[code];
 }
 
-function node(tag, text = '', className = '') {
-	const result = document.createElement(tag);
-
-	result.textContent = text;
-	if (className) result.className = className;
-
-	return result;
-}
-
-function button(text, action) {
-	const result = node('button', text, 'btn btn-outline-primary');
-
-	result.type = 'button';
-	result.addEventListener('click', action);
-
-	return result;
-}
-
 function field(parent, title, value, type = 'text') {
-	const wrapper = node('label', '', 'rules-book__field');
-	const input = node('input');
+	const wrapper = element('label', '', 'rules-book__field');
+	const input = element('input');
 
 	input.type = type;
 	input.value = String(value ?? '');
@@ -227,38 +210,38 @@ function field(parent, title, value, type = 'text') {
 		input.max = String(LIMIT);
 	}
 
-	wrapper.append(node('span', title), input);
+	wrapper.append(element('span', title), input);
 	parent.append(wrapper);
 
 	return input;
 }
 
 function descriptionField(parent, value = '') {
-	const wrapper = node('label', '', 'rules-book__field');
-	const input = node('textarea', '', 'rules-book__description-input');
+	const wrapper = element('label', '', 'rules-book__field');
+	const input = element('textarea', '', 'rules-book__description-input');
 
 	input.rows = 5;
 	input.value = value;
 	input.placeholder = 'Что означает этот элемент и как используется в игре';
 
-	wrapper.append(node('span', 'Описание'), input);
+	wrapper.append(element('span', 'Описание'), input);
 	parent.append(wrapper);
 
 	return input;
 }
 
 function select(parent, title, options, value) {
-    const wrapper = node('label', '', 'rules-book__field');
-    const input = node('select');
+    const wrapper = element('label', '', 'rules-book__field');
+    const input = element('select');
 
     for (const [code, text] of options) {
         if (Array.isArray(text)) {
-            const group = node('optgroup');
+            const group = element('optgroup');
 
             group.label = code;
 
             for (const [optionCode, optionText] of text) {
-                const option = node('option', optionText);
+                const option = element('option', optionText);
 
                 option.value = String(optionCode);
                 group.append(option);
@@ -268,14 +251,14 @@ function select(parent, title, options, value) {
             continue;
         }
 
-        const option = node('option', text);
+        const option = element('option', text);
 
         option.value = String(code);
         input.append(option);
     }
 
     input.value = String(value);
-    wrapper.append(node('span', title), input);
+    wrapper.append(element('span', title), input);
     parent.append(wrapper);
 
     return input;
@@ -306,11 +289,11 @@ export function mountBookAttributes(host, options) {
 	let selected = null;
 	let changed = false;
 
-	const error = node('p', '', 'rules-book__error');
+	const error = element('p', '', 'rules-book__error');
 	error.setAttribute('role', 'alert');
 	error.hidden = true;
 
-	const content = node('div');
+	const content = element('div');
 	host.replaceChildren(error, content);
 
 	function report(action) {
@@ -346,14 +329,14 @@ export function mountBookAttributes(host, options) {
 		const rules = snapshot.document.rules;
 
 		if (!rules) {
-			content.append(node('p', 'Сначала загрузите правила в главе «Основа правил».'));
+			content.append(element('p', 'Сначала загрузите правила в главе «Основа правил».'));
 			return;
 		}
 
 		try {
 			editableRules(snapshot.document);
 		} catch (failure) {
-			content.append(node('p', failure.message));
+			content.append(element('p', failure.message));
 			return;
 		}
 
@@ -366,7 +349,7 @@ export function mountBookAttributes(host, options) {
 		const currentTitle = selected === null ? 'Новая характеристика' : definitions[selected].label || selected;
 		onTitleChange(currentTitle);
 
-		const navigation = node('div', '', 'rules-book__element-picker');
+		const navigation = element('div', '', 'rules-book__element-picker');
 
 		if (entries.length) {
             const groups = groupedRuleEntries(rules, 'attributes');
@@ -402,13 +385,13 @@ export function mountBookAttributes(host, options) {
 		const type = definition.field_type ?? 'integer';
 
 		if (!['integer', 'choice'].includes(type)) {
-			content.append(node('p', 'Этот тип поля ещё не поддерживается редактором. Определение не изменено.'));
+			content.append(element('p', 'Этот тип поля ещё не поддерживается редактором. Определение не изменено.'));
 			return;
 		}
 
-		const editor = node('fieldset', '', 'rules-book__attribute-form');
+		const editor = element('fieldset', '', 'rules-book__attribute-form');
 		editor.disabled = !writable;
-		editor.append(node('legend', selected === null ? 'Новая характеристика' : 'Определение характеристики'));
+		editor.append(element('legend', selected === null ? 'Новая характеристика' : 'Определение характеристики'));
 
 		const code = field(editor, 'Код для ссылок в формулах', selected ?? '');
 		code.readOnly = selected !== null;
@@ -455,26 +438,26 @@ export function mountBookAttributes(host, options) {
 		const types = [['integer', 'Число'], ['choice', 'Выбор из вариантов']];
 		const kind = select(editor, 'Тип значения', types, type);
 
-		const numeric = node('div', '', 'rules-book__value-fields');
+		const numeric = element('div', '', 'rules-book__value-fields');
 		const minimum = field(numeric, 'Минимум', definition.min_value ?? 0, 'number');
 		const maximum = field(numeric, 'Максимум', definition.max_value ?? 20, 'number');
 		const initialValue = selected === null ? 0 : rules.initial_attributes[selected];
 		const numericInitial = field(numeric, 'Начальное значение', initialValue, 'number');
 
-		const choicePanel = node('div');
-		const rowsHost = node('div');
+		const choicePanel = element('div');
+		const rowsHost = element('div');
 		const rows = [];
 
 		let initialSelection = type === 'choice' ? String(initialValue ?? '') : '';
 
 		const initialChoice = select(choicePanel, 'Начальный вариант', [['', 'Выберите вариант']], '');
-		const choiceActions = node('div');
+		const choiceActions = element('div');
 
-		choicePanel.prepend(node('p', 'Подписи видны игроку, числовые значения используются в формулах.'), rowsHost);
+		choicePanel.prepend(element('p', 'Подписи видны игроку, числовые значения используются в формулах.'), rowsHost);
 		choicePanel.append(choiceActions);
 
 		function refreshInitial() {
-			const empty = node('option', 'Выберите начальный вариант');
+			const empty = element('option', 'Выберите начальный вариант');
 			empty.value = '';
 			initialChoice.replaceChildren(empty);
 
@@ -491,7 +474,7 @@ export function mountBookAttributes(host, options) {
 
 				values.add(value);
 
-				const option = node('option', row.label.value.trim() || `Значение ${value}`);
+				const option = element('option', row.label.value.trim() || `Значение ${value}`);
 				option.value = String(value);
 				initialChoice.append(option);
 			}
@@ -504,7 +487,7 @@ export function mountBookAttributes(host, options) {
 				throw new Error('Достигнут технический предел количества вариантов.');
 			}
 
-			const section = node('section', '', 'rules-book__choice');
+			const section = element('section', '', 'rules-book__choice');
 			const name = field(section, 'Название варианта', source.label ?? '');
 			const value = field(section, 'Число для расчётов', source.value ?? '', 'number');
 			const description = descriptionField(section, source.description ?? '');
@@ -550,7 +533,7 @@ export function mountBookAttributes(host, options) {
 		editor.addEventListener('input', () => { changed = true; });
 		editor.addEventListener('change', () => { changed = true; });
 
-		const actions = node('div', '', 'rules-book__attribute-actions');
+		const actions = element('div', '', 'rules-book__attribute-actions');
 
 		actions.append(button('Применить к книге', () => report(() => {
 			if (!indicatorCodes.validate({showAll: true, focus: true})) return;

@@ -14,6 +14,7 @@ from pydantic import ConfigDict, Field, model_validator
 from backend.app.modules.game_systems.schemas.rules.rule_calculations import AttributeCalculations, CalculationModel
 from backend.app.modules.game_systems.schemas.rules.rule_calculations import CalculationValue, Code, MAX_ATTRIBUTES
 from backend.app.modules.game_systems.schemas.rules.rule_resources import MAX_RESOURCES, ResourceDefinition
+from backend.app.modules.game_systems.schemas.rules.rulebook import RulebookChapter
 
 
 # UUID в HTTP-запросах передаётся строкой.
@@ -40,6 +41,7 @@ class RulesProfile(RulesModel):
 	initial_attributes: dict[Code, CalculationValue] = Field(max_length=MAX_ATTRIBUTES)
 
 	resources: dict[Code, ResourceDefinition] = Field(default_factory=dict, max_length=MAX_RESOURCES)
+	rulebook: dict[Code, RulebookChapter] = Field(default_factory=dict, max_length=64)
 
 	@model_validator(mode="after")
 	def validate_resource_contract(self):

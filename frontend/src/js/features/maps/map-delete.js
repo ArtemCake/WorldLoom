@@ -2,6 +2,7 @@
 
 import { requestMapJson } from './map-http.js';
 import { acquireMapOperation } from './map-operation-state.js';
+import {messageShower} from '../../shared/ui/message-box.js';
 
 const initializedButtons = new WeakSet();
 
@@ -30,10 +31,7 @@ function initDeleteButton(button) {
     let phase = 'delete';
     let busy = false;
 
-    function showMessage(text, isError = false) {
-        message.textContent = text;
-        message.classList.toggle('alert-error', isError);
-    }
+    const showMessage = messageShower(message);
 
     button.addEventListener('click', async () => {
         if (busy || phase === 'complete' || !root.isConnected) return;

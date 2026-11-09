@@ -1,17 +1,10 @@
 // frontend/src/js/features/game-systems/editor/shared/rule-sections.js
 
-export const DEFAULT_RULE_SECTIONS = Object.freeze([
-    'Характеристики',
-    'Уровень и мастерство',
-    'Спасброски',
-    'Навыки',
-    'Пассивные проверки',
-    'Инициатива',
-    'Защита',
-    'Хиты и ресурсы',
-    'Особенности',
-    'Проверки характеристик'
-]);
+import {BOOK_DESIGN_CHAPTERS} from '../../book/book-design-catalog.js';
+
+export const DEFAULT_RULE_SECTIONS = Object.freeze(
+    BOOK_DESIGN_CHAPTERS.map((chapter) => chapter.title)
+);
 
 export const OTHER_RULE_SECTION = 'Прочие параметры';
 

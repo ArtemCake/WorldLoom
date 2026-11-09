@@ -74,6 +74,8 @@ node_modules/
 
 # Собранный фронтенд
 /frontend/dist/
+# Копия бандла не должна попадать в исходники: сборка пишет только в dist.
+/frontend/src/js/main.min.js
 
 # Покрытие JavaScript-тестами
 coverage/

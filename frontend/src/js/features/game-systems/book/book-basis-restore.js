@@ -5,6 +5,7 @@ import {validateDependencyGraph, validateFormulaTree} from '../editor/shared/for
 import {bookFormulaSources} from './book-definition-data.js';
 import {collectBookSample} from './book-preview-data.js';
 import {getBookBasisChanges} from './book-basis-changes.js';
+import {validateRulebook} from './book-design-data.js';
 
 function ensure(condition, message) {
 	if (!condition) throw new Error(message);
@@ -14,11 +15,14 @@ function collection(rules, group) {
 	if (group === 'attributes') return rules.calculations.attributes;
 	if (group === 'derived') return rules.calculations.derived;
 	if (group === 'resources') return rules.resources ?? {};
+    if (group === 'rulebook') return rules.rulebook ?? {};
 
 	throw new Error('Неизвестный раздел восстановления.');
 }
 
 function validateRestoredRules(rules) {
+
+    validateRulebook(rules.rulebook ?? {});
 	for (const group of ['attributes', 'derived', 'resources']) {
 		ensure(Object.keys(collection(rules, group)).length <= 128, 'Превышен технический предел элементов раздела.');
 	}
@@ -41,6 +45,7 @@ function validateRestoredRules(rules) {
 }
 
 export function restoreBookBasisItem(document, group, code) {
+    ensure(['attributes', 'derived', 'resources', 'rulebook'].includes(group), 'Неизвестный раздел восстановления.');
 	ensure(['attributes', 'derived', 'resources'].includes(group), 'Неизвестный раздел восстановления.');
 	ensure(typeof code === 'string' && code.length > 0, 'Не указан элемент восстановления.');
 
@@ -59,6 +64,9 @@ export function restoreBookBasisItem(document, group, code) {
 
 	// Все изменения и проверки выполняются на независимом кандидате.
 	const next = structuredClone(document.rules);
+    if (group === 'rulebook' && !Object.hasOwn(next, 'rulebook')) {
+        next.rulebook = {};
+    }
 	const target = collection(next, group);
 
 	target[code] = structuredClone(original[code]);

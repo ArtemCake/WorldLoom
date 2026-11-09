@@ -15,39 +15,16 @@ import {appendGroupedRuleOptions, ruleSectionTitle} from '../editor/shared/rule-
 import {assignDnd2014Sections} from '../editor/presets/dnd5e-2014.js';
 import {mountBookSection} from './book-section-editor.js';
 import {bookParameterLabel, findBookSectionEntry, getBookSectionEntries, isBookRuleSection} from './book-sections.js';
+import {findDesignChapter} from './book-design-catalog.js';
+import {mountBookDesign} from './book-design-editor.js';
+import {renderBookDesign} from './book-design-view.js';
+import {appendFact as pair, appendParagraph as paragraph, button, element} from '../../../shared/dom/elements.js';
 
-function element(tag, text = '', className = '') {
-	const node = document.createElement(tag);
-
-	if (text !== '') node.textContent = text;
-	if (className) node.className = className;
-
-	return node;
-}
-
-function button(text) {
-	const node = element('button', text, 'btn btn-outline-primary');
-	node.type = 'button';
-	return node;
-}
 
 function readDescription(parent, value) {
 	if (typeof value !== 'string' || !value.trim()) return;
 
 	paragraph(parent, value, 'rules-book__description');
-}
-
-function paragraph(parent, text, className = '') {
-	const node = element('p', text, className);
-	parent.append(node);
-	return node;
-}
-
-function pair(parent, title, value) {
-	const row = element('div', '', 'rules-book__fact');
-
-	row.append(element('dt', title), element('dd', String(value ?? 'Не задано')));
-	parent.append(row);
 }
 
 function entry(parent, title, code, description = '') {
@@ -642,7 +619,7 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
                 paragraph(reading, 'Сначала загрузите правила в главе «Основа правил».');
                 return;
             }
-
+			renderBookDesign(reading, rules, chapter);
             const selectedId = selectedItems.get(chapter) ?? null;
             const entry = findBookSectionEntry(rules, chapter, selectedId);
 
@@ -828,6 +805,23 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 			} else {
 				paragraph(settings, 'Редактирование этой главы подключим следующим этапом.');
 			}
+
+            if (snapshot.mode !== 'view' && snapshot.document.rules && findDesignChapter(code)) {
+                const designHost = element('div');
+
+                settings.prepend(designHost);
+
+                mountBookDesign(designHost, {
+                    state,
+                    chapter: code,
+
+                    onChange() {
+                        touched = true;
+                        refreshStatus();
+                        renderReading();
+                    }
+                });
+            }
 
             for (const tab of navigation.querySelectorAll('button')) {
                 if (tab.dataset.chapter === code) {

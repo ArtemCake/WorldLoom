@@ -2,6 +2,7 @@
 
 import { MapRequestError, requestMapJson } from './map-http.js';
 import { acquireMapOperation } from './map-operation-state.js';
+import {messageShower} from '../../shared/ui/message-box.js';
 
 const initializedRoots = new WeakSet();
 const REJECTED_STATUSES = new Set([400, 401, 403, 404, 409, 413, 415, 422]);
@@ -75,10 +76,7 @@ function initManagement(root) {
     let busy = false;
     let locked = false;
 
-    function showMessage(text, isError = false) {
-        message.textContent = text;
-        message.classList.toggle('alert-error', isError);
-    }
+    const showMessage = messageShower(message);
 
     function updateTargetLink() {
         const option = targetSelect?.selectedOptions[0];

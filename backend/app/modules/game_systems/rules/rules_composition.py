@@ -17,6 +17,7 @@ OVERRIDABLE_FIELDS = frozenset({
 	"calculations",
 	"initial_attributes",
 	"resources",
+	"rulebook",
 })
 
 def compose_system_draft(base_rules: RulesProfile, overrides: dict[str, Any] | None = None) -> RulesProfile:

@@ -3,19 +3,11 @@
 import {FORMULA_VALUE_LIMIT as LIMIT} from '../editor/shared/formula-contract.js';
 import {previewBookRules} from './book-preview-data.js';
 import {groupedRuleEntries, ruleSectionTitles, ruleSectionTitle} from '../editor/shared/rule-sections.js';
-
-function element(ownerDocument, tag, text = '', className = '') {
-	const node = ownerDocument.createElement(tag);
-
-	node.textContent = text;
-	if (className) node.className = className;
-
-	return node;
-}
+import {elementIn} from '../../../shared/dom/elements.js';
 
 export function renderBookPreviewResult(host, snapshot) {
 	const ownerDocument = host.ownerDocument;
-	const node = (tag, text = '', className = '') => element(ownerDocument, tag, text, className);
+	const node = (tag, text = '', className = '') => elementIn(ownerDocument, tag, text, className);
 	const result = snapshot.preview;
 	const rules = snapshot.document.rules;
 
@@ -110,7 +102,7 @@ export function mountBookPreview(host, {state, request, onChange = () => {}}) {
 	const ownerDocument = host.ownerDocument;
 	const controller = new AbortController();
 	const {signal} = controller;
-	const node = (tag, text = '', className = '') => element(ownerDocument, tag, text, className);
+	const node = (tag, text = '', className = '') => elementIn(ownerDocument, tag, text, className);
 	const snapshot = state.read();
 	const rules = snapshot.document.rules;
 

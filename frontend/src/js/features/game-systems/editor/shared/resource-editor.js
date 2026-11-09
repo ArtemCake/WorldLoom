@@ -5,24 +5,18 @@ import {createIndicatorCodeController} from './indicator-code.js';
 import {validateResources} from './resource-contract.js';
 import {createShortLabelField} from './short-label-field.js';
 import {createRuleSectionField} from './rule-sections.js';
+import {button, element} from '../../../../shared/dom/elements.js';
 
-
-function node(tag, text = '', className = '') {
-	const element = document.createElement(tag);
-	element.textContent = text;
-	if (className) element.className = className;
-	return element;
-}
 
 function field(parent, title, control) {
-	const wrapper = node('label');
-	wrapper.append(node('span', title), control);
+	const wrapper = element('label');
+	wrapper.append(element('span', title), control);
 	parent.append(wrapper);
 	return control;
 }
 
 function textInput(value = '', maxLength = 100) {
-	const input = node('input');
+	const input = element('input');
 	input.type = 'text';
 	input.value = value;
 	input.maxLength = maxLength;
@@ -30,7 +24,7 @@ function textInput(value = '', maxLength = 100) {
 }
 
 function numberInput(value = 0, minimum = 0) {
-	const input = node('input');
+	const input = element('input');
 	input.type = 'number';
 	input.step = '1';
 	input.min = String(minimum);
@@ -40,10 +34,10 @@ function numberInput(value = 0, minimum = 0) {
 }
 
 function selectInput(items, value) {
-	const select = node('select');
+	const select = element('select');
 
 	for (const [code, label] of items) {
-		const option = node('option', label);
+		const option = element('option', label);
 		option.value = code;
 		select.append(option);
 	}
@@ -73,19 +67,13 @@ function show(control, visible) {
 	control.disabled = !visible;
 }
 
-function button(text) {
-	const control = node('button', text, 'btn btn-outline-primary');
-	control.type = 'button';
-	return control;
-}
-
 export function createResourceEditor(options) {
 	const {getSources, onChange, onError, isBusy, single = false, getExternalCodes = () => []} = options;
-	const element = node('section');
-	element.dataset.engineRulesPanel = 'resources';
-	element.dataset.resourceEditor = '';
+	const root = element('section');
+	root.dataset.engineRulesPanel = 'resources';
+	root.dataset.resourceEditor = '';
 
-	const list = node('div', '', 'engine-attributes-grid');
+	const list = element('div', '', 'engine-attributes-grid');
 	const add = button('Добавить ресурс');
 	const rows = [];
 	const codes = createIndicatorCodeController({
@@ -96,14 +84,14 @@ export function createResourceEditor(options) {
 		}
 	});
 
-	element.append(node('h4', 'Ресурсы'));
-	element.append(node('p', 'Максимум и начальный запас относятся к правилам. Текущие остатки конкретного персонажа здесь не хранятся.'));
-	element.append(list, add);
+	root.append(element('h4', 'Ресурсы'));
+	root.append(element('p', 'Максимум и начальный запас относятся к правилам. Текущие остатки конкретного персонажа здесь не хранятся.'));
+	root.append(list, add);
 
 	if (single) {
 		add.hidden = true;
 
-		for (const child of element.children) {
+		for (const child of root.children) {
 			if (child !== list && child !== add) child.hidden = true;
 		}
 	}
@@ -123,18 +111,18 @@ export function createResourceEditor(options) {
 		const sources = getSources();
 		row.reference.replaceChildren();
 
-		const placeholder = node('option', 'Выберите показатель');
+		const placeholder = element('option', 'Выберите показатель');
 		placeholder.value = '';
 		row.reference.append(placeholder);
 
 		for (const [value, label] of sources) {
-			const option = node('option', label);
+			const option = element('option', label);
 			option.value = value;
 			row.reference.append(option);
 		}
 
 		if (selected && !sources.some(([value]) => value === selected)) {
-			const missing = node('option', `Источник отсутствует: ${selected}`);
+			const missing = element('option', `Источник отсутствует: ${selected}`);
 			missing.value = selected;
 			row.reference.append(missing);
 		}
@@ -149,7 +137,7 @@ export function createResourceEditor(options) {
 	function appendRecovery(row, event = '', amount = 'full') {
 		if (row.recovery.length >= 128) throw new Error('Слишком много событий восстановления.');
 
-		const line = node('div', '', 'engine-rule-card__values');
+		const line = element('div', '', 'engine-rule-card__values');
 		const eventInput = field(line, 'Код события', textInput(event, 40));
 		const modes = [['full', 'До максимума'], ['amount', 'На заданное количество']];
 		const mode = field(line, 'Восстановление', selectInput(modes, amount === 'full' ? 'full' : 'amount'));
@@ -183,11 +171,11 @@ export function createResourceEditor(options) {
 		}
 		if (rows.length >= 128) throw new Error('Слишком много ресурсов.');
 
-		const card = node('fieldset', '', 'engine-rule-card engine-rule-card--attribute');
-		card.append(node('legend', 'Ресурс'));
+		const card = element('fieldset', '', 'engine-rule-card engine-rule-card--attribute');
+		card.append(element('legend', 'Ресурс'));
 
-		const identity = node('div', '', 'engine-rule-card__identity');
-		const settings = node('div', '', 'engine-rule-card__values');
+		const identity = element('div', '', 'engine-rule-card__identity');
+		const settings = element('div', '', 'engine-rule-card__values');
 
 		const maximum = definition.maximum ?? 0;
 		const initial = definition.initial ?? 'full';
@@ -207,7 +195,7 @@ export function createResourceEditor(options) {
 
 		row.label.closest('label').after(row.shortLabel.element);
 
-		const description = node('textarea');
+		const description = element('textarea');
 		description.rows = 5;
 		description.value = definition.description ?? '';
 		row.description = field(identity, 'Описание', description);
@@ -218,20 +206,20 @@ export function createResourceEditor(options) {
 
 		row.maximumMode = field(settings, 'Максимум', selectInput(maximumModes, typeof maximum === 'string' ? 'reference' : 'number'));
 		row.maximumNumber = field(settings, 'Значение максимума', numberInput(typeof maximum === 'number' ? maximum : 0));
-		row.reference = field(settings, 'Источник максимума', node('select'));
+		row.reference = field(settings, 'Источник максимума', element('select'));
 		row.initialMode = field(settings, 'Начальное заполнение', selectInput(initialModes, initial === 'full' ? 'full' : 'number'));
 		row.initialNumber = field(settings, 'Начальный запас', numberInput(initial === 'full' ? 0 : initial));
 
-		const recoveryDetails = node('details');
-		recoveryDetails.append(node('summary', 'Восстановление'));
+		const recoveryDetails = element('details');
+		recoveryDetails.append(element('summary', 'Восстановление'));
 
-		row.recoveryHost = node('div');
+		row.recoveryHost = element('div');
 		const addRecovery = button('Добавить событие восстановления');
 
-		recoveryDetails.append(node('p', 'Например: short_rest, long_rest, dawn. Код связывает ресурс с будущей процедурой события.'));
+		recoveryDetails.append(element('p', 'Например: short_rest, long_rest, dawn. Код связывает ресурс с будущей процедурой события.'));
 		recoveryDetails.append(row.recoveryHost, addRecovery);
 
-		const actions = node('div', '', 'engine-rule-card__actions');
+		const actions = element('div', '', 'engine-rule-card__actions');
 		const remove = button('Удалить ресурс');
 
 		function syncModes() {
@@ -288,8 +276,8 @@ export function createResourceEditor(options) {
 		onChange();
 	}));
 
-	element.addEventListener('input', () => onChange());
-	element.addEventListener('change', () => onChange());
+	root.addEventListener('input', () => onChange());
+	root.addEventListener('change', () => onChange());
 
 	function load(resources, {lockCodes = false} = {}) {
 		const checked = validateResources(resources);
@@ -355,7 +343,7 @@ export function createResourceEditor(options) {
 	}
 
 	return {
-		element,
+		element: root,
 		load,
 		collect,
 		refreshSources,

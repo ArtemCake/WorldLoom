@@ -1,6 +1,7 @@
 // frontend/src/js/features/games/sessions/session-dice.js
 
 import { gameStateApi } from './../game-state-api.js';
+import {messageShower} from '../../../shared/ui/message-box.js';
 
 const initializedRoots = new WeakSet();
 const HISTORY_LIMIT = 100;
@@ -112,10 +113,7 @@ function initPanel(root) {
         root.setAttribute('aria-busy', String(value));
     }
 
-    function showMessage(text, isError = false) {
-        message.textContent = text;
-        message.classList.toggle('alert-error', isError);
-    }
+    const showMessage = messageShower(message);
 
     async function loadHistory() {
         if (busy || !root.isConnected) return;

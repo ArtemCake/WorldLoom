@@ -1,6 +1,7 @@
 // frontend/src/js/features/game-systems/book/book-basis-picker.js
 
 import {applyPublishedBookBasis, readBasisPages} from './book-basis-data.js';
+import {elementIn} from '../../../shared/dom/elements.js';
 
 function ensure(condition, message) {
 	if (!condition) throw new Error(message);
@@ -155,24 +156,15 @@ function mountBasisPicker(host, options) {
 	let entities = [];
 	let versions = [];
 
-	function element(tag, text = '', className = '') {
-		const node = ownerDocument.createElement(tag);
-
-		node.textContent = text;
-		if (className) node.className = className;
-
-		return node;
-	}
-
-	const section = element('section');
-	const heading = element('h4', config.heading);
-	const explanation = element('p', config.explanation, 'rules-book__muted');
-	const fields = element('fieldset');
-	const load = element('button', config.loadLabel, 'btn btn-outline-primary');
-	const entitySelect = element('select');
-	const versionSelect = element('select');
-	const apply = element('button', config.applyLabel, 'btn btn-primary');
-	const message = element('p');
+	const section = elementIn(ownerDocument, 'section');
+	const heading = elementIn(ownerDocument, 'h4', config.heading);
+	const explanation = elementIn(ownerDocument, 'p', config.explanation, 'rules-book__muted');
+	const fields = elementIn(ownerDocument, 'fieldset');
+	const load = elementIn(ownerDocument, 'button', config.loadLabel, 'btn btn-outline-primary');
+	const entitySelect = elementIn(ownerDocument, 'select');
+	const versionSelect = elementIn(ownerDocument, 'select');
+	const apply = elementIn(ownerDocument, 'button', config.applyLabel, 'btn btn-primary');
+	const message = elementIn(ownerDocument, 'p');
 
 	fields.className = 'rules-book__definition-form';
 	load.type = 'button';
@@ -181,20 +173,20 @@ function mountBasisPicker(host, options) {
 	message.setAttribute('aria-live', 'polite');
 
 	function field(title, input) {
-		const label = element('label');
+		const label = elementIn(ownerDocument, 'label');
 
-		label.append(element('span', title), input);
+		label.append(elementIn(ownerDocument, 'span', title), input);
 		return label;
 	}
 
 	function fill(select, items, placeholder, describe) {
-		const empty = element('option', placeholder);
+		const empty = elementIn(ownerDocument, 'option', placeholder);
 
 		empty.value = '';
 		select.replaceChildren(empty);
 
 		for (const item of items) {
-			const option = element('option', describe(item));
+			const option = elementIn(ownerDocument, 'option', describe(item));
 
 			option.value = item.id;
 			select.append(option);

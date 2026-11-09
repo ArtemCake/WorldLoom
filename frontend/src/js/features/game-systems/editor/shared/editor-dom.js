@@ -1,34 +1,8 @@
 // frontend/src/js/features/game-systems/editor/shared/editor-dom.js
 
-export function element(tag, text, className) {
-	const result = document.createElement(tag);
+import {element} from '../../../../shared/dom/elements.js';
 
-	if (text !== undefined) {
-		result.textContent = String(text);
-	}
-
-	if (className) {
-		result.className = className;
-	}
-
-	return result;
-}
-
-export function button(text, action) {
-	const result = element(
-		'button',
-		text,
-		'btn btn-outline-primary'
-	);
-
-	result.type = 'button';
-
-	if (action) {
-		result.addEventListener('click', action);
-	}
-
-	return result;
-}
+export {button, element} from '../../../../shared/dom/elements.js';
 
 export function field(title, input) {
 	const result = element(
@@ -67,23 +41,4 @@ export function choices(options, value) {
 	result.value = value;
 
 	return result;
-}
-
-export function inputField(
-host,
-title,
-value,
-{ numeric = false } = {}
-) {
-	const input = control(value, { required: true });
-
-	if (numeric) {
-		input.inputMode = 'numeric';
-	} else {
-		input.maxLength = 100;
-	}
-
-	host.append(field(title, input));
-
-	return input;
 }

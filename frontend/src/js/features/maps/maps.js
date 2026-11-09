@@ -2,6 +2,7 @@
 
 import { MapRequestError, requestMapJson } from './map-http.js';
 import { initMapSandbox } from './map-sandbox.js';
+import {messageShower} from '../../shared/ui/message-box.js';
 
 const initializedForms = new WeakSet();
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -29,10 +30,7 @@ export function initMaps() {
     let locked = false;
     let disposed = false;
 
-    function showMessage(text, isError = false) {
-        message.textContent = text;
-        message.classList.toggle('alert-error', isError);
-    }
+    const showMessage = messageShower(message);
 
     function clearPreview() {
         image.hidden = true;

@@ -2,6 +2,7 @@
 
 import {loadBookPublications} from './book-publications-data.js';
 import {bookPublicationHref} from './book-publication-source.js';
+import {elementIn} from '../../../shared/dom/elements.js';
 
 export function mountBookPublications(host, {request, systemId, manager}) {
 	const ownerDocument = host.ownerDocument;
@@ -13,17 +14,8 @@ export function mountBookPublications(host, {request, systemId, manager}) {
 	let items = [];
 	let nextBefore = null;
 
-	function node(tag, text = '', className = '') {
-		const element = ownerDocument.createElement(tag);
-
-		element.textContent = text;
-		if (className) element.className = className;
-
-		return element;
-	}
-
 	if (typeof systemId !== 'string' || !systemId.trim()) {
-		host.append(node('p', 'Сначала создайте и сохраните систему. После публикации здесь появится история.'));
+		host.append(elementIn(ownerDocument, 'p', 'Сначала создайте и сохраните систему. После публикации здесь появится история.'));
 
 		return {
 			destroy() {
@@ -33,16 +25,16 @@ export function mountBookPublications(host, {request, systemId, manager}) {
 		};
 	}
 
-	const description = node(
+	const description = elementIn(ownerDocument,
 		'p',
 		'Ссылки открывают конкретные версии правил в новой вкладке. Текущий черновик не изменяется.',
 		'rules-book__muted'
 	);
 
-	const refresh = node('button', 'Обновить историю', 'btn btn-outline-primary');
-	const more = node('button', 'Показать более ранние версии', 'btn btn-outline-primary');
-	const list = node('ul');
-	const message = node('p');
+	const refresh = elementIn(ownerDocument, 'button', 'Обновить историю', 'btn btn-outline-primary');
+	const more = elementIn(ownerDocument, 'button', 'Показать более ранние версии', 'btn btn-outline-primary');
+	const list = elementIn(ownerDocument, 'ul');
+	const message = elementIn(ownerDocument, 'p');
 
 	refresh.type = 'button';
 	more.type = 'button';
@@ -63,8 +55,8 @@ export function mountBookPublications(host, {request, systemId, manager}) {
 		list.replaceChildren();
 
 		for (const item of items) {
-			const entry = node('li');
-			const link = node('a', `Версия №${item.version_number}`);
+			const entry = elementIn(ownerDocument, 'li');
+			const link = elementIn(ownerDocument, 'a', `Версия №${item.version_number}`);
 
 			link.href = bookPublicationHref(systemId, item.id);
             link.setAttribute('data-publication-version', item.id);
@@ -72,7 +64,7 @@ export function mountBookPublications(host, {request, systemId, manager}) {
 			const date = new Date(item.published_at).toLocaleString('ru-RU', {timeZone: 'UTC'});
 			const metadata = `Опубликована: ${date} UTC. Исполнитель: ${item.rules_engine_version}.`;
 
-			entry.append(link, node('p', metadata, 'rules-book__muted'));
+			entry.append(link, elementIn(ownerDocument, 'p', metadata, 'rules-book__muted'));
 			list.append(entry);
 		}
 	}

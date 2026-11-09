@@ -2,12 +2,12 @@
 
 import { requestGameJson } from './game-http.js';
 import { renderGames, renderSystems } from './lobby-view.js';
+import {showBoxMessage} from '../../shared/ui/message-box.js';
 
 const initializedRoots = new WeakSet();
 
 function showMessage(box, text, isError = false) {
-    box.textContent = text;
-    box.classList.toggle('alert-error', isError);
+    showBoxMessage(box, text, isError);
     box.classList.toggle('alert-success', Boolean(text) && !isError);
 }
 

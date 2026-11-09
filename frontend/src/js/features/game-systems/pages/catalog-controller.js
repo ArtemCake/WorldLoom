@@ -1,6 +1,7 @@
 // frontend/src/js/features/game-systems/pages/catalog-controller.js
 
 import {requestGameSystem} from '../api/game-system-api.js';
+import {element} from '../../../shared/dom/elements.js';
 
 const initializedRoots = new WeakSet();
 
@@ -27,17 +28,8 @@ function spineMetrics(system) {
 	};
 }
 
-function node(tag, text = '', className = '') {
-	const result = document.createElement(tag);
-
-	result.textContent = text;
-	if (className) result.className = className;
-
-	return result;
-}
-
 function link(text, href) {
-	const result = node('a', text, 'btn btn-outline-primary');
+	const result = element('a', text, 'btn btn-outline-primary');
 
 	result.href = href;
 	result.setAttribute('hx-boost', 'false');
@@ -93,33 +85,33 @@ export function mountSystemsCatalog(root) {
 	function renderBook(system) {
 		const id = encodeURIComponent(system.id);
 		const metrics = spineMetrics(system);
-		const book = node('article', '', 'book-shelf__book');
+		const book = element('article', '', 'book-shelf__book');
 
 		book.dataset.tone = String(metrics.tone);
 		book.dataset.inactive = String(system.is_active !== true);
 		book.style.setProperty('--spine-height', `${metrics.height}rem`);
 		book.style.setProperty('--spine-width', `${metrics.width.toFixed(1)}rem`);
 
-		const spine = node('a', '', 'book-shelf__spine');
+		const spine = element('a', '', 'book-shelf__spine');
 
 		spine.href = `/game-systems/catalog/${id}`;
 		spine.setAttribute('hx-boost', 'false');
-		spine.append(node('span', system.name, 'book-shelf__title'));
-		book.append(spine, node('span', '', 'book-shelf__mark'));
+		spine.append(element('span', system.name, 'book-shelf__title'));
+		book.append(spine, element('span', '', 'book-shelf__mark'));
 
-		const panel = node('div', '', 'book-shelf__panel');
-		const head = node('header', '', 'book-shelf__panel-head');
-		const badge = node('span', system.is_active === true ? 'Активна' : 'Неактивна', 'book-shelf__badge');
+		const panel = element('div', '', 'book-shelf__panel');
+		const head = element('header', '', 'book-shelf__panel-head');
+		const badge = element('span', system.is_active === true ? 'Активна' : 'Неактивна', 'book-shelf__badge');
 
 		badge.classList.toggle('book-shelf__badge--active', system.is_active === true);
-		head.append(node('h3', system.name), badge);
+		head.append(element('h3', system.name), badge);
 
 		panel.append(
 			head,
-			node('p', system.description || 'Описание пока не добавлено.', 'book-shelf__description')
+			element('p', system.description || 'Описание пока не добавлено.', 'book-shelf__description')
 		);
 
-		const actions = node('div', '', 'book-shelf__actions');
+		const actions = element('div', '', 'book-shelf__actions');
 
 		actions.append(link('Посмотреть', `/game-systems/catalog/${id}`));
 
@@ -129,7 +121,7 @@ export function mountSystemsCatalog(root) {
 
 		panel.append(actions);
 
-		const management = node('div', '', 'book-shelf__management');
+		const management = element('div', '', 'book-shelf__management');
 
 		for (const action of ['toggle', 'delete']) {
 			const allowed = action === 'toggle' ? access?.can_toggle === true : access?.can_delete === true;
@@ -138,7 +130,7 @@ export function mountSystemsCatalog(root) {
 			if (action === 'toggle' && typeof system.is_active !== 'boolean') continue;
 
 			const text = action === 'delete' ? 'Удалить' : system.is_active ? 'Деактивировать' : 'Активировать';
-			const button = node('button', text, 'btn btn-outline-primary');
+			const button = element('button', text, 'btn btn-outline-primary');
 
 			button.type = 'button';
 			button.dataset.catalogAction = action;
@@ -173,8 +165,8 @@ export function mountSystemsCatalog(root) {
 		const fragment = document.createDocumentFragment();
 
 		for (let start = 0; start < visible.length; start += SHELF_CAPACITY) {
-			const shelf = node('div', '', 'book-shelf__shelf');
-			const row = node('div', '', 'book-shelf__row');
+			const shelf = element('div', '', 'book-shelf__shelf');
+			const row = element('div', '', 'book-shelf__row');
 
 			for (const system of visible.slice(start, start + SHELF_CAPACITY)) {
 				row.append(renderBook(system));
@@ -185,10 +177,10 @@ export function mountSystemsCatalog(root) {
 		}
 
 		if (!visible.length) {
-			const empty = node('section', '', 'system-catalog__empty');
+			const empty = element('section', '', 'system-catalog__empty');
 
-			empty.append(node('h2', systems.length ? 'Ничего не найдено' : 'Игровых систем пока нет'));
-			empty.append(node('p', systems.length ? 'Измените поиск или фильтр активности.' : 'Создайте первую книгу правил.'));
+			empty.append(element('h2', systems.length ? 'Ничего не найдено' : 'Игровых систем пока нет'));
+			empty.append(element('p', systems.length ? 'Измените поиск или фильтр активности.' : 'Создайте первую книгу правил.'));
 			fragment.append(empty);
 		}
 

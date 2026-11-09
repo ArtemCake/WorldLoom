@@ -5,6 +5,7 @@ import {mountBookDefinitions} from './book-definitions.js';
 import {isBookModifierCode} from './book-definition-data.js';
 import {bookParameterId, bookParameterLabel, bookRuleSectionTitle} from './book-sections.js';
 import {findBookSectionEntry, getBookSectionEntries} from './book-sections.js';
+import {elementIn} from '../../../shared/dom/elements.js';
 
 const creationTypes = [
     ['attributes', 'Исходное значение'],
@@ -24,29 +25,20 @@ export function mountBookSection(host, options) {
     let generation = 0;
     let destroyed = false;
 
-    function node(tag, text = '', className = '') {
-        const result = ownerDocument.createElement(tag);
-
-        result.textContent = text;
-        if (className) result.className = className;
-
-        return result;
-    }
-
-    const navigation = node('div', '', 'rules-book__element-picker');
-    const pickerLabel = node('label', '', 'rules-book__field');
-    const picker = node('select');
-    const typeLabel = node('label', '', 'rules-book__field');
-    const type = node('select');
-    const add = node('button', 'Добавить параметр', 'btn btn-outline-primary');
-    const editorHost = node('div');
+    const navigation = elementIn(ownerDocument, 'div', '', 'rules-book__element-picker');
+    const pickerLabel = elementIn(ownerDocument, 'label', '', 'rules-book__field');
+    const picker = elementIn(ownerDocument, 'select');
+    const typeLabel = elementIn(ownerDocument, 'label', '', 'rules-book__field');
+    const type = elementIn(ownerDocument, 'select');
+    const add = elementIn(ownerDocument, 'button', 'Добавить параметр', 'btn btn-outline-primary');
+    const editorHost = elementIn(ownerDocument, 'div');
 
     add.type = 'button';
-    pickerLabel.append(node('span', 'Параметр раздела'), picker);
-    typeLabel.append(node('span', 'Тип нового параметра'), type);
+    pickerLabel.append(elementIn(ownerDocument, 'span', 'Параметр раздела'), picker);
+    typeLabel.append(elementIn(ownerDocument, 'span', 'Тип нового параметра'), type);
 
     for (const [value, title] of creationTypes) {
-        const option = node('option', title);
+        const option = elementIn(ownerDocument, 'option', title);
 
         option.value = value;
         type.append(option);
@@ -86,13 +78,13 @@ export function mountBookSection(host, options) {
     function syncNavigation() {
         const snapshot = state.read();
         const writable = snapshot.mode !== 'view' && !snapshot.blocked && snapshot.writePending === null;
-        const empty = node('option', 'Новый параметр');
+        const empty = elementIn(ownerDocument, 'option', 'Новый параметр');
 
         empty.value = '';
         picker.replaceChildren(empty);
 
         for (const entry of entries()) {
-            const option = node('option', bookParameterLabel(entry));
+            const option = elementIn(ownerDocument, 'option', bookParameterLabel(entry));
 
             option.value = entry.id;
             picker.append(option);
@@ -111,7 +103,7 @@ export function mountBookSection(host, options) {
         child = null;
 
         if (!snapshot.document.rules) {
-            editorHost.replaceChildren(node('p', 'Сначала загрузите правила в главе «Основа правил».'));
+            editorHost.replaceChildren(elementIn(ownerDocument, 'p', 'Сначала загрузите правила в главе «Основа правил».'));
             syncNavigation();
             return;
         }
@@ -122,7 +114,7 @@ export function mountBookSection(host, options) {
         if (entry) creationType = technicalChapter(entry);
 
         const childChapter = entry ? technicalChapter(entry) : creationType;
-        const hiddenNavigation = node('div');
+        const hiddenNavigation = elementIn(ownerDocument, 'div');
         const mountEditor = childChapter === 'attributes' ? mountBookAttributes : mountBookDefinitions;
 
         const childOptions = {

@@ -4,6 +4,7 @@ import { gameStateApi, GameStateApiError } from './../game-state-api.js';
 import { readTokenCreateValues } from '../token-create-values.js';
 import { fillTokenMapField, readTokenMapChanges } from '../token-map-fields.js';
 import { notifySessionTokensChanged, subscribeSessionTokensChanged } from './session-token-events.js';
+import {messageShower} from '../../../shared/ui/message-box.js';
 
 const initializedRoots = new WeakSet();
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -184,10 +185,7 @@ function initTokenPanel(root) {
         return !disposed && root.isConnected;
     }
 
-    function showMessage(text, isError = false) {
-        message.textContent = text;
-        message.classList.toggle('alert-error', isError);
-    }
+    const showMessage = messageShower(message);
 
     function applyExternalRefresh() {
         if (!isActive() || busy || !pendingExternalRefresh) return;

@@ -1,6 +1,7 @@
 // frontend/src/js/features/maps/map-edit.js
 
 import { MapRequestError, requestMapJson } from './map-http.js';
+import {messageShower} from '../../shared/ui/message-box.js';
 
 const initializedForms = new WeakSet();
 const REJECTED_STATUSES = new Set([400, 401, 403, 404, 409, 413, 415, 422]);
@@ -149,10 +150,7 @@ function initEditForm(form) {
     let locked = false;
     let disposed = false;
 
-    function showMessage(text, isError = false) {
-        message.textContent = text;
-        message.classList.toggle('alert-error', isError);
-    }
+    const showMessage = messageShower(message);
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();

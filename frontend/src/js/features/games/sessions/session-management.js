@@ -1,6 +1,7 @@
 // frontend/src/js/features/games/sessions/session-management.js
 
 import { requestGameJson } from './../game-http.js';
+import {messageShower} from '../../../shared/ui/message-box.js';
 
 const initializedRoots = new WeakSet();
 
@@ -46,10 +47,7 @@ function initPanel(root) {
     initializedRoots.add(root);
     let busy = false;
 
-    function showMessage(text, isError = false) {
-        message.textContent = text;
-        message.classList.toggle('alert-error', isError);
-    }
+    const showMessage = messageShower(message);
 
     async function perform(form, method, body, sessionId = null, expectedActive = null) {
         if (busy || !root.isConnected) return;

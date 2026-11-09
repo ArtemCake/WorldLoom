@@ -1,18 +1,10 @@
 // frontend/src/js/features/game-systems/book/book-sections.js
 
 import {ruleCollections, ruleSectionTitle} from '../editor/shared/rule-sections.js';
+import {BOOK_DESIGN_CHAPTERS} from './book-design-catalog.js';
 
 const sections = [
-    {code: 'abilities', title: 'Характеристики'},
-    {code: 'level_mastery', title: 'Уровень и мастерство'},
-    {code: 'saving_throws', title: 'Спасброски'},
-    {code: 'skills', title: 'Навыки'},
-    {code: 'passive_checks', title: 'Пассивные проверки'},
-    {code: 'initiative', title: 'Инициатива'},
-    {code: 'defense', title: 'Защита'},
-    {code: 'hit_points_resources', title: 'Хиты и ресурсы'},
-    {code: 'features', title: 'Особенности'},
-    {code: 'ability_checks', title: 'Проверки характеристик'},
+    ...BOOK_DESIGN_CHAPTERS.map(({code, title}) => ({code, title})),
     {code: 'other_parameters', title: 'Прочие параметры'}
 ];
 

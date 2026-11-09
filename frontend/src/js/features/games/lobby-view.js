@@ -1,5 +1,7 @@
 // frontend/src/js/features/games/lobby-view.js
 
+import {element} from '../../shared/dom/elements.js';
+
 const STATUS_LABELS = {
     draft: 'Черновик',
     active: 'Идёт',
@@ -13,21 +15,14 @@ const PRIVACY_LABELS = {
     private: 'Приватная'
 };
 
-function element(tag, className = '', text = '') {
-    const node = document.createElement(tag);
-    node.className = className;
-    node.textContent = text;
-    return node;
-}
-
 function link(text, href) {
-    const node = element('a', 'btn btn-outline-primary', text);
+    const node = element('a', text, 'btn btn-outline-primary');
     node.href = href;
     return node;
 }
 
 function actionButton(text, action, gameId) {
-    const button = element('button', 'btn btn-outline-primary', text);
+    const button = element('button', text, 'btn btn-outline-primary');
     button.type = 'button';
     button.dataset.lobbyAction = action;
     button.dataset.gameId = gameId;
@@ -37,35 +32,35 @@ function actionButton(text, action, gameId) {
 function gameCard(game, currentUserId) {
     const isMaster = game.master_id === currentUserId;
     const gamePath = `/games/${encodeURIComponent(game.id)}`;
-    const card = element('article', 'lobby-card');
-    const header = element('header', 'lobby-card__header');
+    const card = element('article', '', 'lobby-card');
+    const header = element('header', '', 'lobby-card__header');
     const heading = element('h3');
-    const title = element('a', '', game.title);
+    const title = element('a', game.title);
 
     title.href = `${gamePath}/details`;
     heading.append(title);
     header.append(heading);
 
     if (isMaster) {
-        header.append(element('span', 'lobby-badge lobby-badge--master', 'Вы — ведущий'));
+        header.append(element('span', 'Вы — ведущий', 'lobby-badge lobby-badge--master'));
     }
 
     card.append(header);
 
     if (game.description) {
-        card.append(element('p', 'lobby-card__description', game.description));
+        card.append(element('p', game.description, 'lobby-card__description'));
     }
 
-    const badges = element('div', 'lobby-card__badges');
+    const badges = element('div', '', 'lobby-card__badges');
     const status = STATUS_LABELS[game.status] || game.status;
     const privacy = PRIVACY_LABELS[game.privacy_level] || game.privacy_level;
 
     badges.append(
-        element('span', 'lobby-badge', `Статус: ${status}`),
-        element('span', 'lobby-badge', privacy)
+        element('span', `Статус: ${status}`, 'lobby-badge'),
+        element('span', privacy, 'lobby-badge')
     );
 
-    const actions = element('div', 'lobby-card__actions');
+    const actions = element('div', '', 'lobby-card__actions');
 
     actions.append(
         link(isMaster ? 'Открыть и настроить' : 'Открыть игру', `${gamePath}/details`),

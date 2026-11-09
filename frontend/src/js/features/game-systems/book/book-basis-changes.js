@@ -1,6 +1,7 @@
 // frontend/src/js/features/game-systems/book/book-basis-changes.js
 
 import {collectEngineOverrides, jsonEqual} from '../editor/game-system-engine-origin.js';
+import {elementIn} from '../../../shared/dom/elements.js';
 
 function record(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -70,10 +71,15 @@ export function getBookBasisChanges(document) {
             items: compareCollection(base.calculations.derived, current.calculations.derived)
         },
         {
+            code: 'rulebook',
+            title: 'Описание правил',
+            items: compareCollection(base.rulebook ?? {}, current.rulebook ?? {})
+        },
+        {
             code: 'resources',
             title: 'Ресурсы',
             items: compareCollection(base.resources ?? {}, current.resources ?? {})
-        }
+        },
     ];
 }
 
@@ -84,22 +90,13 @@ export function renderBookBasisChanges(host, document, {onRestore = null, canRes
 
     const ownerDocument = host.ownerDocument;
 
-    function node(tag, text = '', className = '') {
-        const element = ownerDocument.createElement(tag);
-
-        element.textContent = text;
-        if (className) element.className = className;
-
-        return element;
-    }
-
-    const section = node('section');
+    const section = elementIn(ownerDocument, 'section');
     const total = groups.reduce((count, group) => count + group.items.length, 0);
 
-    section.append(node('h4', 'Изменения относительно основы'));
+    section.append(elementIn(ownerDocument, 'h4', 'Изменения относительно основы'));
 
     if (total === 0) {
-        section.append(node('p', 'Характеристики, формулы и ресурсы совпадают с опубликованной основой.'));
+        section.append(elementIn(ownerDocument, 'p', 'Определения, начальные значения и описание правил совпадают с опубликованной основой.'));
     } else {
         const statuses = {
             added: 'Добавлено',
@@ -110,15 +107,15 @@ export function renderBookBasisChanges(host, document, {onRestore = null, canRes
         for (const group of groups) {
             if (group.items.length === 0) continue;
 
-            const list = node('ul');
+            const list = elementIn(ownerDocument, 'ul');
 
-            section.append(node('h5', group.title));
+            section.append(elementIn(ownerDocument, 'h5', group.title));
 
             for (const item of group.items) {
-                const entry = node('li', `${statuses[item.status]}: ${item.label} (${item.code}).`);
+                const entry = elementIn(ownerDocument, 'li', `${statuses[item.status]}: ${item.label} (${item.code}).`);
 
                 if (item.status !== 'added' && typeof onRestore === 'function') {
-                    const action = node('button', 'Вернуть к основе', 'btn btn-outline-primary');
+                    const action = elementIn(ownerDocument, 'button', 'Вернуть к основе', 'btn btn-outline-primary');
 
                     action.type = 'button';
                     action.disabled = !canRestore;
@@ -135,16 +132,16 @@ export function renderBookBasisChanges(host, document, {onRestore = null, canRes
         }
     }
 
-    section.append(node(
+    section.append(elementIn(ownerDocument, 
         'p',
-        'Сравнение учитывает определения и начальные значения характеристик. Исходная публикация не изменяется.',
+         'Сравнение учитывает определения, начальные значения и описание глав. Исходная публикация не изменяется.',
         'rules-book__muted'
     ));
 
     if (typeof onRestore === 'function') {
-        section.append(node(
+        section.append(elementIn(ownerDocument, 
             'p',
-            'Возврат заменяет выбранное определение целиком, а у характеристики — также начальное значение. Затем сохраните книгу.',
+            'Возврат заменяет выбранное определение или описание главы целиком. У исходного значения возвращается и начальное.',
             'rules-book__muted'
         ));
     }

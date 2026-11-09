@@ -2,6 +2,7 @@
 
 import { gameStateApi, GameStateApiError } from './../game-state-api.js';
 import { readCombatants, validateCombatState } from './../combat-values.js';
+import {messageShower} from '../../../shared/ui/message-box.js';
 
 const initializedRoots = new WeakSet();
 const REJECTED_STATUSES = new Set([400, 401, 403, 404, 409, 413, 415, 422]);
@@ -80,10 +81,7 @@ function initPanel(root) {
         return !disposed && root.isConnected;
     }
 
-    function showMessage(text, isError = false) {
-        message.textContent = text;
-        message.classList.toggle('alert-error', isError);
-    }
+    const showMessage = messageShower(message);
 
     function syncControls() {
         root.setAttribute('aria-busy', busy ? 'true' : 'false');

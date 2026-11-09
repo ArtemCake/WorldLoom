@@ -3,7 +3,8 @@
 export const OVERRIDABLE_FIELDS = Object.freeze([
     'calculations',
     'initial_attributes',
-    'resources'
+    'resources',
+    'rulebook'
 ]);
 
 const allowed = new Set(OVERRIDABLE_FIELDS);
@@ -46,6 +47,12 @@ function normalizedRules(raw) {
 
     const rules = clone(raw);
 
+    if (!own(rules, 'rulebook')) {
+        rules.rulebook = {};
+    }
+    if (!record(rules.rulebook)) {
+        throw new Error('Описание книги должно быть объектом.');
+    }
     if (rules.schema_version === 3 && !own(rules, 'resources')) {
         rules.resources = {};
     }

@@ -9,6 +9,7 @@ import {bookFormulaSources, editableBookRules, removeBookDefinition, writeBookDe
 import {createShortLabelField} from '../editor/shared/short-label-field.js';
 import {bookFormulaDefinition} from './book-definition-data.js';
 import {appendGroupedRuleOptions, createRuleSectionField} from '../editor/shared/rule-sections.js';
+import {button, element} from '../../../shared/dom/elements.js';
 
 const TITLES = {
 	modifiers: ['Модификатор', 'Новый модификатор', 'Добавить модификатор'],
@@ -16,33 +17,15 @@ const TITLES = {
 	resources: ['Ресурс', 'Новый ресурс', 'Добавить ресурс']
 };
 
-function node(tag, text = '', className = '') {
-	const result = document.createElement(tag);
-
-	result.textContent = text;
-	if (className) result.className = className;
-
-	return result;
-}
-
-function button(text, action) {
-	const result = node('button', text, 'btn btn-outline-primary');
-
-	result.type = 'button';
-	result.addEventListener('click', action);
-
-	return result;
-}
-
 function field(parent, title, value = '', tag = 'input') {
-	const wrapper = node('label', '', 'rules-book__field');
-	const input = node(tag);
+	const wrapper = element('label', '', 'rules-book__field');
+	const input = element(tag);
 
 	if (tag === 'input') input.type = 'text';
 	if (tag === 'textarea') input.rows = 5;
 
 	input.value = value;
-	wrapper.append(node('span', title), input);
+	wrapper.append(element('span', title), input);
 	parent.append(wrapper);
 
 	return input;
@@ -60,8 +43,8 @@ export function mountBookDefinitions(host, options) {
 
 	const [itemTitle, newTitle, addTitle] = TITLES[chapter];
 	const resourceMode = chapter === 'resources';
-	const error = node('p', '', 'rules-book__error');
-	const content = node('div');
+	const error = element('p', '', 'rules-book__error');
+	const content = element('div');
 
 	error.hidden = true;
 	error.setAttribute('role', 'alert');
@@ -107,7 +90,7 @@ export function mountBookDefinitions(host, options) {
 		const snapshot = state.read();
 
 		if (!snapshot.document.rules) {
-			content.append(node('p', 'Сначала загрузите правила в главе «Основа правил».'));
+			content.append(element('p', 'Сначала загрузите правила в главе «Основа правил».'));
 			return;
 		}
 
@@ -119,11 +102,11 @@ export function mountBookDefinitions(host, options) {
 		if (selected !== null && !items.includes(selected)) selected = null;
 
         const definition = selected === null ? {section: defaultSection} : collection[selected];
-		const navigation = node('div', '', 'rules-book__element-picker');
+		const navigation = element('div', '', 'rules-book__element-picker');
 
 		if (items.length) {
 			const picker = field(navigation, itemTitle, '', 'select');
-			const empty = node('option', newTitle);
+			const empty = element('option', newTitle);
 
 			empty.value = '';
 			picker.append(empty);
@@ -150,7 +133,7 @@ export function mountBookDefinitions(host, options) {
 			content.append(navigation);
 		}
 
-		const editor = node('fieldset', '', 'rules-book__definition-form');
+		const editor = element('fieldset', '', 'rules-book__definition-form');
 		editor.disabled = !writable;
 
 		let identity;
@@ -222,10 +205,10 @@ export function mountBookDefinitions(host, options) {
 			? 'Коды модификаторов: modifier_название или название_modifier. Ссылка в формулах — stat.код.'
 			: 'Префикс modifier_ и окончание _modifier зарезервированы для главы модификаторов.';
 
-			editor.append(node('p', note, 'rules-book__muted'));
+			editor.append(element('p', note, 'rules-book__muted'));
 
-			const formulaDetails = node('details', '', 'rules-book__formula-settings');
-			formulaDetails.append(node('summary', 'Формула расчёта'));
+			const formulaDetails = element('details', '', 'rules-book__formula-settings');
+			formulaDetails.append(element('summary', 'Формула расчёта'));
 
 			const formula = createFormulaInput({
 				value: definition.formula ?? {operation: 'sum', arguments: [0]},
@@ -268,7 +251,7 @@ export function mountBookDefinitions(host, options) {
 		editor.addEventListener('input', markChanged);
 		editor.addEventListener('change', markChanged);
 
-		const actions = node('div', '', 'rules-book__attribute-actions');
+		const actions = element('div', '', 'rules-book__attribute-actions');
 
 		actions.append(button('Применить к книге', () => report(() => {
 			const input = collect();

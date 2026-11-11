@@ -134,7 +134,8 @@ WorldLoom/
 │   │   │   │   │   │   ├── rule_engine_removal.py
 │   │   │   │   │   │   ├── rule_engines.py
 │   │   │   │   │   │   ├── rule_previews.py
-│   │   │   │   │   │   └── rule_resources.py
+│   │   │   │   │   │   ├── rule_resources.py
+│   │   │   │   │   │   └── rulebook.py
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── game_rules.py
 │   │   │   │   │   ├── game_system_editor.py
@@ -316,8 +317,6 @@ WorldLoom/
 │   │   ├── js/
 │   │   │   ├── app/
 │   │   │   │   └── page-lifecycle.js
-│   │   │   ├── config/
-│   │   │   │   └── app-config.js
 │   │   │   ├── features/
 │   │   │   │   ├── admin/
 │   │   │   │   │   └── admin.js
@@ -336,6 +335,10 @@ WorldLoom/
 │   │   │   │   │   │   ├── book-basis-restore.js
 │   │   │   │   │   │   ├── book-definition-data.js
 │   │   │   │   │   │   ├── book-definitions.js
+│   │   │   │   │   │   ├── book-design-catalog.js
+│   │   │   │   │   │   ├── book-design-data.js
+│   │   │   │   │   │   ├── book-design-editor.js
+│   │   │   │   │   │   ├── book-design-view.js
 │   │   │   │   │   │   ├── book-page-turn.js
 │   │   │   │   │   │   ├── book-pagination.js
 │   │   │   │   │   │   ├── book-preview-data.js
@@ -350,9 +353,10 @@ WorldLoom/
 │   │   │   │   │   │   └── book-view.js
 │   │   │   │   │   ├── editor/
 │   │   │   │   │   │   ├── presets/
+│   │   │   │   │   │   │   ├── dnd5e-2014-extension.js
+│   │   │   │   │   │   │   ├── dnd5e-2014-rulebook.js
 │   │   │   │   │   │   │   └── dnd5e-2014.js
 │   │   │   │   │   │   ├── shared/
-│   │   │   │   │   │   │   ├── attribute-value-editor.js
 │   │   │   │   │   │   │   ├── editor-dom.js
 │   │   │   │   │   │   │   ├── formula-contract.js
 │   │   │   │   │   │   │   ├── formula-editor.js
@@ -417,6 +421,8 @@ WorldLoom/
 │   │   │   │       ├── profile-actions.js
 │   │   │   │       └── profile.js
 │   │   │   ├── shared/
+│   │   │   │   ├── dom/
+│   │   │   │   │   └── elements.js
 │   │   │   │   ├── http/
 │   │   │   │   │   ├── network-error-handler.js
 │   │   │   │   │   └── session-client.js
@@ -424,6 +430,7 @@ WorldLoom/
 │   │   │   │   │   ├── DisplayObjectPool.js
 │   │   │   │   │   └── TokenFactory.js
 │   │   │   │   └── ui/
+│   │   │   │       ├── message-box.js
 │   │   │   │       ├── notifications.js
 │   │   │   │       ├── sticky-navigation.js
 │   │   │   │       ├── theme-switcher.js
@@ -528,38 +535,49 @@ WorldLoom/
 │   ├── worldloom.log.2026-11-06
 │   ├── worldloom.log.2026-11-07
 │   ├── worldloom.log.2026-11-08
+│   ├── worldloom.log.2026-11-09
 │   └── worldloom_error.log
 ├── staging/
 ├── tests/
 │   ├── js/
-│   │   ├── book-semantic-sections.test.mjs
-│   │   ├── dnd5e-2014-resources.test.mjs
-│   │   ├── engine-formula-text.test.mjs
-│   │   ├── engine-presets.test.mjs
-│   │   ├── resource-contract.test.mjs
-│   │   ├── rule-sections.test.mjs
-│   │   ├── rules-book-attributes.test.mjs
-│   │   ├── rules-book-basis-changes.test.mjs
-│   │   ├── rules-book-basis.test.mjs
-│   │   ├── rules-book-engine-origin.test.mjs
-│   │   ├── rules-book-formula-presentation.test.mjs
-│   │   ├── rules-book-pagination.test.mjs
-│   │   ├── rules-book-preview.test.mjs
-│   │   ├── rules-book-publication-source.test.mjs
-│   │   ├── rules-book-publication.test.mjs
-│   │   ├── rules-book-publications.test.mjs
-│   │   ├── rules-book-short-label.test.mjs
-│   │   └── rules-book-state.test.mjs
+│   │   ├── book/
+│   │   │   ├── book-design.test.mjs
+│   │   │   ├── book-semantic-sections.test.mjs
+│   │   │   ├── rules-book-attributes.test.mjs
+│   │   │   ├── rules-book-basis-changes.test.mjs
+│   │   │   ├── rules-book-basis.test.mjs
+│   │   │   ├── rules-book-engine-origin.test.mjs
+│   │   │   ├── rules-book-formula-presentation.test.mjs
+│   │   │   ├── rules-book-pagination.test.mjs
+│   │   │   ├── rules-book-preview.test.mjs
+│   │   │   ├── rules-book-publication-source.test.mjs
+│   │   │   ├── rules-book-publication.test.mjs
+│   │   │   ├── rules-book-publications.test.mjs
+│   │   │   ├── rules-book-short-label.test.mjs
+│   │   │   └── rules-book-state.test.mjs
+│   │   └── editor/
+│   │       ├── dnd5e-2014-resources.test.mjs
+│   │       ├── engine-formula-text.test.mjs
+│   │       ├── engine-presets.test.mjs
+│   │       ├── resource-contract.test.mjs
+│   │       └── rule-sections.test.mjs
 │   ├── python/
-│   │   ├── test_attribute_choices.py
-│   │   ├── test_dnd5e_2014_checks_extension.py
-│   │   ├── test_dnd5e_2014_preset.py
-│   │   ├── test_engine_numeric_contract.py
-│   │   ├── test_engine_resource_storage.py
-│   │   ├── test_game_system_draft_validation.py
-│   │   ├── test_profile_resources.py
-│   │   ├── test_resource_engine.py
-│   │   └── test_web_assets.py
+│   │   ├── game_systems/
+│   │   │   ├── __init__.py
+│   │   │   ├── test_attribute_choices.py
+│   │   │   ├── test_dnd5e_2014_checks_extension.py
+│   │   │   ├── test_dnd5e_2014_extended_preset.py
+│   │   │   ├── test_dnd5e_2014_preset.py
+│   │   │   ├── test_engine_numeric_contract.py
+│   │   │   ├── test_engine_resource_storage.py
+│   │   │   ├── test_game_system_draft_validation.py
+│   │   │   ├── test_profile_resources.py
+│   │   │   ├── test_resource_engine.py
+│   │   │   └── test_rulebook_contract.py
+│   │   ├── web/
+│   │   │   ├── __init__.py
+│   │   │   └── test_web_assets.py
+│   │   └── __init__.py
 │   └── Test_Commands.md
 ├── tools/
 │   ├── commands_tools.md

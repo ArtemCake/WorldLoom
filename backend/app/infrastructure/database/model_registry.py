@@ -67,6 +67,14 @@ _MODEL_MODULES: tuple[tuple[str, tuple[str, ...]], ...] = (
 		),
 	),
 	(
+		"backend.app.modules.rules.models.articles",
+		("RuleArticle", "RuleArticleDraft", "RuleArticleVersion"),
+	),
+	(
+		"backend.app.modules.rules.models.books",
+		("RuleBook", "RuleBookDraft", "RuleBookVersion", "RuleBookVersionArticle"),
+	),
+	(
 		"backend.app.modules.game_systems.models.rule_engines",
 		(
 			"RuleEngine",

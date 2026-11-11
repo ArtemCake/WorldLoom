@@ -1,8 +1,8 @@
-"""head
+"""СозданиеПроекта
 
-Revision ID: 9d84ac5b42d0
+Revision ID: 1e297517fb5c
 Revises: 
-Create Date: 2026-11-07 20:38:39.517159
+Create Date: 2026-11-12 00:31:22.058435
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '9d84ac5b42d0'
+revision: str = '1e297517fb5c'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -510,6 +510,36 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_rarities_owner_id'), 'rarities', ['owner_id'], unique=False)
     op.create_index(op.f('ix_rarities_system_id'), 'rarities', ['system_id'], unique=False)
+    op.create_table('rule_articles',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('owner_id', sa.UUID(), nullable=True),
+    sa.Column('slug', sa.String(length=100), nullable=False),
+    sa.Column('visibility', sa.String(length=20), server_default=sa.text("'private'"), nullable=False),
+    sa.Column('is_active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint("slug ~ '^[a-z0-9]+([-_][a-z0-9]+)*$'", name='ck_rule_articles_slug'),
+    sa.CheckConstraint("visibility IN ('private', 'public')", name='ck_rule_articles_visibility'),
+    sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('slug', name='uq_rule_articles_slug')
+    )
+    op.create_index(op.f('ix_rule_articles_owner_id'), 'rule_articles', ['owner_id'], unique=False)
+    op.create_table('rule_books',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('owner_id', sa.UUID(), nullable=True),
+    sa.Column('slug', sa.String(length=100), nullable=False),
+    sa.Column('visibility', sa.String(length=20), server_default=sa.text("'private'"), nullable=False),
+    sa.Column('is_active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint("slug ~ '^[a-z0-9]+([-_][a-z0-9]+)*$'", name='ck_rule_books_slug'),
+    sa.CheckConstraint("visibility IN ('private', 'public')", name='ck_rule_books_visibility'),
+    sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('slug', name='uq_rule_books_slug')
+    )
+    op.create_index(op.f('ix_rule_books_owner_id'), 'rule_books', ['owner_id'], unique=False)
     op.create_table('rule_engines',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('owner_id', sa.UUID(), nullable=True),
@@ -706,6 +736,66 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_races_owner_id'), 'races', ['owner_id'], unique=False)
     op.create_index(op.f('ix_races_system_id'), 'races', ['system_id'], unique=False)
+    op.create_table('rule_article_drafts',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('article_id', sa.UUID(), nullable=False),
+    sa.Column('content_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('revision', sa.Integer(), server_default=sa.text('1'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint('(jsonb_typeof(content_json) = \'object\' AND content_json @> \'{"schema_version": 1}\'::jsonb AND jsonb_typeof(content_json->\'title\') = \'string\' AND length(btrim(content_json->>\'title\')) BETWEEN 1 AND 200 AND jsonb_typeof(content_json->\'body\') = \'string\' AND length(content_json->>\'body\') <= 300000) IS TRUE', name='ck_rule_article_drafts_content'),
+    sa.CheckConstraint('revision >= 1', name='ck_rule_article_drafts_revision'),
+    sa.ForeignKeyConstraint(['article_id'], ['rule_articles.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('article_id', name='uq_rule_article_drafts_article')
+    )
+    op.create_table('rule_article_versions',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('article_id', sa.UUID(), nullable=False),
+    sa.Column('version_number', sa.Integer(), nullable=False),
+    sa.Column('source_draft_revision', sa.Integer(), nullable=False),
+    sa.Column('content_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('published_by', sa.UUID(), nullable=True),
+    sa.Column('published_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint("length(btrim(content_json->>'body')) > 0", name='ck_rule_article_versions_body'),
+    sa.CheckConstraint('(jsonb_typeof(content_json) = \'object\' AND content_json @> \'{"schema_version": 1}\'::jsonb AND jsonb_typeof(content_json->\'title\') = \'string\' AND length(btrim(content_json->>\'title\')) BETWEEN 1 AND 200 AND jsonb_typeof(content_json->\'body\') = \'string\' AND length(content_json->>\'body\') <= 300000) IS TRUE', name='ck_rule_article_versions_content'),
+    sa.CheckConstraint('source_draft_revision >= 1', name='ck_rule_article_versions_revision'),
+    sa.CheckConstraint('version_number >= 1', name='ck_rule_article_versions_number'),
+    sa.ForeignKeyConstraint(['article_id'], ['rule_articles.id'], ondelete='RESTRICT'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('article_id', 'source_draft_revision', name='uq_rule_article_versions_source'),
+    sa.UniqueConstraint('article_id', 'version_number', name='uq_rule_article_versions_number')
+    )
+    op.create_table('rule_book_drafts',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('book_id', sa.UUID(), nullable=False),
+    sa.Column('content_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('revision', sa.Integer(), server_default=sa.text('1'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint('(jsonb_typeof(content_json) = \'object\' AND content_json @> \'{"schema_version": 1}\'::jsonb AND jsonb_typeof(content_json->\'title\') = \'string\' AND length(btrim(content_json->>\'title\')) BETWEEN 1 AND 200 AND jsonb_typeof(content_json->\'toc\') = \'array\' AND jsonb_array_length(content_json->\'toc\') <= 2000) IS TRUE', name='ck_rule_book_drafts_content'),
+    sa.CheckConstraint('revision >= 1', name='ck_rule_book_drafts_revision'),
+    sa.ForeignKeyConstraint(['book_id'], ['rule_books.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('book_id', name='uq_rule_book_drafts_book')
+    )
+    op.create_table('rule_book_versions',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('book_id', sa.UUID(), nullable=False),
+    sa.Column('version_number', sa.Integer(), nullable=False),
+    sa.Column('source_draft_revision', sa.Integer(), nullable=False),
+    sa.Column('content_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('published_by', sa.UUID(), nullable=True),
+    sa.Column('published_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint('(jsonb_typeof(content_json) = \'object\' AND content_json @> \'{"schema_version": 1}\'::jsonb AND jsonb_typeof(content_json->\'title\') = \'string\' AND length(btrim(content_json->>\'title\')) BETWEEN 1 AND 200 AND jsonb_typeof(content_json->\'toc\') = \'array\' AND jsonb_array_length(content_json->\'toc\') <= 2000) IS TRUE', name='ck_rule_book_versions_content'),
+    sa.CheckConstraint('content_json @> \'{"toc": [{"kind": "article"}]}\'::jsonb', name='ck_rule_book_versions_articles'),
+    sa.CheckConstraint('source_draft_revision >= 1', name='ck_rule_book_versions_revision'),
+    sa.CheckConstraint('version_number >= 1', name='ck_rule_book_versions_number'),
+    sa.ForeignKeyConstraint(['book_id'], ['rule_books.id'], ondelete='RESTRICT'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('book_id', 'source_draft_revision', name='uq_rule_book_versions_source'),
+    sa.UniqueConstraint('book_id', 'version_number', name='uq_rule_book_versions_number')
+    )
     op.create_table('rule_engine_drafts',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('engine_id', sa.UUID(), nullable=False),
@@ -1020,6 +1110,14 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['race_id'], ['races.id'], ),
     sa.PrimaryKeyConstraint('race_id', 'language_id')
     )
+    op.create_table('rule_book_version_articles',
+    sa.Column('book_version_id', sa.UUID(), nullable=False),
+    sa.Column('article_version_id', sa.UUID(), nullable=False),
+    sa.ForeignKeyConstraint(['article_version_id'], ['rule_article_versions.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['book_version_id'], ['rule_book_versions.id'], ondelete='RESTRICT'),
+    sa.PrimaryKeyConstraint('book_version_id', 'article_version_id')
+    )
+    op.create_index(op.f('ix_rule_book_version_articles_article_version_id'), 'rule_book_version_articles', ['article_version_id'], unique=False)
     op.create_table('skill_characteristic_map',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('system_id', sa.UUID(), nullable=False),
@@ -1643,6 +1741,8 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_skill_characteristic_map_system_id'), table_name='skill_characteristic_map')
     op.drop_index(op.f('ix_skill_characteristic_map_owner_id'), table_name='skill_characteristic_map')
     op.drop_table('skill_characteristic_map')
+    op.drop_index(op.f('ix_rule_book_version_articles_article_version_id'), table_name='rule_book_version_articles')
+    op.drop_table('rule_book_version_articles')
     op.drop_table('race_languages')
     op.drop_index(op.f('ix_origins_system_id'), table_name='origins')
     op.drop_index(op.f('ix_origins_race_id'), table_name='origins')
@@ -1691,6 +1791,10 @@ def downgrade() -> None:
     op.drop_table('skills')
     op.drop_table('rule_engine_versions')
     op.drop_table('rule_engine_drafts')
+    op.drop_table('rule_book_versions')
+    op.drop_table('rule_book_drafts')
+    op.drop_table('rule_article_versions')
+    op.drop_table('rule_article_drafts')
     op.drop_index(op.f('ix_races_system_id'), table_name='races')
     op.drop_index(op.f('ix_races_owner_id'), table_name='races')
     op.drop_table('races')
@@ -1720,6 +1824,10 @@ def downgrade() -> None:
     op.drop_table('spell_levels')
     op.drop_index(op.f('ix_rule_engines_owner_id'), table_name='rule_engines')
     op.drop_table('rule_engines')
+    op.drop_index(op.f('ix_rule_books_owner_id'), table_name='rule_books')
+    op.drop_table('rule_books')
+    op.drop_index(op.f('ix_rule_articles_owner_id'), table_name='rule_articles')
+    op.drop_table('rule_articles')
     op.drop_index(op.f('ix_rarities_system_id'), table_name='rarities')
     op.drop_index(op.f('ix_rarities_owner_id'), table_name='rarities')
     op.drop_table('rarities')

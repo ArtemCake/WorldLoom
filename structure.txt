@@ -206,6 +206,21 @@ WorldLoom/
 │   │   │   ├── media/
 │   │   │   │   ├── __init__.py
 │   │   │   │   └── models.py
+│   │   │   ├── rules/
+│   │   │   │   ├── models/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── articles.py
+│   │   │   │   │   └── books.py
+│   │   │   │   ├── schemas/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── articles.py
+│   │   │   │   │   └── books.py
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── article_service.py
+│   │   │   │   │   └── book_service.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── errors.py
 │   │   │   ├── users/
 │   │   │   │   ├── models/
 │   │   │   │   │   ├── __init__.py
@@ -254,7 +269,7 @@ WorldLoom/
 │   │   └── migrate.py
 │   ├── db_migrations/
 │   │   ├── versions/
-│   │   │   └── 9d84ac5b42d0_head.py
+│   │   │   └── 1e297517fb5c_созданиепроекта.py
 │   │   ├── __init__.py
 │   │   ├── env.py
 │   │   ├── README
@@ -536,6 +551,7 @@ WorldLoom/
 │   ├── worldloom.log.2026-11-07
 │   ├── worldloom.log.2026-11-08
 │   ├── worldloom.log.2026-11-09
+│   ├── worldloom.log.2026-11-10
 │   └── worldloom_error.log
 ├── staging/
 ├── tests/
@@ -574,6 +590,14 @@ WorldLoom/
 │   │   │   ├── test_profile_resources.py
 │   │   │   ├── test_resource_engine.py
 │   │   │   └── test_rulebook_contract.py
+│   │   ├── rules/
+│   │   │   ├── __init__.py
+│   │   │   ├── test_article_foundation.py
+│   │   │   ├── test_article_postgresql.py
+│   │   │   ├── test_article_service.py
+│   │   │   ├── test_book_contracts.py
+│   │   │   ├── test_book_models.py
+│   │   │   └── test_book_postgresql.py
 │   │   ├── web/
 │   │   │   ├── __init__.py
 │   │   │   └── test_web_assets.py

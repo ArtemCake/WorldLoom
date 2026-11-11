@@ -1,17 +1,15 @@
-// tests/js/engine-presets.test.mjs
-
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
     createEnginePreset,
     listEnginePresets
-} from '../../frontend/src/js/features/game-systems/editor/engine-presets.js';
+} from '../../../frontend/src/js/features/game-systems/editor/engine-presets.js';
 
 import {
     formatEngineFormula,
     parseEngineFormula
-} from '../../frontend/src/js/features/game-systems/editor/engine-formula-text.js';
+} from '../../../frontend/src/js/features/game-systems/editor/engine-formula-text.js';
 
 test('каталог содержит отдельные редакции и собственную основу', () => {
     assert.deepEqual(
@@ -112,8 +110,8 @@ test('D&D 2014 содержит исходные и вычисляемые по�
     const attributes = profile.calculations.attributes;
     const derived = profile.calculations.derived;
 
-    assert.equal(Object.keys(attributes).length, 32);
-    assert.equal(Object.keys(derived).length, 51);
+    assert.equal(Object.keys(attributes).length, 213);
+    assert.equal(Object.keys(derived).length, 158);
 
     const abilities = [
         'strength',

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {BOOK_DESIGN_CHAPTERS} from '../../frontend/src/js/features/game-systems/book/book-design-catalog.js';
-import {validateRulebook, writeDesignChapter} from '../../frontend/src/js/features/game-systems/book/book-design-data.js';
-import {collectEngineOverrides} from '../../frontend/src/js/features/game-systems/editor/game-system-engine-origin.js';
+import {BOOK_DESIGN_CHAPTERS} from '../../../frontend/src/js/features/game-systems/book/book-design-catalog.js';
+import {validateRulebook, writeDesignChapter} from '../../../frontend/src/js/features/game-systems/book/book-design-data.js';
+import {collectEngineOverrides} from '../../../frontend/src/js/features/game-systems/editor/game-system-engine-origin.js';
 
 function createRules() {
     return {

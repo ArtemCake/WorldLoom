@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readProfileResources, validateResources, validateResourcePreview} from '../../frontend/src/js/features/game-systems/editor/shared/resource-contract.js';
+import {readProfileResources, validateResources, validateResourcePreview} from '../../../frontend/src/js/features/game-systems/editor/shared/resource-contract.js';
 
 function resource() {
     return {

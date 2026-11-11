@@ -1,4 +1,4 @@
-# tests/python/test_profile_resources.py
+# tests/python/game_systems/test_profile_resources.py
 
 import unittest
 

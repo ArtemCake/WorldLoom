@@ -1,12 +1,10 @@
-// tests/js/engine-formula-text.test.mjs
-
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
     formatEngineFormula,
     parseEngineFormula
-} from '../../frontend/src/js/features/game-systems/editor/engine-formula-text.js';
+} from '../../../frontend/src/js/features/game-systems/editor/engine-formula-text.js';
 
 test('разбирает число и исходный показатель', () => {
     assert.deepEqual(parseEngineFormula('sum(@power, 2)'), {

@@ -11,7 +11,7 @@ from backend.app.modules.game_systems.schemas.game_rules import RulesProfile, Sh
 
 @pytest.fixture(scope="module")
 def extended_profile():
-	root = Path(__file__).resolve().parents[2]
+	root = Path(__file__).resolve().parents[3]
 	script = """
 const path = './frontend/src/js/features/game-systems/editor/presets/dnd5e-2014.js';
 const module = await import(path);

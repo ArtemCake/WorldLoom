@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createFormulaPresentation} from '../../frontend/src/js/features/game-systems/editor/shared/formula-presentation.js';
+import {createFormulaPresentation} from '../../../frontend/src/js/features/game-systems/editor/shared/formula-presentation.js';
 
 function operation(name, ...args) {
     return {operation: name, arguments: args};

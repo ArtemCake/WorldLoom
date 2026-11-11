@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {createRulesBookState} from '../../frontend/src/js/features/game-systems/book/book-state.js';
-import {writeBookAttribute, removeBookAttribute} from '../../frontend/src/js/features/game-systems/book/book-attributes.js';
+import {createRulesBookState} from '../../../frontend/src/js/features/game-systems/book/book-state.js';
+import {writeBookAttribute, removeBookAttribute} from '../../../frontend/src/js/features/game-systems/book/book-attributes.js';
 
 function document() {
     return {

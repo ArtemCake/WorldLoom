@@ -1,4 +1,4 @@
-# tests/python/test_resource_engine.py
+# tests/python/game_systems/test_resource_engine.py
 
 import unittest
 

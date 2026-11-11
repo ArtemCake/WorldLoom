@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as origin from '../../frontend/src/js/features/game-systems/editor/game-system-engine-origin.js';
-import * as preset from '../../frontend/src/js/features/game-systems/editor/presets/dnd5e-2014.js';
-import {writeBookAttribute} from '../../frontend/src/js/features/game-systems/book/book-attributes.js';
-import {writeBookDefinition} from '../../frontend/src/js/features/game-systems/book/book-definition-data.js';
+import * as origin from '../../../frontend/src/js/features/game-systems/editor/game-system-engine-origin.js';
+import * as preset from '../../../frontend/src/js/features/game-systems/editor/presets/dnd5e-2014.js';
+import {writeBookAttribute} from '../../../frontend/src/js/features/game-systems/book/book-attributes.js';
+import {writeBookDefinition} from '../../../frontend/src/js/features/game-systems/book/book-definition-data.js';
 
 function linkedDocument(rules = preset.createDnd5e2014NumericProfile()) {
     return {

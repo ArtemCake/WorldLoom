@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {loadBookPublications} from '../../frontend/src/js/features/game-systems/book/book-publications-data.js';
+import {loadBookPublications} from '../../../frontend/src/js/features/game-systems/book/book-publications-data.js';
 
 function item(number) {
     return {

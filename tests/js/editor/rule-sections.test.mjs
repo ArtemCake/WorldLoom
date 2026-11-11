@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {groupedRuleEntries, normalizeRuleSection} from '../../frontend/src/js/features/game-systems/editor/shared/rule-sections.js';
-import {assignDnd2014Sections, createDnd5e2014NumericProfile} from '../../frontend/src/js/features/game-systems/editor/presets/dnd5e-2014.js';
-import {validateResources} from '../../frontend/src/js/features/game-systems/editor/shared/resource-contract.js';
+import {groupedRuleEntries, normalizeRuleSection} from '../../../frontend/src/js/features/game-systems/editor/shared/rule-sections.js';
+import {assignDnd2014Sections, createDnd5e2014NumericProfile} from '../../../frontend/src/js/features/game-systems/editor/presets/dnd5e-2014.js';
+import {validateResources} from '../../../frontend/src/js/features/game-systems/editor/shared/resource-contract.js';
 
 test('Старые параметры без разделов не теряются', () => {
     const rules = {

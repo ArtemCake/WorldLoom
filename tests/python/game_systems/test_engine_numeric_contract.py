@@ -1,4 +1,4 @@
-# tests/python/test_engine_numeric_contract.py
+# tests/python/game_systems/test_engine_numeric_contract.py
 
 """Проверки числового контракта, используемого редактором движков."""
 

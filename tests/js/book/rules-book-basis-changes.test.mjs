@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {restoreBookBasisItem} from '../../frontend/src/js/features/game-systems/book/book-basis-restore.js';
-import {createRulesBookState} from '../../frontend/src/js/features/game-systems/book/book-state.js';
-import {getBookBasisChanges} from '../../frontend/src/js/features/game-systems/book/book-basis-changes.js';
+import {restoreBookBasisItem} from '../../../frontend/src/js/features/game-systems/book/book-basis-restore.js';
+import {createRulesBookState} from '../../../frontend/src/js/features/game-systems/book/book-state.js';
+import {getBookBasisChanges} from '../../../frontend/src/js/features/game-systems/book/book-basis-changes.js';
 
 
 function fixture() {
@@ -59,7 +59,10 @@ test('Самостоятельная система не сравниваетс�
 test('Одинаковые правила не содержат отличий', () => {
     const groups = getBookBasisChanges(fixture());
 
-    assert.equal(groups.length, 3);
+    assert.deepEqual(
+        groups.map((group) => group.code),
+        ['attributes', 'derived', 'rulebook', 'resources']
+    );
     assert.equal(groups.every((group) => group.items.length === 0), true);
 });
 

@@ -1,4 +1,4 @@
-# tests/python/test_web_assets.py
+# tests/python/web/test_web_assets.py
 
 """Проверки связи манифеста Vite с публичными ресурсами."""
 
@@ -46,11 +46,11 @@ class WebAssetsTests(unittest.TestCase):
 
         self.assertEqual(
             resolve("js/main.min.js"),
-            f"/frontend/src/{self.js_path}",
+            f"/frontend/public/{self.js_path}",
         )
         self.assertEqual(
             resolve("css/style.min.css"),
-            f"/frontend/src/{self.css_path}",
+            f"/frontend/public/{self.css_path}",
         )
 
     def test_renaming_entry_without_manifest_update_is_rejected(self) -> None:

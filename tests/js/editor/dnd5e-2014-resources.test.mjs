@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as preset from '../../frontend/src/js/features/game-systems/editor/presets/dnd5e-2014.js';
-import * as contract from '../../frontend/src/js/features/game-systems/editor/shared/resource-contract.js';
+import * as preset from '../../../frontend/src/js/features/game-systems/editor/presets/dnd5e-2014.js';
+import * as contract from '../../../frontend/src/js/features/game-systems/editor/shared/resource-contract.js';
 
 const {createDnd5e2014NumericProfile} = preset;
 const {readProfileResources, validateResourcePreview} = contract;
@@ -31,16 +31,40 @@ test('предпросмотр хитов использует переданн�
     const profile = createDnd5e2014NumericProfile();
     const resources = readProfileResources(profile);
 
+    // Ответ сервера должен содержать все ресурсы пресета.
     const result = {
-        attributes: {hit_points_max: 12},
+        attributes: {...profile.initial_attributes},
         derived: {},
-        resource_limits: {hit_points: 12},
-        resource_initial: {hit_points: 12}
+        resource_limits: {},
+        resource_initial: {}
     };
+
+    result.attributes.hit_points_max = 12;
+
+    for (const [code, definition] of Object.entries(resources)) {
+        let maximum = definition.maximum;
+
+        if (typeof maximum === 'string') {
+            const [namespace, target] = maximum.split('.');
+            const source = namespace === 'attribute' ? result.attributes : result.derived;
+
+            if (!Object.hasOwn(source, target)) source[target] = 1;
+            maximum = source[target];
+        }
+
+        result.resource_limits[code] = maximum;
+        result.resource_initial[code] = definition.initial === 'full' ? maximum : definition.initial;
+    }
 
     const rows = validateResourcePreview(resources, result);
 
-    assert.deepEqual(rows, [{code: 'hit_points', label: 'Хиты', maximum: 12, initial: 12}]);
+    assert.equal(rows.length, Object.keys(resources).length);
+    assert.deepEqual(rows.find((row) => row.code === 'hit_points'), {
+        code: 'hit_points',
+        label: 'Хиты',
+        maximum: 12,
+        initial: 12
+    });
 });
 
 test('короткий отдых не получает автоматическое восстановление хитов', () => {

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {createRulesBookState} from '../../frontend/src/js/features/game-systems/book/book-state.js';
-import {collectBookSample, previewBookRules} from '../../frontend/src/js/features/game-systems/book/book-preview-data.js';
+import {createRulesBookState} from '../../../frontend/src/js/features/game-systems/book/book-state.js';
+import {collectBookSample, previewBookRules} from '../../../frontend/src/js/features/game-systems/book/book-preview-data.js';
 
 function fixture(mode = 'edit') {
     const rules = {

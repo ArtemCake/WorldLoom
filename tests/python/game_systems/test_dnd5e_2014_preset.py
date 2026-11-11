@@ -1,4 +1,4 @@
-# tests/python/test_dnd5e_2014_preset.py
+# tests/python/game_systems/test_dnd5e_2014_preset.py
 
 """Проверка JS-пресета D&D 2014 серверным числовым исполнителем.
 
@@ -30,7 +30,7 @@ from backend.app.modules.game_systems.schemas.game_rules import (
 )
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 PRESET_EXPORT_SCRIPT = """
 import {
@@ -88,14 +88,14 @@ class Dnd5e2014PresetTests(unittest.TestCase):
     def test_actual_js_preset_is_accepted(self):
         profile = self.make_profile()
 
-        self.assertEqual(profile.schema_version, 3)
+        self.assertEqual(profile.schema_version, 4)
         self.assertEqual(
             len(profile.calculations.attributes),
-            31,
+            213,
         )
         self.assertEqual(
             len(profile.calculations.derived),
-            51,
+            158,
         )
 
     def test_profile_survives_json_round_trip(self):

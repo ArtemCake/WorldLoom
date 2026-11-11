@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {BOOK_CHAPTERS, createRulesBookState} from '../../frontend/src/js/features/game-systems/book/book-state.js';
+import {BOOK_CHAPTERS, createRulesBookState} from '../../../frontend/src/js/features/game-systems/book/book-state.js';
 
 function document() {
     return {

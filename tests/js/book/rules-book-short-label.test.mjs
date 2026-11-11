@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {generateShortLabel, getShortLabel, normalizeShortLabel} from '../../frontend/src/js/features/game-systems/editor/shared/short-label.js';
+import {generateShortLabel, getShortLabel, normalizeShortLabel} from '../../../frontend/src/js/features/game-systems/editor/shared/short-label.js';
 
 test('Произвольные названия сокращаются без игрового словаря', () => {
     assert.equal(generateShortLabel('Скорость обучения навыку'), 'СОН');

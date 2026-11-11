@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as source from '../../frontend/src/js/features/game-systems/book/book-publication-source.js';
+import * as source from '../../../frontend/src/js/features/game-systems/book/book-publication-source.js';
 
 function publication() {
     return {

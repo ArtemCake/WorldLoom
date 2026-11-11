@@ -1,10 +1,9 @@
-// tests/js/book-semantic-sections.test.mjs
-
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {BOOK_CHAPTERS} from '../../frontend/src/js/features/game-systems/book/book-state.js';
-import {getBookChapterItems, getBookTurn} from '../../frontend/src/js/features/game-systems/book/book-pagination.js';
-import {getBookSectionEntries} from '../../frontend/src/js/features/game-systems/book/book-sections.js';
+import {BOOK_CHAPTERS} from '../../../frontend/src/js/features/game-systems/book/book-state.js';
+import {BOOK_RULE_SECTIONS} from '../../../frontend/src/js/features/game-systems/book/book-sections.js';
+import {getBookChapterItems, getBookTurn} from '../../../frontend/src/js/features/game-systems/book/book-pagination.js';
+import {getBookSectionEntries} from '../../../frontend/src/js/features/game-systems/book/book-sections.js';
 
 function createDocument() {
     return {
@@ -28,22 +27,15 @@ function createDocument() {
 }
 
 test('Оглавление содержит самостоятельные смысловые разделы', () => {
-    const expected = [
-        'Характеристики',
-        'Уровень и мастерство',
-        'Спасброски',
-        'Навыки',
-        'Пассивные проверки',
-        'Инициатива',
-        'Защита',
-        'Хиты и ресурсы',
-        'Особенности',
-        'Проверки характеристик'
-    ];
+    const codes = BOOK_CHAPTERS.map((chapter) => chapter.code);
 
-    const titles = BOOK_CHAPTERS.map((chapter) => chapter.title);
-
-    assert.deepEqual(titles.slice(2, 12), expected);
+    // Служебные главы до и после перечисляют смысловые разделы по порядку.
+    assert.deepEqual(codes.slice(0, 2), ['main', 'basis']);
+    assert.deepEqual(
+        codes.slice(2, 2 + BOOK_RULE_SECTIONS.length),
+        BOOK_RULE_SECTIONS.map((section) => section.code)
+    );
+    assert.deepEqual(codes.slice(2 + BOOK_RULE_SECTIONS.length), ['preview', 'publications', 'access']);
 
     for (const code of ['attributes', 'modifiers', 'derived', 'resources']) {
         assert.equal(BOOK_CHAPTERS.some((chapter) => chapter.code === code), false);

@@ -9,6 +9,7 @@ import { initProfile } from '../features/users/profile.js';
 import { initGlobalUI } from '../shared/ui/ui.js';
 import { initGameSystemsCatalog } from '../features/game-systems/pages/catalog-page.js';
 import { initGameSystemEditor } from '../features/game-systems/pages/editor-page.js';
+import { initRulesCatalog } from '../features/rules/catalog/catalog-page.js';
 
 let lifecycleBound = false;
 
@@ -21,6 +22,7 @@ export function initPage() {
     initDeleteAccountModal();
     initAdminPanel();
     initGameSystemsCatalog();
+    initRulesCatalog();
     initGameSystemEditor();
 }
 

@@ -1,8 +1,8 @@
 """СозданиеПроекта
 
-Revision ID: 1e297517fb5c
+Revision ID: 1372661e8ac9
 Revises: 
-Create Date: 2026-11-12 00:31:22.058435
+Create Date: 2026-11-13 23:47:15.241870
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '1e297517fb5c'
+revision: str = '1372661e8ac9'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -528,6 +528,7 @@ def upgrade() -> None:
     op.create_table('rule_books',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('owner_id', sa.UUID(), nullable=True),
+    sa.Column('system_id', sa.UUID(), nullable=True),
     sa.Column('slug', sa.String(length=100), nullable=False),
     sa.Column('visibility', sa.String(length=20), server_default=sa.text("'private'"), nullable=False),
     sa.Column('is_active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
@@ -536,10 +537,12 @@ def upgrade() -> None:
     sa.CheckConstraint("slug ~ '^[a-z0-9]+([-_][a-z0-9]+)*$'", name='ck_rule_books_slug'),
     sa.CheckConstraint("visibility IN ('private', 'public')", name='ck_rule_books_visibility'),
     sa.ForeignKeyConstraint(['owner_id'], ['users.id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['system_id'], ['game_systems.id'], name='fk_rule_books_system', ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('slug', name='uq_rule_books_slug')
     )
     op.create_index(op.f('ix_rule_books_owner_id'), 'rule_books', ['owner_id'], unique=False)
+    op.create_index(op.f('ix_rule_books_system_id'), 'rule_books', ['system_id'], unique=False)
     op.create_table('rule_engines',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('owner_id', sa.UUID(), nullable=True),
@@ -1824,6 +1827,7 @@ def downgrade() -> None:
     op.drop_table('spell_levels')
     op.drop_index(op.f('ix_rule_engines_owner_id'), table_name='rule_engines')
     op.drop_table('rule_engines')
+    op.drop_index(op.f('ix_rule_books_system_id'), table_name='rule_books')
     op.drop_index(op.f('ix_rule_books_owner_id'), table_name='rule_books')
     op.drop_table('rule_books')
     op.drop_index(op.f('ix_rule_articles_owner_id'), table_name='rule_articles')

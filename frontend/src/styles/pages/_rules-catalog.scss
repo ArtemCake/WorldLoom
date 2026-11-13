@@ -1,0 +1,147 @@
+/* frontend/src/styles/pages/_rules-catalog.scss */
+
+.rules-catalog {
+    width: 100%;
+    min-width: 0;
+    padding-block: 1.5rem;
+
+    &__header {
+        margin-bottom: 1.5rem;
+    }
+
+    &__filters {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+        gap: 1rem;
+        align-items: end;
+        margin-bottom: 1rem;
+    }
+
+    &__filters label {
+        display: grid;
+        min-width: 0;
+        gap: 0.4rem;
+    }
+
+    &__filters input,
+    &__filters select {
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        min-height: 2.75rem;
+        padding: 0.5rem 0.65rem;
+        border: 1px solid currentColor;
+        border-radius: 0.4rem;
+        color: inherit;
+        background: transparent;
+        font: inherit;
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    &__message {
+        min-height: 1.5em;
+        margin-block: 1rem;
+    }
+
+    &__message--error {
+        padding-inline-start: 0.75rem;
+        border-inline-start: 0.25rem solid currentColor;
+        font-weight: 600;
+    }
+
+    &__list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    &__card {
+        min-width: 0;
+        padding: 1.25rem;
+        border: 1px solid currentColor;
+        border-radius: 0.75rem;
+        overflow-wrap: anywhere;
+    }
+
+    &__title {
+        margin-block: 0.5rem 0.75rem;
+        font-size: 1.3rem;
+    }
+
+    &__summary {
+        white-space: pre-wrap;
+        line-height: 1.6;
+    }
+
+    &__meta {
+        margin-block: 0.5rem;
+        font-size: 0.9rem;
+    }
+}
+.rules-catalog {
+    [hidden] {
+        display: none !important;
+    }
+
+    &__reader,
+    &__section,
+    &__source {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    &__reader {
+        max-width: 60rem;
+        margin-inline: auto;
+    }
+
+    &__toc {
+        margin-block: 1.5rem;
+        padding: 1rem;
+        border: 1px solid currentColor;
+        border-radius: 0.5rem;
+    }
+
+    &__toc ul {
+        padding-inline-start: 1.25rem;
+    }
+
+    &__toc ul:empty {
+        display: none;
+    }
+
+    &__toc li {
+        margin-block: 0.5rem;
+    }
+
+    &__section {
+        padding-block: 1.25rem;
+        border-bottom: 1px solid currentColor;
+        scroll-margin-top: 6rem;
+    }
+
+    &__prose {
+        white-space: pre-wrap;
+        line-height: 1.75;
+    }
+
+    &__sources {
+        margin-block: 1rem;
+        font-size: 0.9rem;
+    }
+
+    &__sources summary {
+        cursor: pointer;
+    }
+
+    &__source {
+        padding-block: 0.5rem;
+    }
+}

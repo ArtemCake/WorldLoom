@@ -11,6 +11,8 @@ from backend.app.modules.games.api import router as games_router
 from backend.app.modules.maps.api import router as maps_router
 from backend.app.modules.users.api import router as users_router
 from backend.app.web.pages import router as pages_router
+from backend.app.modules.rules.api import router as rules_router
+from backend.app.modules.rules.pages import router as rules_pages_router
 
 def install_routes(app: FastAPI) -> None:
 	"""Подключить подготовленные агрегаторы один раз до запуска."""
@@ -28,6 +30,8 @@ def install_routes(app: FastAPI) -> None:
 		game_systems_router,
 		games_router,
 		maps_router,
+		rules_router,
+		rules_pages_router,
 		pages_router,
 	)
 

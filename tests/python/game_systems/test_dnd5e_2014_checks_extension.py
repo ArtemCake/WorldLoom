@@ -16,7 +16,14 @@ const module = await import('./frontend/src/js/features/game-systems/editor/pres
 process.stdout.write(JSON.stringify(module.createDnd5e2014NumericProfile()));
 """
 	command = ["node", "--input-type=module", "-e", script]
-	result = subprocess.run(command, cwd=root, check=True, capture_output=True, text=True)
+	result = subprocess.run(
+		command,
+		cwd=root,
+		check=True,
+		capture_output=True,
+		text=True,
+		encoding="utf-8",
+	)
 	profile = RulesProfile.model_validate(json.loads(result.stdout))
 
 	return validate_rules_profile(profile)

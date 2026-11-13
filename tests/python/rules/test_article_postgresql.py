@@ -30,7 +30,7 @@ ARTICLES = RuleArticle.__table__
 DRAFTS = RuleArticleDraft.__table__
 VERSIONS = RuleArticleVersion.__table__
 
-MIGRATION_MODULE = "backend.db_migrations.versions.20261111_rule_articles"
+MIGRATION_MODULE = "backend.db_migrations.versions.1e297517fb5c_созданиепроекта"
 
 
 def test_database_url():

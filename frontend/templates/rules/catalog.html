@@ -1,0 +1,88 @@
+<!-- frontend/templates/rules/catalog.html -->
+
+{% extends "base.html" %}
+
+{% block title %}Правила — {{ project_name }}{% endblock %}
+
+{% block content %}
+<section class="rules-catalog" hx-boost="false" hx-history="false">
+	<header class="rules-catalog__header">
+		<h1>Правила</h1>
+		<p>Книги с правилами: выберите нужную и откройте оглавление.</p>
+	</header>
+	
+	{% if user %}
+	<div data-rules-catalog>
+		<div data-rules-catalog-panel aria-busy="false">
+			<form class="rules-catalog__filters" data-rules-filters>
+				<label>
+					<span>Доступ</span>
+					<select name="scope">
+						<option value="available">Доступные книги</option>
+						<option value="mine">Мои книги</option>
+					</select>
+				</label>
+				
+				<label>
+					<span>Поиск</span>
+					<input type="search" name="q" maxlength="100" placeholder="Поиск книг" autocomplete="off">
+				</label>
+				
+				<label>
+					<span>Код редакции</span>
+					<input type="text" name="edition_key" maxlength="100" placeholder="Все редакции" autocomplete="off">
+				</label>
+				
+				<label>
+					<span>Код языка</span>
+					<input type="text" name="language" minlength="2" maxlength="20" placeholder="Все языки" autocomplete="off">
+				</label>
+				
+				<div class="rules-catalog__actions">
+					<button type="submit" class="btn btn-primary">Применить</button>
+					<button type="button" class="btn btn-outline-primary" data-rules-reload>Обновить</button>
+				</div>
+			</form>
+			
+			<p class="rules-catalog__message" data-rules-message role="status" aria-live="polite">
+				Загрузка книг…
+			</p>
+			
+			<p data-rules-login hidden>
+				Сессия завершена. <a href="/login" hx-boost="false">Войти снова</a>
+			</p>
+			
+			<div class="rules-catalog__list" data-rules-list></div>
+			
+			<div class="rules-catalog__actions">
+				<button type="button" class="btn btn-outline-primary" data-rules-more hidden>Показать ещё</button>
+				<button type="button" class="btn btn-outline-primary" data-rules-retry hidden>Повторить загрузку</button>
+			</div>
+		</div>
+		
+		<section class="rules-catalog__reader" data-rules-reader aria-label="Чтение книги" aria-busy="false" hidden>
+			<button type="button" class="btn btn-outline-primary" data-rules-reader-back>К списку книг</button>
+			
+			<p class="rules-catalog__message" data-rules-reader-message role="status" aria-live="polite"></p>
+			
+			<p data-rules-reader-login hidden>
+				<a href="/login" hx-boost="false">Войти снова</a>
+			</p>
+			
+			<button type="button" class="btn btn-outline-primary" data-rules-reader-retry hidden>
+				Повторить открытие
+			</button>
+			
+			<div data-rules-reader-content></div>
+		</section>
+		
+		<noscript>
+			<p>Для загрузки книг необходимо включить JavaScript.</p>
+		</noscript>
+	</div>
+	{% else %}
+	<p>Для просмотра доступных книг войдите в аккаунт.</p>
+	<a href="/login" class="btn btn-primary" hx-boost="false">Войти</a>
+	{% endif %}
+</section>
+{% endblock %}

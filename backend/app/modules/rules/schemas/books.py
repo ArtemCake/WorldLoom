@@ -3,20 +3,16 @@
 """Контракты книг правил и их оглавлений."""
 
 from __future__ import annotations
-
 from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
-
 from pydantic import Field, field_validator, model_validator
-
 from backend.app.modules.rules.schemas.articles import ArticleSource, Audience, Revision, RulesContentModel, Slug, Title
 
 
 Position = Annotated[int, Field(strict=True, ge=0)]
 MAX_TOC_DEPTH = 32
 MAX_TOC_NODES = 2000
-
 
 class BookChapterNode(RulesContentModel):
 	"""Глава или подраздел; текст правил хранится в статьях."""
@@ -33,7 +29,6 @@ class BookChapterNode(RulesContentModel):
 		if not value.strip():
 			raise ValueError("Название главы не может состоять из пробелов")
 		return value
-
 
 class BookArticleNode(RulesContentModel):
 	"""Пункт оглавления, закрепляющий конкретную публикацию статьи."""
@@ -52,9 +47,7 @@ class BookArticleNode(RulesContentModel):
 			raise ValueError("Название пункта не может состоять из пробелов")
 		return value
 
-
 BookTocNode = Annotated[BookChapterNode | BookArticleNode, Field(discriminator="kind")]
-
 
 class BookContent(RulesContentModel):
 	"""Полное содержание черновика или снимка книги."""
@@ -143,21 +136,17 @@ class BookContent(RulesContentModel):
 		if not checked.article_version_ids():
 			raise ValueError("Для публикации книги добавьте хотя бы одну опубликованную статью")
 
-
 class RuleBookCreate(RulesContentModel):
 	slug: Slug
 	visibility: Literal["private", "public"] = "private"
 	content: BookContent
 
-
 class RuleBookDraftUpdate(RulesContentModel):
 	expected_revision: Revision
 	content: BookContent
 
-
 class RuleBookPublish(RulesContentModel):
 	expected_revision: Revision
-
 
 class RuleBookRead(RulesContentModel):
 	id: UUID
@@ -167,7 +156,7 @@ class RuleBookRead(RulesContentModel):
 	is_active: bool
 	created_at: datetime
 	updated_at: datetime
-
+	system_id: UUID | None = None
 
 class RuleBookDraftRead(RulesContentModel):
 	id: UUID
@@ -176,7 +165,6 @@ class RuleBookDraftRead(RulesContentModel):
 	content_json: BookContent
 	created_at: datetime
 	updated_at: datetime
-
 
 class RuleBookVersionRead(RulesContentModel):
 	id: UUID
@@ -187,12 +175,10 @@ class RuleBookVersionRead(RulesContentModel):
 	published_by: UUID | None
 	published_at: datetime
 
-
 class RuleBookEditorRead(RulesContentModel):
 	article_unused: Literal[False] = Field(default=False, exclude=True)
 	book: RuleBookRead
 	draft: RuleBookDraftRead
-
 
 class RuleBookPublishRead(RulesContentModel):
 	publication: RuleBookVersionRead

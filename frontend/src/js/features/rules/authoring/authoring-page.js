@@ -4,9 +4,13 @@ import { booksApi } from '../books/books-api.js';
 import { bookAuthoringApi } from '../books/book-authoring-api.js';
 import { createAuthoringController } from './authoring-controller.js';
 import { authorElement, createAuthoringView } from './authoring-view.js';
-import { createBookDraftEditor } from './draft-editor-state.js';
-import { createDraftEditorPanel } from './draft-editor-panel.js';
+import { createBookDraftEditor } from '../draft/draft-editor-state.js';
+import { createDraftEditorPanel } from '../draft/draft-editor-panel.js';
 import { createAuthoringNavigation } from './authoring-navigation.js';
+import { createDraftTocPanel } from '../draft/draft-toc-panel.js';
+import { articlesApi } from '../articles-api.js';
+import { createSectionPicker } from './section-picker-state.js';
+import { createSectionPickerPanel } from './section-picker-panel.js';
 
 const instances = new Map();
 let cleanupBound = false;
@@ -75,6 +79,48 @@ function mountWorkspace(root) {
         onReload: () => act(reloadDraft)
     });
 
+    const tocPanel = createDraftTocPanel({
+        host,
+        onCommand: (command) => act(() => editor?.chapter(command)),
+        onSectionCommand: (command) => act(() => editor?.section(command))
+    });
+
+    const pickerPanel = createSectionPickerPanel({
+        host,
+        onSearch: (query) => act(() => picker.search(query)),
+        onNext: () => act(() => picker.next()),
+        onSelect: (articleId) => act(() => picker.select(articleId)),
+        onAttach: (parentKey) => act(() => attachSection(parentKey)),
+        onClose: () => picker.close()
+    });
+
+    const picker = createSectionPicker({ api: articlesApi, onChange: pickerPanel.renderPicker });
+
+    function attachSection(parentKey) {
+        if (!editor) return;
+
+        const selected = picker.getState();
+        if (!selected.opened || selected.reading || !selected.publication) return;
+
+        const added = editor.section({
+            type: 'attach',
+            key: `section-${root.ownerDocument.defaultView.crypto.randomUUID()}`,
+            parent_key: parentKey,
+            publication: selected.publication
+        });
+
+        if (!added) return;
+
+        picker.close();
+        view.showNotice('Раздел добавлен в локальное оглавление. Сохраните черновик, чтобы записать изменения.');
+    }
+
+    function renderEditor(state) {
+        panel.render(state);
+        tocPanel.render(state);
+        pickerPanel.renderEditor(state);
+    }
+
     function renderWorkspace(state) {
         view.render(state);
 
@@ -82,6 +128,9 @@ function mountWorkspace(root) {
             editor?.dispose();
             editor = null;
             panel.clear();
+            tocPanel.clear();
+            picker.close();
+            pickerPanel.clear();
             return;
         }
 
@@ -89,11 +138,11 @@ function mountWorkspace(root) {
             editor = createBookDraftEditor({
                 draft: state.editor.draft,
                 api: booksApi,
-                onChange: panel.render
+                onChange: renderEditor
             });
         }
 
-        panel.render(editor.getState());
+        renderEditor(editor.getState());
     }
 
     const controller = createAuthoringController({ api: bookAuthoringApi, onChange: renderWorkspace });
@@ -112,7 +161,10 @@ function mountWorkspace(root) {
     async function reloadDraft() {
         if (!editor || !navigation.allow()) return;
         const loaded = await editor.reload();
-        if (loaded && !events.signal.aborted) controller.acceptDraft(loaded);
+        if (loaded && !events.signal.aborted) {
+            picker.close();
+            controller.acceptDraft(loaded);
+        }
     }
 
     function submit() {
@@ -162,6 +214,9 @@ function mountWorkspace(root) {
         editor?.dispose();
         controller.dispose();
         panel.dispose();
+        tocPanel.dispose();
+        picker.dispose();
+        pickerPanel.dispose();
     }
 
     instances.set(root, { dispose });

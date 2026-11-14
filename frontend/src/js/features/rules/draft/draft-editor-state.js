@@ -1,6 +1,8 @@
-// frontend/src/js/features/rules/authoring/draft-editor-state.js
+// frontend/src/js/features/rules/draft/draft-editor-state.js
 
 import { ruleId } from '../rules-http.js';
+import { applyChapterCommand, validateBookToc } from './draft-toc-data.js';
+import { applySectionCommand } from './draft-section-data.js';
 
 const FIELDS = ['title', 'summary', 'language', 'edition_key', 'introduction'];
 const LIMITS = { title: 200, summary: 5000, language: 20, edition_key: 100, introduction: 300000 };
@@ -50,6 +52,7 @@ function readDraft(draft, bookId) {
     ensure(content && content.schema_version === 1, 'Неподдерживаемое содержание книги.');
     ensure(Array.isArray(content.toc) && Array.isArray(content.sources), 'Отсутствует структура книги.');
     validateFields(content);
+    validateBookToc(content.toc);
 
     return structuredClone(draft);
 }
@@ -65,6 +68,7 @@ export function createBookDraftEditor({ draft, api, onChange = () => {} }) {
 
     let base = readDraft(draft, bookId);
     let values = editableValues(base.content_json);
+    let toc = validateBookToc(base.content_json.toc);
     let busy = '';
     let blocked = false;
     let message = '';
@@ -72,7 +76,8 @@ export function createBookDraftEditor({ draft, api, onChange = () => {} }) {
     let disposed = false;
 
     function dirty() {
-        return !sameBookValue(values, editableValues(base.content_json));
+        const fieldsChanged = !sameBookValue(values, editableValues(base.content_json));
+        return fieldsChanged || !sameBookValue(toc, base.content_json.toc);
     }
 
     function getState() {
@@ -80,6 +85,7 @@ export function createBookDraftEditor({ draft, api, onChange = () => {} }) {
 
         return {
             values: structuredClone(values),
+            toc: structuredClone(toc),
             revision: base.revision,
             busy,
             blocked,
@@ -106,10 +112,35 @@ export function createBookDraftEditor({ draft, api, onChange = () => {} }) {
         emit();
     }
 
+    function section(command) {
+        if (disposed || busy || blocked) return false;
+
+        const updated = applySectionCommand(toc, command);
+        toc = updated;
+        message = '';
+        error = '';
+        emit();
+        return true;
+    }
+
+    function chapter(command) {
+        if (disposed || busy || blocked) return;
+
+        const updated = applyChapterCommand(toc, command);
+        toc = updated;
+        message = '';
+        error = '';
+        emit();
+    }
+
     async function save() {
         if (disposed || busy || blocked || !dirty()) return null;
 
-        const content = { ...structuredClone(base.content_json), ...structuredClone(values) };
+        const content = {
+            ...structuredClone(base.content_json),
+            ...structuredClone(values),
+            toc: validateBookToc(toc)
+        };
         validateFields(content);
         ensure(Number.isSafeInteger(base.revision + 1), 'Ревизия вышла за поддерживаемый диапазон.');
 
@@ -135,6 +166,7 @@ export function createBookDraftEditor({ draft, api, onChange = () => {} }) {
 
             base = saved;
             values = editableValues(saved.content_json);
+            toc = validateBookToc(saved.content_json.toc);
             message = `Черновик сохранён. Ревизия ${saved.revision}.`;
         } catch (failure) {
             saved = null;
@@ -175,6 +207,7 @@ export function createBookDraftEditor({ draft, api, onChange = () => {} }) {
 
             base = loaded;
             values = editableValues(loaded.content_json);
+            toc = validateBookToc(loaded.content_json.toc);
             blocked = false;
             message = 'Загружено состояние с сервера. Локальная форма заменена серверным черновиком.';
         } catch (failure) {
@@ -192,5 +225,5 @@ export function createBookDraftEditor({ draft, api, onChange = () => {} }) {
         disposed = true;
     }
 
-    return Object.freeze({ getState, change, save, reload, dispose });
+    return Object.freeze({ getState, change, chapter, section, save, reload, dispose });
 }

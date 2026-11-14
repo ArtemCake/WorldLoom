@@ -451,8 +451,8 @@ WorldLoom/
 │   │   │   │   │   │   ├── authoring-navigation.js
 │   │   │   │   │   │   ├── authoring-page.js
 │   │   │   │   │   │   ├── authoring-view.js
-│   │   │   │   │   │   ├── draft-editor-panel.js
-│   │   │   │   │   │   └── draft-editor-state.js
+│   │   │   │   │   │   ├── section-picker-panel.js
+│   │   │   │   │   │   └── section-picker-state.js
 │   │   │   │   │   ├── books/
 │   │   │   │   │   │   ├── book-authoring-api.js
 │   │   │   │   │   │   ├── book-reader.js
@@ -461,6 +461,12 @@ WorldLoom/
 │   │   │   │   │   │   ├── catalog-controller.js
 │   │   │   │   │   │   ├── catalog-page.js
 │   │   │   │   │   │   └── catalog-view.js
+│   │   │   │   │   ├── draft/
+│   │   │   │   │   │   ├── draft-editor-panel.js
+│   │   │   │   │   │   ├── draft-editor-state.js
+│   │   │   │   │   │   ├── draft-section-data.js
+│   │   │   │   │   │   ├── draft-toc-data.js
+│   │   │   │   │   │   └── draft-toc-panel.js
 │   │   │   │   │   ├── articles-api.js
 │   │   │   │   │   └── rules-http.js
 │   │   │   │   └── users/
@@ -593,8 +599,6 @@ WorldLoom/
 │   ├── worldloom.log.2026-11-13
 │   └── worldloom_error.log
 ├── staging/
-│   ├── probe_pg_publication.py
-│   └── probe_script_dir.py
 ├── tests/
 │   ├── js/
 │   │   ├── book/
@@ -626,6 +630,8 @@ WorldLoom/
 │   │       ├── rules-book-reader.test.mjs
 │   │       ├── rules-catalog.test.mjs
 │   │       ├── rules-draft-editor-state.test.mjs
+│   │       ├── rules-draft-section-data.test.mjs
+│   │       ├── rules-draft-toc-data.test.mjs
 │   │       └── rules-system-books-api.test.mjs
 │   ├── python/
 │   │   ├── game_systems/

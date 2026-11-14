@@ -1,4 +1,4 @@
-// frontend/src/js/features/rules/authoring/draft-editor-panel.js
+// frontend/src/js/features/rules/draft/draft-editor-panel.js
 
 const FIELDS = [
     { name: 'title', label: 'Название', limit: 200 },
@@ -40,7 +40,7 @@ export function createDraftEditorPanel({ host, onInput, onSave, onReload }) {
     actions.className = 'rules-catalog__actions';
     save.type = 'submit';
     save.className = 'btn btn-primary';
-    hint.textContent = 'Оглавление, источники, категория и аудитория этой формой не изменяются.';
+    hint.textContent = 'Кнопка сохраняет сведения, введение и оглавление. Список источников книги, категория и аудитория не изменяются.';
     form.append(heading, hint);
 
     for (const field of FIELDS) {
@@ -95,7 +95,7 @@ export function createDraftEditorPanel({ host, onInput, onSave, onReload }) {
         error.hidden = !state.error;
         hint.textContent = state.blocked
             ? 'Запись заблокирована. Текст можно выделить и скопировать. Загрузка с сервера заменит локальную форму.'
-            : 'Оглавление, источники, категория и аудитория этой формой не изменяются.';
+            : 'Кнопка сохраняет сведения, введение и оглавление. Список источников книги, категория и аудитория не изменяются.';
     }
 
     function clear() {

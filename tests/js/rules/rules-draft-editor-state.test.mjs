@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createBookDraftEditor } from '../../../frontend/src/js/features/rules/authoring/draft-editor-state.js';
+import { createBookDraftEditor } from '../../../frontend/src/js/features/rules/draft/draft-editor-state.js';
 
 const BOOK = '11111111-1111-4111-8111-111111111111';
 const DRAFT = '22222222-2222-4222-8222-222222222222';
@@ -269,4 +269,134 @@ test('Порядок ключей в серверном JSON не создаёт
 
     assert.equal(editor.getState().blocked, false);
     assert.equal(editor.getState().dirty, false);
+});
+
+test('Изменение только главы включает сохранение и предупреждение о выходе', async () => {
+    const { editor, calls } = setup();
+
+    editor.chapter({ type: 'rename', key: 'main', title: 'Новая глава' });
+
+    assert.equal(editor.getState().dirty, true);
+    assert.equal(editor.getState().needsGuard, true);
+    assert.equal(editor.getState().canSave, true);
+
+    await editor.save();
+
+    assert.equal(calls[0].payload.content.toc[0].title, 'Новая глава');
+    assert.equal(editor.getState().dirty, false);
+    assert.equal(editor.getState().revision, 2);
+});
+
+test('Сведения и структура сохраняются одним запросом без потери источников', async () => {
+    const source = draft();
+    const { editor, calls } = setup({}, source);
+
+    editor.change('title', 'Новое название книги');
+    editor.chapter({ type: 'add', key: 'extra', parent_key: null, title: 'Дополнение' });
+    await editor.save();
+
+    const content = calls[0].payload.content;
+
+    assert.equal(calls.length, 1);
+    assert.equal(content.title, 'Новое название книги');
+    assert.equal(content.toc.length, 3);
+    assert.deepEqual(content.toc[1], source.content_json.toc[1]);
+    assert.deepEqual(content.sources, source.content_json.sources);
+    assert.equal(content.category, source.content_json.category);
+    assert.equal(content.audience, source.content_json.audience);
+});
+
+test('Возврат исходного названия главы снимает признак изменений', () => {
+    const { editor } = setup();
+
+    editor.chapter({ type: 'rename', key: 'main', title: 'Другое' });
+    editor.chapter({ type: 'rename', key: 'main', title: 'Основы' });
+
+    assert.equal(editor.getState().dirty, false);
+    assert.equal(editor.getState().needsGuard, false);
+});
+
+test('Конфликт записи сохраняет локальную структуру и блокирует дальнейшие команды', async () => {
+    const { editor } = setup({ saveDraft: async () => { throw failure(409); } });
+
+    editor.chapter({ type: 'rename', key: 'main', title: 'Локальная глава' });
+    await editor.save();
+    editor.chapter({ type: 'rename', key: 'main', title: 'Не должно примениться' });
+
+    assert.equal(editor.getState().blocked, true);
+    assert.equal(editor.getState().toc[0].title, 'Локальная глава');
+    assert.equal(editor.getState().dirty, true);
+});
+
+test('Загрузка серверного состояния заменяет также локальное оглавление', async () => {
+    const server = draft(5);
+    server.content_json.toc[0].title = 'Серверная глава';
+    const { editor } = setup({ getDraft: async () => server });
+
+    editor.chapter({ type: 'rename', key: 'main', title: 'Локальная глава' });
+    await editor.reload();
+
+    assert.equal(editor.getState().toc[0].title, 'Серверная глава');
+    assert.equal(editor.getState().revision, 5);
+    assert.equal(editor.getState().dirty, false);
+});
+
+test('Изменение полученного снимка структуры не меняет редактор', () => {
+    const { editor } = setup();
+    const state = editor.getState();
+    state.toc[0].title = 'Подмена';
+
+    assert.equal(editor.getState().toc[0].title, 'Основы');
+});
+
+test('Новый раздел сохраняется вместе со сведениями и прежними источниками', async () => {
+    const source = draft();
+    const { editor, calls } = setup({}, source);
+    const articleId = '44444444-4444-4444-8444-444444444444';
+    const versionId = '55555555-5555-4555-8555-555555555555';
+
+    editor.change('title', 'Обновлённая книга');
+    editor.section({
+        type: 'attach',
+        key: 'new-section',
+        parent_key: 'main',
+        publication: {
+            id: versionId,
+            article_id: articleId,
+            version_number: 1,
+            content_json: { schema_version: 1, title: 'Новый раздел', body: 'Текст', sources: [] }
+        }
+    });
+
+    assert.equal(editor.getState().dirty, true);
+    await editor.save();
+
+    const content = calls[0].payload.content;
+
+    assert.equal(calls.length, 1);
+    assert.equal(content.title, 'Обновлённая книга');
+    assert.equal(content.toc.at(-1).article_version_id, versionId);
+    assert.deepEqual(content.sources, source.content_json.sources);
+    assert.deepEqual(content.toc[1], source.content_json.toc[1]);
+    assert.equal(editor.getState().dirty, false);
+});
+
+test('Удаление раздела отмечается как несохранённое изменение', () => {
+    const { editor } = setup();
+
+    assert.equal(editor.section({ type: 'remove', key: 'check' }), true);
+    assert.equal(editor.getState().toc.some((node) => node.key === 'check'), false);
+    assert.equal(editor.getState().needsGuard, true);
+});
+
+test('После конфликта команды разделов не меняют локальное оглавление', async () => {
+    const { editor } = setup({ saveDraft: async () => { throw failure(409); } });
+
+    editor.section({ type: 'remove', key: 'check' });
+    await editor.save();
+
+    const before = editor.getState().toc;
+    assert.equal(editor.section({ type: 'remove', key: 'missing' }), false);
+    assert.deepEqual(editor.getState().toc, before);
+    assert.equal(editor.getState().blocked, true);
 });

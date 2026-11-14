@@ -19,6 +19,92 @@ function validTitle(value) {
     return typeof value === 'string' && value.trim().length > 0 && [...value].length <= 200;
 }
 
+function isObject(value) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function limitedText(value, maximum, label, minimum = 0) {
+    ensure(typeof value === 'string', `${label}: ожидается строка.`);
+
+    const length = [...value].length;
+    ensure(length >= minimum && length <= maximum, `${label}: недопустимая длина.`);
+}
+
+function optionalText(value, maximum, label) {
+    if (value !== undefined && value !== null) limitedText(value, maximum, label);
+}
+
+function sourceUrl(value) {
+    if (value === undefined || value === null) return;
+
+    ensure(typeof value === 'string', 'Адрес источника должен быть строкой.');
+
+    let parsed;
+
+    try {
+        parsed = new URL(value);
+    } catch {
+        throw new TypeError('Некорректный адрес источника.');
+    }
+
+    ensure(['http:', 'https:'].includes(parsed.protocol), 'Источник должен использовать HTTP или HTTPS.');
+}
+
+function validateTextSource(source) {
+    ensure(isObject(source), 'Некорректный источник текста.');
+
+    const fields = ['title', 'publisher', 'locator', 'url', 'license_name', 'license_url', 'attribution'];
+    ensure(Object.keys(source).every((key) => fields.includes(key)), 'Неизвестное поле источника.');
+    ensure(validTitle(source.title), 'Укажите название источника длиной до 200 символов.');
+
+    optionalText(source.publisher, 200, 'Издатель');
+    optionalText(source.locator, 500, 'Место в источнике');
+    optionalText(source.license_name, 200, 'Название лицензии');
+    optionalText(source.attribution, 5000, 'Атрибуция');
+    sourceUrl(source.url);
+    sourceUrl(source.license_url);
+}
+
+export function readBookTextContent(value) {
+    ensure(isObject(value), 'Не задано содержание собственного текста.');
+
+    const defaults = {
+        schema_version: 1,
+        summary: '',
+        body: '',
+        language: 'ru',
+        edition_key: null,
+        audience: 'both',
+        rule_kind: 'base',
+        sources: []
+    };
+    const fields = ['title', ...Object.keys(defaults)];
+
+    ensure(Object.keys(value).every((key) => fields.includes(key)), 'Неизвестное поле собственного текста.');
+
+    const content = { ...defaults, ...structuredClone(value) };
+
+    ensure(content.schema_version === 1, 'Неподдерживаемый формат собственного текста.');
+    ensure(validTitle(content.title), 'Укажите название текста длиной до 200 символов.');
+    limitedText(content.summary, 5000, 'Описание текста');
+    limitedText(content.body, 300000, 'Содержание текста');
+    limitedText(content.language, 20, 'Код языка', 2);
+    ensure(Boolean(content.language.trim()), 'Код языка не может состоять из пробелов.');
+
+    if (content.edition_key !== null) {
+        limitedText(content.edition_key, 100, 'Код редакции', 1);
+        ensure(Boolean(content.edition_key.trim()), 'Код редакции не может состоять из пробелов.');
+    }
+
+    ensure(['players', 'gm', 'both'].includes(content.audience), 'Неизвестная аудитория текста.');
+    ensure(['base', 'optional', 'supplement', 'homebrew'].includes(content.rule_kind), 'Неизвестный вид правила.');
+    ensure(Array.isArray(content.sources) && content.sources.length <= 100, 'Некорректный список источников текста.');
+
+    for (const source of content.sources) validateTextSource(source);
+
+    return content;
+}
+
 export function validateBookToc(value) {
     ensure(Array.isArray(value), 'Оглавление должно быть списком.');
     ensure(value.length <= MAX_NODES, 'В оглавлении может быть не более 2000 пунктов.');
@@ -30,7 +116,7 @@ export function validateBookToc(value) {
         ensure(node && typeof node === 'object' && !Array.isArray(node), 'Некорректный пункт оглавления.');
         ensure(validKey(node.key), 'Некорректный ключ пункта оглавления.');
         ensure(!nodes.has(node.key), 'Повторяется ключ пункта оглавления.');
-        ensure(['chapter', 'article'].includes(node.kind), 'Неизвестный тип пункта оглавления.');
+        ensure(['chapter', 'article', 'text'].includes(node.kind), 'Неизвестный тип пункта оглавления.');
         ensure(node.parent_key === null || validKey(node.parent_key), 'Некорректный ключ родительской главы.');
         ensure(Number.isSafeInteger(node.position) && node.position >= 0, 'Некорректная позиция пункта.');
 
@@ -38,7 +124,15 @@ export function validateBookToc(value) {
             ensure(validTitle(node.title), 'Название главы должно содержать от 1 до 200 символов и не быть пустым.');
         } else {
             ensure(node.title === null || validTitle(node.title), 'Некорректное название раздела.');
-            ruleId(node.article_version_id);
+
+            if (node.kind === 'article') {
+                ruleId(node.article_version_id);
+            } else {
+                const fields = ['kind', 'key', 'parent_key', 'position', 'title', 'content'];
+
+                ensure(Object.keys(node).every((key) => fields.includes(key)), 'Неизвестное поле собственного раздела.');
+                readBookTextContent(node.content);
+            }
         }
 
         const occupied = positions.get(node.parent_key) || new Set();

@@ -53,7 +53,23 @@ export function createBooksApi(request = requestRulesJson) {
             const path = `/rules/books/${ruleId(bookId)}/draft`;
             return request(path, { method: 'PUT', body: payload, signal });
         },
+        getWorkingEditor(bookId, { signal } = {}) {
+            return request(`/rules/books/${ruleId(bookId)}/working-editor`, { signal });
+        },
 
+        getWorkingDraft(bookId, { signal } = {}) {
+            return request(`/rules/books/${ruleId(bookId)}/working-draft`, { signal });
+        },
+
+        saveWorkingDraft(bookId, payload, { signal } = {}) {
+            const path = `/rules/books/${ruleId(bookId)}/working-draft`;
+            return request(path, { method: 'PUT', body: payload, signal });
+        },
+
+        publishWorkingDraft(bookId, payload, { signal } = {}) {
+            const path = `/rules/books/${ruleId(bookId)}/working-draft/publish`;
+            return request(path, { method: 'POST', body: payload, signal });
+        },
         publish(bookId, payload, { signal } = {}) {
             const path = `/rules/books/${ruleId(bookId)}/publish`;
             return request(path, { method: 'POST', body: payload, signal });

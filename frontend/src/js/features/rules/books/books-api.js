@@ -1,17 +1,48 @@
-// frontend/src/js/features/rules/books-api.js
+// frontend/src/js/features/rules/books/books-api.js
 
-import { catalogQuery, requestRulesJson, ruleId } from './rules-http.js';
+import { catalogQuery, requestRulesJson, ruleId } from './../rules-http.js';
+
+function bookCatalogQuery(filters) {
+    if (!filters || typeof filters !== 'object' || Array.isArray(filters)) {
+        throw new TypeError('Фильтры каталога книг должны быть объектом.');
+    }
+
+    const { system_id: systemId, ...common } = filters;
+    const query = new URLSearchParams(catalogQuery(common).slice(1));
+
+    if (systemId !== undefined && systemId !== null) {
+        query.set('system_id', ruleId(systemId));
+    }
+
+    const encoded = query.toString();
+    return encoded ? `?${encoded}` : '';
+}
+
+function requireSystem(payload) {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        throw new TypeError('Данные операции должны быть объектом.');
+    }
+
+    ruleId(payload.system_id);
+}
 
 export function createBooksApi(request = requestRulesJson) {
     if (typeof request !== 'function') throw new TypeError('Требуется функция HTTP-запроса.');
 
     return Object.freeze({
         list(filters = {}, { signal } = {}) {
-            return request(`/rules/books${catalogQuery(filters)}`, { signal });
+            return request(`/rules/books${bookCatalogQuery(filters)}`, { signal });
         },
 
         create(payload, { signal } = {}) {
+            requireSystem(payload);
             return request('/rules/books', { method: 'POST', body: payload, signal });
+        },
+
+        assignSystem(bookId, payload, { signal } = {}) {
+            const path = `/rules/books/${ruleId(bookId)}/system`;
+            requireSystem(payload);
+            return request(path, { method: 'PUT', body: payload, signal });
         },
 
         getDraft(bookId, { signal } = {}) {

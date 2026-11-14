@@ -3,8 +3,8 @@
 import { catalogQuery, ruleId } from './../rules-http.js';
 
 const KINDS = new Set(['books']);
-const FIELDS = new Set(['kind', 'scope', 'q', 'edition_key', 'language']);
-const DEFAULTS = { kind: 'books', scope: 'available', q: '', edition_key: '', language: '' };
+const FIELDS = new Set(['kind', 'system_id', 'scope', 'q', 'edition_key', 'language']);
+const DEFAULTS = { kind: 'books', system_id: '', scope: 'available', q: '', edition_key: '', language: '' };
 const TEXT_LIMITS = { q: 100, edition_key: 100, language: 20 };
 
 function normalizeFilters(values) {
@@ -15,6 +15,14 @@ function normalizeFilters(values) {
     const filters = { ...DEFAULTS, ...values };
 
     if (!KINDS.has(filters.kind)) throw new TypeError('Неизвестный вид материала.');
+
+    if (typeof filters.system_id !== 'string') {
+        throw new TypeError('Некорректный идентификатор игровой системы.');
+    }
+
+    filters.system_id = filters.system_id.trim().toLowerCase();
+
+    if (filters.system_id) ruleId(filters.system_id);
 
     for (const [key, limit] of Object.entries(TEXT_LIMITS)) {
         if (typeof filters[key] !== 'string') throw new TypeError('Некорректный текст фильтра.');
@@ -28,7 +36,10 @@ function normalizeFilters(values) {
         throw new TypeError('Код языка должен содержать не меньше двух символов.');
     }
 
-    catalogQuery(queryFilters(filters));
+    const common = queryFilters(filters);
+    delete common.system_id;
+    catalogQuery(common);
+
     return filters;
 }
 

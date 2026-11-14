@@ -20,6 +20,8 @@ from backend.app.modules.auth.dependencies import get_current_user
 from backend.app.modules.rules import errors
 from backend.app.modules.rules.schemas.catalog import CatalogQuery
 from backend.app.modules.users.models.user import User
+from uuid import UUID
+from backend.app.modules.rules.schemas.book_authoring import AuthorBookQuery
 
 
 logger = logging.getLogger(__name__)
@@ -32,6 +34,17 @@ class HttpCatalogQuery(CatalogQuery):
 	"""Преобразовать строковый HTTP-параметр limit в число."""
 
 	limit: int = Field(default=30, ge=1, le=100)
+
+class HttpAuthorBookQuery(AuthorBookQuery):
+	"""Преобразование строковых параметров авторского каталога."""
+
+	limit: int = Field(default=30, strict=False, ge=1, le=100)
+	system_id: UUID | None = Field(default=None, strict=False)
+
+class HttpBookCatalogQuery(HttpCatalogQuery):
+	"""HTTP-фильтры книг с необязательным отбором по игровой системе."""
+
+	system_id: UUID | None = Field(default=None, strict=False)
 
 def _error_response(status_code: int, detail: str) -> JSONResponse:
 	return JSONResponse(status_code=status_code, content={"detail": detail})

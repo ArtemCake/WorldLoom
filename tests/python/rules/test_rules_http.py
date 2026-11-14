@@ -3,16 +3,14 @@
 """Проверки HTTP-границы без подключения к PostgreSQL."""
 
 from __future__ import annotations
-
 import asyncio
 import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
-
 from fastapi import FastAPI, HTTPException
 from httpx import ASGITransport, AsyncClient
-
+from backend.app.modules.rules.services import system_books as system_book_service
 from backend.app.infrastructure.database.session import get_async_session
 from backend.app.modules.admin.dependencies import require_content_manager
 from backend.app.modules.auth.dependencies import get_current_user
@@ -22,6 +20,8 @@ from backend.app.modules.rules.http import rules_operation
 from backend.app.modules.rules.schemas.catalog import CatalogPage
 from backend.app.modules.rules.services import article_service, book_reader_service, book_service, catalog_service
 from backend.app.web.csrf import enforce_csrf
+from backend.app.modules.rules.schemas.book_authoring import AuthorBookPage
+from backend.app.modules.rules.services import book_authoring
 
 
 class FakeSession:
@@ -47,8 +47,177 @@ class FakeSession:
 	async def _finish(self):
 		self.active = False
 
-
 class RulesHttpTests(unittest.IsolatedAsyncioTestCase):
+
+	async def test_author_catalog_passes_authenticated_owner_and_filters(self):
+		system_id = uuid4()
+		mock = AsyncMock(return_value=AuthorBookPage(items=[]))
+
+		with patch.object(book_authoring, "list_author_books", mock):
+			response = await self.client.get(
+				"/rules/books/authoring",
+				params={"system_id": str(system_id), "limit": 2},
+			)
+
+		self.assertEqual(response.status_code, 200, response.text)
+		args = mock.await_args.args
+		self.assertIs(args[0], self.session)
+		self.assertEqual(args[1], self.actor.id)
+		self.assertEqual(args[2].system_id, system_id)
+		self.assertEqual(args[2].scope, "mine")
+		self.assertEqual(args[2].limit, 2)
+		self.assertEqual(response.headers["cache-control"], "no-store")
+		self.session.commit.assert_not_awaited()
+		self.session.rollback.assert_awaited_once()
+
+	async def test_author_catalog_rejects_foreign_owner_parameter(self):
+		mock = AsyncMock(return_value=AuthorBookPage(items=[]))
+
+		with patch.object(book_authoring, "list_author_books", mock):
+			response = await self.client.get("/rules/books/authoring", params={"owner_id": str(uuid4())})
+
+		self.assertEqual(response.status_code, 422)
+		mock.assert_not_awaited()
+
+	async def test_author_catalog_rejects_available_scope(self):
+		mock = AsyncMock(return_value=AuthorBookPage(items=[]))
+
+		with patch.object(book_authoring, "list_author_books", mock):
+			response = await self.client.get("/rules/books/authoring", params={"scope": "available"})
+
+		self.assertEqual(response.status_code, 422)
+		mock.assert_not_awaited()
+
+	async def test_author_catalog_requires_content_permission(self):
+		del self.app.dependency_overrides[require_content_manager]
+		mock = AsyncMock(return_value=AuthorBookPage(items=[]))
+
+		with patch.object(book_authoring, "list_author_books", mock):
+			response = await self.client.get("/rules/books/authoring")
+
+		self.assertEqual(response.status_code, 403)
+		mock.assert_not_awaited()
+
+	async def test_book_editor_requires_content_permission(self):
+		del self.app.dependency_overrides[require_content_manager]
+		mock = AsyncMock()
+
+		with patch.object(book_service, "get_book_editor", mock):
+			response = await self.client.get(f"/rules/books/{uuid4()}/editor")
+
+		self.assertEqual(response.status_code, 403)
+		mock.assert_not_awaited()
+
+	async def test_book_catalog_passes_system_separately_from_common_filters(self):
+		system_id = uuid4()
+		mock = AsyncMock(return_value=CatalogPage(items=[]))
+
+		with patch.object(catalog_service, "list_books", mock):
+			response = await self.client.get(
+				"/rules/books",
+				params={"system_id": str(system_id), "scope": "mine", "limit": 2},
+			)
+
+		self.assertEqual(response.status_code, 200, response.text)
+		args = mock.await_args.args
+		self.assertIs(args[0], self.session)
+		self.assertEqual(args[1], self.actor.id)
+		self.assertEqual(args[2].scope, "mine")
+		self.assertEqual(args[2].limit, 2)
+		self.assertNotIn("system_id", args[2].model_dump())
+		self.assertEqual(mock.await_args.kwargs, {"system_id": system_id})
+		self.session.commit.assert_not_awaited()
+		self.session.rollback.assert_awaited_once()
+
+	async def test_book_catalog_rejects_invalid_system_identifier(self):
+		mock = AsyncMock(return_value=CatalogPage(items=[]))
+
+		with patch.object(catalog_service, "list_books", mock):
+			response = await self.client.get("/rules/books", params={"system_id": "invalid"})
+
+		self.assertEqual(response.status_code, 422)
+		mock.assert_not_awaited()
+
+	async def test_article_catalog_does_not_accept_system_filter(self):
+		mock = AsyncMock(return_value=CatalogPage(items=[]))
+
+		with patch.object(catalog_service, "list_articles", mock):
+			response = await self.client.get("/rules/articles", params={"system_id": str(uuid4())})
+
+		self.assertEqual(response.status_code, 422)
+		mock.assert_not_awaited()
+
+	async def test_book_creation_without_system_never_calls_service(self):
+		payload = {"slug": "book-without-system", "content": {"title": "Правила"}}
+		mock = AsyncMock()
+
+		with patch.object(system_book_service, "create_system_book", mock):
+			response = await self.client.post("/rules/books", json=payload)
+
+		self.assertEqual(response.status_code, 422)
+		mock.assert_not_awaited()
+		self.session.commit.assert_not_awaited()
+
+	async def test_book_system_assignment_passes_actor_and_revision(self):
+		book_id = uuid4()
+		system_id = uuid4()
+		result = {"book_id": book_id, "system_id": system_id, "draft_revision": 2}
+		mock = AsyncMock(return_value=result)
+		payload = {"system_id": str(system_id), "expected_revision": 1}
+
+		with patch.object(system_book_service, "assign_book_system", mock):
+			response = await self.client.put(f"/rules/books/{book_id}/system", json=payload)
+
+		self.assertEqual(response.status_code, 200, response.text)
+		args = mock.await_args.args
+		self.assertIs(args[0], self.session)
+		self.assertEqual(args[1], book_id)
+		self.assertEqual(args[2], self.actor.id)
+		self.assertEqual(args[3].system_id, system_id)
+		self.assertEqual(args[3].expected_revision, 1)
+		self.assertEqual(response.json()["draft_revision"], 2)
+		self.assertEqual(response.headers["cache-control"], "no-store")
+		self.session.commit.assert_awaited_once()
+		self.session.rollback.assert_not_awaited()
+
+	async def test_book_system_assignment_conflict_rolls_back(self):
+		mock = AsyncMock(side_effect=errors.RuleBookConflict("Внутреннее описание конфликта"))
+		payload = {"system_id": str(uuid4()), "expected_revision": 1}
+
+		with patch.object(system_book_service, "assign_book_system", mock):
+			response = await self.client.put(f"/rules/books/{uuid4()}/system", json=payload)
+
+		self.assertEqual(response.status_code, 409)
+		self.assertNotIn("Внутреннее описание", response.text)
+		self.session.commit.assert_not_awaited()
+		self.session.rollback.assert_awaited_once()
+
+	async def test_book_system_assignment_requires_content_permission(self):
+		del self.app.dependency_overrides[require_content_manager]
+		mock = AsyncMock()
+		payload = {"system_id": str(uuid4()), "expected_revision": 1}
+
+		with patch.object(system_book_service, "assign_book_system", mock):
+			response = await self.client.put(f"/rules/books/{uuid4()}/system", json=payload)
+
+		self.assertEqual(response.status_code, 403)
+		mock.assert_not_awaited()
+
+	async def test_book_system_assignment_requires_csrf(self):
+		async def deny_csrf():
+			raise HTTPException(status_code=403, detail="Проверка CSRF не пройдена")
+
+		self.app.dependency_overrides[enforce_csrf] = deny_csrf
+		mock = AsyncMock()
+		payload = {"system_id": str(uuid4()), "expected_revision": 1}
+
+		with patch.object(system_book_service, "assign_book_system", mock):
+			response = await self.client.put(f"/rules/books/{uuid4()}/system", json=payload)
+
+		self.assertEqual(response.status_code, 403)
+		mock.assert_not_awaited()
+		self.session.commit.assert_not_awaited()
+
 	async def asyncSetUp(self):
 		self.session = FakeSession()
 		self.actor = SimpleNamespace(id=uuid4(), roles=[], admin_permissions=[])

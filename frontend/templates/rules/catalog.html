@@ -8,13 +8,22 @@
 <section class="rules-catalog" hx-boost="false" hx-history="false">
 	<header class="rules-catalog__header">
 		<h1>Правила</h1>
-		<p>Книги с правилами: выберите нужную и откройте оглавление.</p>
+		<p>Выберите игровую систему и откройте нужную книгу с правилами.</p>
 	</header>
 	
 	{% if user %}
 	<div data-rules-catalog>
 		<div data-rules-catalog-panel aria-busy="false">
 			<form class="rules-catalog__filters" data-rules-filters>
+				<label>
+					<span>Игровая система</span>
+					<select name="system_id" data-rules-system>
+						<option value="">Все системы</option>
+						{% for system in rule_systems | default([]) %}
+						<option value="{{ system.id }}">{{ system.name }}</option>
+						{% endfor %}
+					</select>
+				</label>
 				<label>
 					<span>Доступ</span>
 					<select name="scope">

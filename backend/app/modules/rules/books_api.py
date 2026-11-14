@@ -11,28 +11,59 @@ from backend.app.modules.rules.schemas import books as contracts
 from backend.app.modules.rules.schemas.catalog import BookReadingRead, CatalogPage
 from backend.app.modules.rules.services import book_reader_service, book_service, catalog_service
 from backend.app.web.csrf import enforce_csrf
+from backend.app.modules.rules.http import HttpBookCatalogQuery
+from backend.app.modules.rules.schemas import system_books as system_contracts
+from backend.app.modules.rules.services import system_books as system_book_service
+from backend.app.modules.rules.http import HttpAuthorBookQuery
+from backend.app.modules.rules.schemas.book_authoring import AuthorBookPage
+from backend.app.modules.rules.services import book_authoring
 
 
 router = APIRouter(prefix="/rules/books", tags=["rules-books"], route_class=RulesRoute)
 
-CatalogFilters = Annotated[HttpCatalogQuery, Query()]
-Create = contracts.RuleBookCreate
+CatalogFilters = Annotated[HttpBookCatalogQuery, Query()]
+AuthorFilters = Annotated[HttpAuthorBookQuery, Query()]
+Create = system_contracts.SystemBookCreate
 Update = contracts.RuleBookDraftUpdate
 Publish = contracts.RuleBookPublish
 EditorRead = contracts.RuleBookEditorRead
 DraftRead = contracts.RuleBookDraftRead
 PublishRead = contracts.RuleBookPublishRead
 VersionRead = contracts.RuleBookVersionRead
+AssignSystem = system_contracts.BookSystemAssign
+AssignmentRead = system_contracts.BookSystemAssignmentRead
+
+ASSIGN_SYSTEM_OPTIONS = {
+	"response_model": AssignmentRead,
+	"dependencies": [Depends(enforce_csrf)],
+	"operation_id": "assignRuleBookSystem",
+}
 
 @router.get("", response_model=CatalogPage, operation_id="listRuleBooks")
 async def list_books(filters: CatalogFilters, session: RulesSession, user: RulesUser) -> CatalogPage:
+	common = HttpCatalogQuery.model_validate(filters.model_dump(exclude={"system_id"}))
 	async with rules_operation(session):
-		return await catalog_service.list_books(session, user.id, filters)
+		return await catalog_service.list_books(session, user.id, common, system_id=filters.system_id)
 
 @router.post("", response_model=EditorRead, status_code=201, dependencies=[Depends(enforce_csrf)], operation_id="createRuleBook")
 async def create_book(data: Create, session: RulesSession, user: RulesEditor) -> EditorRead:
 	async with rules_operation(session, write=True):
-		return await book_service.create_book(session, user.id, data)
+		return await system_book_service.create_system_book(session, user.id, data)
+
+@router.get("/authoring", response_model=AuthorBookPage, operation_id="listAuthorRuleBooks")
+async def list_author_books(filters: AuthorFilters, session: RulesSession, user: RulesEditor) -> AuthorBookPage:
+	async with rules_operation(session):
+		return await book_authoring.list_author_books(session, user.id, filters)
+
+@router.put("/{book_id}/system", **ASSIGN_SYSTEM_OPTIONS)
+async def assign_system(book_id: UUID, data: AssignSystem, session: RulesSession, user: RulesEditor) -> AssignmentRead:
+	async with rules_operation(session, write=True):
+		return await system_book_service.assign_book_system(session, book_id, user.id, data)
+
+@router.get("/{book_id}/editor", response_model=EditorRead, operation_id="getRuleBookEditor")
+async def get_editor(book_id: UUID, session: RulesSession, user: RulesEditor) -> EditorRead:
+	async with rules_operation(session):
+		return await book_service.get_book_editor(session, book_id, user.id)
 
 @router.get("/{book_id}/draft", response_model=DraftRead, operation_id="getRuleBookDraft")
 async def get_draft(book_id: UUID, session: RulesSession, user: RulesEditor) -> DraftRead:

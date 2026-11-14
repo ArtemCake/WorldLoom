@@ -6,7 +6,7 @@ from __future__ import annotations
 import importlib
 import os
 import unittest
-from uuid import uuid4
+from uuid import UUID, uuid4
 import asyncio
 from backend.app.modules.rules import errors
 from backend.app.modules.rules.models.articles import RuleArticle, RuleArticleVersion
@@ -35,6 +35,8 @@ from backend.app.web.csrf import enforce_csrf
 from backend.app.modules.rules import errors
 from backend.app.modules.rules.schemas import system_books as system_contracts
 from backend.app.modules.rules.schemas.catalog import CatalogQuery
+from backend.app.modules.rules.schemas.book_authoring import AuthorBookQuery
+from backend.app.modules.rules.services import book_authoring
 from backend.app.modules.rules.services import catalog_service, system_books
 
 
@@ -82,6 +84,236 @@ def sqlstate(error: DBAPIError):
 
 
 class BookPostgreSQLTests(unittest.IsolatedAsyncioTestCase):
+
+    async def test_http_editor_opens_unpublished_own_book(self):
+        book_id = await self.create_book(self.book_content([]))
+
+        async with self.rules_http_client() as client:
+            response = await client.get(f"/rules/books/{book_id}/editor")
+
+        self.assertEqual(response.status_code, 200, response.text)
+        data = response.json()
+        self.assertEqual(data["book"]["id"], str(book_id))
+        self.assertEqual(data["draft"]["book_id"], str(book_id))
+        self.assertEqual(data["draft"]["revision"], 1)
+        self.assertEqual(data["draft"]["content_json"]["title"], "Книга правил")
+        self.assertEqual(response.headers["cache-control"], "no-store")
+
+    async def test_http_editor_does_not_expose_foreign_public_draft(self):
+        book_id = await self.create_book(self.book_content([]))
+        reader_id = await self.add_reader()
+
+        async with self.sessions.begin() as session:
+            await session.execute(update(BOOKS).where(BOOKS.c.id == book_id).values(visibility="public"))
+
+        async with self.rules_http_client(actor_id=reader_id) as client:
+            response = await client.get(f"/rules/books/{book_id}/editor")
+
+        self.assertEqual(response.status_code, 404, response.text)
+        self.assertNotIn("Книга правил", response.text)
+
+    async def test_http_author_catalog_returns_unpublished_book(self):
+        book_id = await self.create_book(self.book_content([]))
+
+        async with self.rules_http_client() as client:
+            response = await client.get("/rules/books/authoring", params={"limit": 1})
+
+        self.assertEqual(response.status_code, 200, response.text)
+        data = response.json()
+        self.assertEqual([item["id"] for item in data["items"]], [str(book_id)])
+        self.assertIsNone(data["items"][0]["version_id"])
+        self.assertIsNone(data["next_after"])
+
+    async def test_author_catalog_compares_content_instead_of_revision_numbers(self):
+        article_id = await self.create_article_version()
+        book_id = await self.create_book(self.book_content([article_id]))
+
+        async with self.sessions.begin() as session:
+            request = book_contracts.RuleBookPublish(expected_revision=1)
+            published = await book_service.publish_book(session, book_id, self.owner_id, request)
+
+        async with self.sessions.begin() as session:
+            page = await book_authoring.list_author_books(session, self.owner_id, AuthorBookQuery())
+
+        self.assertEqual(page.items[0].draft_revision, published.draft_revision)
+        self.assertFalse(page.items[0].has_unpublished_changes)
+        self.assertEqual(page.items[0].version_id, published.publication.id)
+
+        content = self.book_content([article_id])
+        content.title = "Новое название черновика"
+        request = book_contracts.RuleBookDraftUpdate(expected_revision=published.draft_revision, content=content)
+
+        async with self.sessions.begin() as session:
+            await book_service.update_book_draft(session, book_id, self.owner_id, request)
+
+        async with self.sessions.begin() as session:
+            query = AuthorBookQuery(q="Новое название")
+            changed = await book_authoring.list_author_books(session, self.owner_id, query)
+
+        self.assertEqual([item.id for item in changed.items], [book_id])
+        self.assertTrue(changed.items[0].has_unpublished_changes)
+        self.assertEqual(changed.items[0].title, "Новое название черновика")
+
+        async with self.sessions.begin() as session:
+            statement = select(VERSIONS.c.content_json).where(VERSIONS.c.id == published.publication.id)
+            snapshot = (await session.execute(statement)).scalar_one()
+
+        self.assertEqual(snapshot["title"], "Книга правил")
+
+    async def test_author_catalog_includes_unpublished_book(self):
+        book_id = await self.create_book(self.book_content([]))
+
+        async with self.sessions.begin() as session:
+            page = await book_authoring.list_author_books(session, self.owner_id, AuthorBookQuery())
+
+        self.assertEqual([item.id for item in page.items], [book_id])
+        item = page.items[0]
+        self.assertEqual(item.draft_revision, 1)
+        self.assertIsNone(item.version_id)
+        self.assertIsNone(item.version_number)
+        self.assertTrue(item.has_unpublished_changes)
+        self.assertNotIn("content_json", item.model_dump())
+
+    async def test_author_catalog_excludes_other_owners_even_for_public_books(self):
+        own_id = await self.create_book(self.book_content([]))
+        foreign_id = await self.create_book(self.book_content([]))
+        reader_id = await self.add_reader()
+
+        async with self.sessions.begin() as session:
+            await session.execute(
+                update(BOOKS)
+                .where(BOOKS.c.id == foreign_id)
+                .values(owner_id=reader_id, visibility="public")
+            )
+
+        async with self.sessions.begin() as session:
+            page = await book_authoring.list_author_books(session, self.owner_id, AuthorBookQuery())
+
+        self.assertEqual([item.id for item in page.items], [own_id])
+
+    async def test_author_catalog_keeps_deactivated_own_book(self):
+        book_id = await self.create_book(self.book_content([]))
+
+        async with self.sessions.begin() as session:
+            await session.execute(update(BOOKS).where(BOOKS.c.id == book_id).values(is_active=False))
+
+        async with self.sessions.begin() as session:
+            page = await book_authoring.list_author_books(session, self.owner_id, AuthorBookQuery())
+
+        self.assertEqual([item.id for item in page.items], [book_id])
+        self.assertFalse(page.items[0].is_active)
+
+    async def test_http_system_book_creation_persists_assignment(self):
+        system_id = await self.create_test_system()
+        content = self.book_content([])
+        payload = {
+            "system_id": str(system_id),
+            "slug": f"http-system-book-{uuid4().hex}",
+            "content": content.model_dump(mode="json"),
+        }
+
+        async with self.rules_http_client() as client:
+            response = await client.post("/rules/books", json=payload)
+
+            self.assertEqual(response.status_code, 201, response.text)
+            data = response.json()
+            draft = await client.get(f"/rules/books/{data['book']['id']}/draft")
+
+        self.assertEqual(data["book"]["system_id"], str(system_id))
+        self.assertEqual(draft.status_code, 200, draft.text)
+        self.assertEqual(draft.json()["revision"], 1)
+
+        saved_system = await self.read_book_system(UUID(data["book"]["id"]))
+        self.assertEqual(saved_system, system_id)
+
+    async def test_http_system_book_creation_rejects_missing_system(self):
+        before = await self.count_rows(BOOKS)
+        payload = {
+            "system_id": str(uuid4()),
+            "slug": f"http-missing-system-{uuid4().hex}",
+            "content": self.book_content([]).model_dump(mode="json"),
+        }
+
+        async with self.rules_http_client() as client:
+            response = await client.post("/rules/books", json=payload)
+
+        self.assertEqual(response.status_code, 404, response.text)
+        self.assertEqual(await self.count_rows(BOOKS), before)
+
+    async def test_http_book_creation_requires_system(self):
+        before = await self.count_rows(BOOKS)
+        payload = {
+            "slug": f"http-no-system-{uuid4().hex}",
+            "content": self.book_content([]).model_dump(mode="json"),
+        }
+
+        async with self.rules_http_client() as client:
+            response = await client.post("/rules/books", json=payload)
+
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(await self.count_rows(BOOKS), before)
+
+    async def test_http_assignment_is_visible_in_next_request(self):
+        book_id = await self.create_book(self.book_content([]))
+        system_id = await self.create_test_system()
+        payload = {"system_id": str(system_id), "expected_revision": 1}
+
+        async with self.rules_http_client() as client:
+            assigned = await client.put(f"/rules/books/{book_id}/system", json=payload)
+            draft = await client.get(f"/rules/books/{book_id}/draft")
+
+        self.assertEqual(assigned.status_code, 200, assigned.text)
+        self.assertEqual(assigned.json()["draft_revision"], 2)
+        self.assertEqual(draft.status_code, 200, draft.text)
+        self.assertEqual(draft.json()["revision"], 2)
+        self.assertEqual(await self.read_book_system(book_id), system_id)
+
+    async def test_http_assignment_stale_revision_leaves_book_unassigned(self):
+        book_id = await self.create_book(self.book_content([]))
+        system_id = await self.create_test_system()
+        payload = {"system_id": str(system_id), "expected_revision": 2}
+
+        async with self.rules_http_client() as client:
+            response = await client.put(f"/rules/books/{book_id}/system", json=payload)
+
+        self.assertEqual(response.status_code, 409, response.text)
+        self.assertIsNone(await self.read_book_system(book_id))
+
+    async def test_http_assignment_does_not_allow_editing_another_owners_book(self):
+        book_id = await self.create_book(self.book_content([]))
+        system_id = await self.create_test_system()
+        reader_id = await self.add_reader()
+        payload = {"system_id": str(system_id), "expected_revision": 1}
+
+        async with self.rules_http_client(actor_id=reader_id) as client:
+            response = await client.put(f"/rules/books/{book_id}/system", json=payload)
+
+        self.assertEqual(response.status_code, 404, response.text)
+        self.assertIsNone(await self.read_book_system(book_id))
+
+    async def test_http_catalog_filters_system_before_pagination(self):
+        article_id = await self.create_article_version()
+        content = self.book_content([article_id])
+        first_system = await self.create_test_system()
+        second_system = await self.create_test_system()
+        book_ids = []
+
+        for system_id in (first_system, second_system):
+            book_id = await self.create_book(content)
+            await self.publish_directly(book_id, content)
+            await self.assign_test_system(book_id, system_id)
+            book_ids.append(book_id)
+
+        async with self.rules_http_client() as client:
+            response = await client.get(
+                "/rules/books",
+                params={"system_id": str(first_system), "scope": "mine", "limit": 1},
+            )
+
+        self.assertEqual(response.status_code, 200, response.text)
+        data = response.json()
+        self.assertEqual([item["id"] for item in data["items"]], [str(book_ids[0])])
+        self.assertIsNone(data["next_after"])
 
     async def test_catalog_filters_books_by_system_before_pagination(self):
         article_id = await self.create_article_version()

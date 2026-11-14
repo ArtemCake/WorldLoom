@@ -1,9 +1,9 @@
-// frontend/src/js/features/rules/catalog-page.js
+// frontend/src/js/features/rules/catalog/catalog-page.js
 
-import { booksApi } from './../books-api.js';
+import { booksApi } from './../books/books-api.js';
 import { createRulesCatalogController } from './catalog-controller.js';
 import { createRulesCatalogView } from './catalog-view.js';
-import { createBookReader } from './../book-reader.js';
+import { createBookReader } from './../books/book-reader.js';
 
 const instances = new Map();
 let cleanupBound = false;
@@ -38,6 +38,7 @@ function formFilters(form) {
 
     return {
         kind: 'books',
+        system_id: String(values.get('system_id') || ''),
         scope: String(values.get('scope') || 'available'),
         q: String(values.get('q') || ''),
         edition_key: String(values.get('edition_key') || ''),
@@ -54,7 +55,7 @@ export function initRulesCatalog() {
 
     for (const root of document.querySelectorAll('[data-rules-catalog]')) {
         if (instances.has(root)) continue;
-
+        const system = root.querySelector('[data-rules-system]');
         const form = root.querySelector('[data-rules-filters]');
         const reload = root.querySelector('[data-rules-reload]');
         const more = root.querySelector('[data-rules-more]');
@@ -62,7 +63,7 @@ export function initRulesCatalog() {
         const back = root.querySelector('[data-rules-reader-back]');
         const readerRetry = root.querySelector('[data-rules-reader-retry]');
 
-        if (!form || !reload || !more || !retry || !back || !readerRetry) {
+        if (!form || !system || !reload || !more || !retry || !back || !readerRetry) {
             throw new Error('Разметка раздела правил неполна.');
         }
 
@@ -94,6 +95,7 @@ export function initRulesCatalog() {
             event.preventDefault();
             submitFilters();
         }, options);
+        system.addEventListener('change', submitFilters, options);
 
         reload.addEventListener('click', submitFilters, options);
         more.addEventListener('click', () => { void controller.next(); }, options);

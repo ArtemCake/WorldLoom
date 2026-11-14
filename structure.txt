@@ -214,13 +214,24 @@ WorldLoom/
 │   │   │   │   ├── schemas/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── articles.py
-│   │   │   │   │   └── books.py
+│   │   │   │   │   ├── books.py
+│   │   │   │   │   ├── catalog.py
+│   │   │   │   │   └── system_books.py
 │   │   │   │   ├── services/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── article_service.py
-│   │   │   │   │   └── book_service.py
+│   │   │   │   │   ├── book_reader_service.py
+│   │   │   │   │   ├── book_service.py
+│   │   │   │   │   ├── catalog_service.py
+│   │   │   │   │   ├── system_books.py
+│   │   │   │   │   └── system_catalog.py
 │   │   │   │   ├── __init__.py
-│   │   │   │   └── errors.py
+│   │   │   │   ├── api.py
+│   │   │   │   ├── articles_api.py
+│   │   │   │   ├── books_api.py
+│   │   │   │   ├── errors.py
+│   │   │   │   ├── http.py
+│   │   │   │   └── pages.py
 │   │   │   ├── users/
 │   │   │   │   ├── models/
 │   │   │   │   │   ├── __init__.py
@@ -269,7 +280,7 @@ WorldLoom/
 │   │   └── migrate.py
 │   ├── db_migrations/
 │   │   ├── versions/
-│   │   │   └── 1e297517fb5c_созданиепроекта.py
+│   │   │   └── 1372661e8ac9_созданиепроекта.py
 │   │   ├── __init__.py
 │   │   ├── env.py
 │   │   ├── README
@@ -430,6 +441,15 @@ WorldLoom/
 │   │   │   │   │   ├── map.js
 │   │   │   │   │   ├── maps.js
 │   │   │   │   │   └── stored-game-map.js
+│   │   │   │   ├── rules/
+│   │   │   │   │   ├── catalog/
+│   │   │   │   │   │   ├── catalog-controller.js
+│   │   │   │   │   │   ├── catalog-page.js
+│   │   │   │   │   │   └── catalog-view.js
+│   │   │   │   │   ├── articles-api.js
+│   │   │   │   │   ├── book-reader.js
+│   │   │   │   │   ├── books-api.js
+│   │   │   │   │   └── rules-http.js
 │   │   │   │   └── users/
 │   │   │   │       ├── avatar-preview.js
 │   │   │   │       ├── delete-account.js
@@ -485,6 +505,7 @@ WorldLoom/
 │   │       │   ├── _legal.scss
 │   │       │   ├── _lobby.scss
 │   │       │   ├── _profile.scss
+│   │       │   ├── _rules-catalog.scss
 │   │       │   └── _session-dice.scss
 │   │       ├── style.min.css
 │   │       └── style.scss
@@ -532,6 +553,8 @@ WorldLoom/
 │   │   │   ├── map_sandbox.html
 │   │   │   ├── map_view.html
 │   │   │   └── maps.html
+│   │   ├── rules/
+│   │   │   └── catalog.html
 │   │   ├── shared/
 │   │   │   └── menu.html
 │   │   ├── users/
@@ -552,6 +575,7 @@ WorldLoom/
 │   ├── worldloom.log.2026-11-08
 │   ├── worldloom.log.2026-11-09
 │   ├── worldloom.log.2026-11-10
+│   ├── worldloom.log.2026-11-12
 │   └── worldloom_error.log
 ├── staging/
 ├── tests/
@@ -571,12 +595,17 @@ WorldLoom/
 │   │   │   ├── rules-book-publications.test.mjs
 │   │   │   ├── rules-book-short-label.test.mjs
 │   │   │   └── rules-book-state.test.mjs
-│   │   └── editor/
-│   │       ├── dnd5e-2014-resources.test.mjs
-│   │       ├── engine-formula-text.test.mjs
-│   │       ├── engine-presets.test.mjs
-│   │       ├── resource-contract.test.mjs
-│   │       └── rule-sections.test.mjs
+│   │   ├── editor/
+│   │   │   ├── dnd5e-2014-resources.test.mjs
+│   │   │   ├── engine-formula-text.test.mjs
+│   │   │   ├── engine-presets.test.mjs
+│   │   │   ├── resource-contract.test.mjs
+│   │   │   └── rule-sections.test.mjs
+│   │   └── rules/
+│   │       ├── rules-api.test.mjs
+│   │       ├── rules-book-reader.test.mjs
+│   │       ├── rules-catalog.test.mjs
+│   │       └── rules-system-books-api.test.mjs
 │   ├── python/
 │   │   ├── game_systems/
 │   │   │   ├── __init__.py
@@ -597,11 +626,15 @@ WorldLoom/
 │   │   │   ├── test_article_service.py
 │   │   │   ├── test_book_contracts.py
 │   │   │   ├── test_book_models.py
-│   │   │   └── test_book_postgresql.py
+│   │   │   ├── test_book_postgresql.py
+│   │   │   ├── test_rules_http.py
+│   │   │   ├── test_rules_pages.py
+│   │   │   └── test_system_catalog.py
 │   │   ├── web/
 │   │   │   ├── __init__.py
 │   │   │   └── test_web_assets.py
 │   │   └── __init__.py
+│   ├── __init__.py
 │   └── Test_Commands.md
 ├── tools/
 │   ├── commands_tools.md

@@ -6,7 +6,7 @@ import test from 'node:test';
 import { createSessionClient } from '../../../frontend/src/js/shared/http/session-client.js';
 import { catalogQuery, createRulesRequester, RulesRequestError } from '../../../frontend/src/js/features/rules/rules-http.js';
 import { createArticlesApi } from '../../../frontend/src/js/features/rules/articles-api.js';
-import { createBooksApi } from '../../../frontend/src/js/features/rules/books-api.js';
+import { createBooksApi } from '../../../frontend/src/js/features/rules/books/books-api.js';
 
 const OBJECT_ID = '11111111-1111-4111-8111-111111111111';
 const VERSION_ID = '22222222-2222-4222-8222-222222222222';

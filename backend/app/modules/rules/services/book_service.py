@@ -16,15 +16,12 @@ actor_id поступает из проверенной аутентификац
 """
 
 from __future__ import annotations
-
 from collections.abc import Mapping
 from typing import Any, TypeVar
 from uuid import UUID
-
 from sqlalchemy import func, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.app.modules.rules import errors
 from backend.app.modules.rules.models.articles import RuleArticle, RuleArticleVersion
 from backend.app.modules.rules.models.books import RuleBook, RuleBookDraft, RuleBookVersion
@@ -66,7 +63,6 @@ def _prepare(session: AsyncSession, actor_id: UUID, *identifiers: UUID) -> None:
 	if not session.in_transaction():
 		raise RuntimeError("Операция книги требует транзакцию вызывающего слоя")
 
-
 def _request(model: type[ReadModel], value: ReadModel) -> ReadModel:
 	if not isinstance(value, model):
 		raise errors.InvalidRuleBook("Передан неподдерживаемый контракт операции")
@@ -76,18 +72,15 @@ def _request(model: type[ReadModel], value: ReadModel) -> ReadModel:
 	except ValueError as exc:
 		raise errors.InvalidRuleBook("Данные книги не прошли проверку") from exc
 
-
 def _read(model: type[ReadModel], row: Mapping[str, Any]) -> ReadModel:
 	try:
 		return model.model_validate(dict(row))
 	except ValueError as exc:
 		raise errors.RuleBookStorageError("Сохранённые данные книги имеют неподдерживаемый формат") from exc
 
-
 def _check_revision(draft: Mapping[str, Any], expected_revision: int) -> None:
 	if draft["revision"] != expected_revision:
 		raise errors.RuleBookConflict("Черновик книги уже изменён. Получите актуальную ревизию")
-
 
 async def _book(session: AsyncSession, book_id: UUID, actor_id: UUID, *, owner_only: bool, write: bool):
 	statement = (
@@ -109,7 +102,6 @@ async def _book(session: AsyncSession, book_id: UUID, actor_id: UUID, *, owner_o
 
 	return row
 
-
 async def _draft(session: AsyncSession, book_id: UUID, *, write: bool):
 	statement = (
 		select(_DRAFTS)
@@ -123,7 +115,6 @@ async def _draft(session: AsyncSession, book_id: UUID, *, write: bool):
 		raise errors.RuleBookStorageError("У книги отсутствует обязательный черновик")
 
 	return row
-
 
 async def _dependencies(session: AsyncSession, content: BookContent, actor_id: UUID, *, public_only: bool) -> None:
 	"""Проверить все публикации и удержать карточки статей до конца транзакции."""
@@ -158,7 +149,6 @@ async def _dependencies(session: AsyncSession, content: BookContent, actor_id: U
 		if not row["is_active"] or not allowed:
 			raise errors.RuleBookDependencyUnavailable("Некоторые публикации статей отсутствуют или недоступны")
 
-
 async def _save_draft(session: AsyncSession, draft: Mapping[str, Any], payload: dict | None = None) -> DraftRead:
 	values = {
 		"revision": _DRAFTS.c.revision + 1,
@@ -186,11 +176,9 @@ async def _save_draft(session: AsyncSession, draft: Mapping[str, Any], payload: 
 
 	return _read(DraftRead, row)
 
-
 async def _touch_book(session: AsyncSession, book_id: UUID) -> None:
 	statement = update(_BOOKS).where(_BOOKS.c.id == book_id).values(updated_at=func.now())
 	await session.execute(statement)
-
 
 async def create_book(session: AsyncSession, actor_id: UUID, data: BookCreate) -> EditorRead:
 	"""Создать карточку и черновик; пустое оглавление разрешено."""
@@ -235,7 +223,6 @@ async def create_book(session: AsyncSession, actor_id: UUID, data: BookCreate) -
 		draft=_read(DraftRead, draft),
 	)
 
-
 async def get_book_draft(session: AsyncSession, book_id: UUID, actor_id: UUID) -> DraftRead:
 	"""Владелец может открыть черновик и исправить недоступные ссылки."""
 	_prepare(session, actor_id, book_id)
@@ -245,6 +232,17 @@ async def get_book_draft(session: AsyncSession, book_id: UUID, actor_id: UUID) -
 
 	return _read(DraftRead, draft)
 
+async def get_book_editor(session: AsyncSession, book_id: UUID, actor_id: UUID) -> EditorRead:
+	"""Открыть карточку и черновик только собственной книги."""
+	_prepare(session, actor_id, book_id)
+
+	book = await _book(session, book_id, actor_id, owner_only=True, write=False)
+	draft = await _draft(session, book_id, write=False)
+
+	return EditorRead(
+		book=_read(contracts.RuleBookRead, book),
+		draft=_read(DraftRead, draft),
+	)
 
 async def update_book_draft(session: AsyncSession, book_id: UUID, actor_id: UUID, data: BookUpdate) -> DraftRead:
 	"""Сохранить полное содержание с проверкой структуры, ссылок и ревизии."""
@@ -263,7 +261,6 @@ async def update_book_draft(session: AsyncSession, book_id: UUID, actor_id: UUID
 	await _touch_book(session, book_id)
 
 	return saved
-
 
 async def publish_book(session: AsyncSession, book_id: UUID, actor_id: UUID, data: BookPublish) -> PublishRead:
 	"""Выпустить снимок сохранённого черновика и увеличить его ревизию."""
@@ -316,7 +313,6 @@ async def publish_book(session: AsyncSession, book_id: UUID, actor_id: UUID, dat
 	await _touch_book(session, book_id)
 
 	return PublishRead(publication=publication, draft_revision=saved.revision)
-
 
 async def get_book_version(session: AsyncSession, book_id: UUID, version_id: UUID, actor_id: UUID) -> VersionRead:
 	"""Прочитать снимок без обхода текущих прав на исходные статьи."""

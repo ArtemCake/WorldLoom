@@ -2,8 +2,8 @@
 
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { createRulesCatalogController, parseCatalogPage } from '../../../frontend/src/js/features/rules/catalog/catalog-controller.js';
 
-import { createRulesCatalogController, parseCatalogPage } from '../../../frontend/src/js/features/rules/catalog-controller.js';
 
 const FIRST = '11111111-1111-4111-8111-111111111111';
 const SECOND = '22222222-2222-4222-8222-222222222222';
@@ -223,8 +223,119 @@ test('Полученное состояние нельзя использова�
 
     const state = controller.getState();
     state.items[0].title = 'Подмена';
-    state.filters.kind = 'books';
+    state.filters.kind = 'invalid';
+    state.filters.system_id = FIRST;
 
     assert.equal(controller.getState().items[0].title, 'Проверки');
-    assert.equal(controller.getState().filters.kind, 'articles');
+    assert.equal(controller.getState().filters.kind, 'books');
+    assert.equal(controller.getState().filters.system_id, '');
 });
+
+test('Выбранная система передаётся при поиске и продолжении каталога', async () => {
+    const calls = [];
+    const responses = [page([card()], FIRST), page([card(SECOND)])];
+    const controller = createRulesCatalogController({
+        loadPage: async (_kind, filters) => {
+            calls.push(filters);
+            return responses.shift();
+        }
+    });
+
+    await controller.reload({ system_id: FIRST, q: 'Бой', scope: 'mine' });
+    await controller.next();
+
+    assert.equal(calls[0].system_id, FIRST);
+    assert.equal(calls[0].q, 'Бой');
+    assert.equal(calls[0].scope, 'mine');
+    assert.equal(calls[1].system_id, FIRST);
+    assert.equal(calls[1].q, 'Бой');
+    assert.equal(calls[1].after, FIRST);
+    assert.equal(controller.getState().filters.system_id, FIRST);
+});
+
+test('Смена системы сбрасывает курсор и карточки предыдущей системы', async () => {
+    const calls = [];
+    const controller = createRulesCatalogController({
+        loadPage: async (_kind, filters) => {
+            calls.push(filters);
+            return filters.system_id === FIRST ? page([card()], FIRST) : page([card(SECOND)]);
+        }
+    });
+
+    await controller.reload({ system_id: FIRST });
+    await controller.reload({ system_id: SECOND });
+
+    assert.equal(calls[1].system_id, SECOND);
+    assert.equal(Object.hasOwn(calls[1], 'after'), false);
+    assert.deepEqual(controller.getState().items.map((item) => item.id), [SECOND]);
+    assert.equal(controller.getState().nextAfter, null);
+});
+
+test('Новый поиск сохраняет ранее выбранную систему', async () => {
+    const calls = [];
+    const controller = createRulesCatalogController({
+        loadPage: async (_kind, filters) => {
+            calls.push(filters);
+            return page([]);
+        }
+    });
+
+    await controller.reload({ system_id: FIRST });
+    await controller.reload({ q: 'Снаряжение' });
+
+    assert.equal(calls[1].system_id, FIRST);
+    assert.equal(calls[1].q, 'Снаряжение');
+});
+
+test('Все системы снимает фильтр принадлежности', async () => {
+    const calls = [];
+    const controller = createRulesCatalogController({
+        loadPage: async (_kind, filters) => {
+            calls.push(filters);
+            return page([]);
+        }
+    });
+
+    await controller.reload({ system_id: FIRST });
+    await controller.reload({ system_id: '' });
+
+    assert.equal(Object.hasOwn(calls[1], 'system_id'), false);
+    assert.equal(controller.getState().filters.system_id, '');
+});
+
+test('Запоздавший ответ предыдущей системы не подменяет новый список', async () => {
+    const old = deferred();
+    let previousSignal;
+    const controller = createRulesCatalogController({
+        loadPage: async (_kind, filters, options) => {
+            if (filters.system_id === FIRST) {
+                previousSignal = options.signal;
+                return old.promise;
+            }
+
+            return page([card(SECOND, 'Книга выбранной системы')]);
+        }
+    });
+
+    const pending = controller.reload({ system_id: FIRST });
+    await controller.reload({ system_id: SECOND });
+
+    assert.equal(previousSignal.aborted, true);
+
+    old.resolve(page([card(FIRST, 'Книга предыдущей системы')]));
+    await pending;
+
+    assert.equal(controller.getState().filters.system_id, SECOND);
+    assert.equal(controller.getState().items[0].id, SECOND);
+});
+
+test('Некорректная система не отправляется в API', () => {
+    const controller = createRulesCatalogController({
+        loadPage: async () => assert.fail('Запрос не должен отправляться')
+    });
+
+    for (const systemId of [null, 42, {}, '../system', 'invalid']) {
+        assert.throws(() => controller.reload({ system_id: systemId }), TypeError);
+    }
+});
+

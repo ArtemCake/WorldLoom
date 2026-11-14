@@ -1,6 +1,6 @@
-// frontend/src/js/features/rules/book-reader.js
+// frontend/src/js/features/rules/books/book-reader.js
 
-import { ruleId } from './rules-http.js';
+import { ruleId } from './../rules-http.js';
 
 const KEY_PATTERN = /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/u;
 

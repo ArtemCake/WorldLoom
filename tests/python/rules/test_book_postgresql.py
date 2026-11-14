@@ -9,7 +9,8 @@ from uuid import UUID, uuid4
 import asyncio
 from backend.app.modules.rules import errors
 from backend.app.modules.rules.models.articles import RuleArticle, RuleArticleVersion
-from backend.app.modules.rules.services import book_service
+from backend.app.modules.rules.services.books import book_service, book_working_publication, book_reader_service, \
+    book_authoring
 from sqlalchemy import delete, func, insert, select, text, update
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import DBAPIError
@@ -17,10 +18,10 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 from backend.app.modules.rules.models.books import RuleBook, RuleBookDraft, RuleBookVersion, RuleBookVersionArticle
 from backend.app.modules.rules.schemas import articles as article_contracts
-from backend.app.modules.rules.schemas import books as book_contracts
+from backend.app.modules.rules.schemas.books import books as book_contracts
 from backend.app.modules.rules.services import article_service
 from backend.app.modules.rules.schemas.catalog import CatalogQuery
-from backend.app.modules.rules.services import book_reader_service, catalog_service
+from backend.app.modules.rules.services import catalog_service
 from types import SimpleNamespace
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
@@ -30,16 +31,15 @@ from backend.app.modules.auth.dependencies import get_current_user
 from backend.app.modules.rules.api import router as rules_router
 from backend.app.web.csrf import enforce_csrf
 from backend.app.modules.rules.schemas import system_books as system_contracts
-from backend.app.modules.rules.schemas.book_authoring import AuthorBookQuery
-from backend.app.modules.rules.services import book_authoring
+from backend.app.modules.rules.schemas.books.book_authoring import AuthorBookQuery
 from backend.app.modules.rules.services import system_books
 from tests.python.rules.pg_support import (USER_INSERT_SQL, PostgresTestCase, apply_migrations,
     require_connection, system_values, user_values)
-from backend.app.modules.rules.schemas.book_draft_content import BookDraftContent
-from backend.app.modules.rules.schemas.book_working_draft import BookWorkingDraftUpdate
+from backend.app.modules.rules.schemas.books.book_draft_content import BookDraftContent
+from backend.app.modules.rules.schemas.books.book_working_draft import BookWorkingDraftUpdate
 from unittest.mock import patch
 from backend.app.modules.rules.models.books import RuleBookText
-from backend.app.modules.rules.services import book_working_publication
+from backend.app.modules.rules.services.books import book_working_editor
 
 
 BOOKS = RuleBook.__table__
@@ -73,6 +73,122 @@ def sqlstate(error: DBAPIError):
 
 
 class BookPostgreSQLTests(PostgresTestCase):
+
+    async def test_author_catalog_matches_materialized_working_publication(self):
+        book_id = await self.create_working_book()
+        published = await self.publish_working_book(book_id)
+
+        async with self.sessions.begin() as session:
+            page = await book_authoring.list_author_books(session, self.owner_id, AuthorBookQuery())
+
+        item = next(item for item in page.items if item.id == book_id)
+
+        self.assertFalse(item.has_unpublished_changes)
+        self.assertEqual(item.version_id, published.publication.id)
+        self.assertEqual(item.draft_revision, published.draft_revision)
+        self.assertNotIn("draft_content", item.model_dump())
+        self.assertNotIn("publication_content", item.model_dump())
+
+    async def test_working_text_change_and_revert_update_author_catalog(self):
+        book_id = await self.create_working_book()
+        await self.publish_working_book(book_id)
+
+        async with self.sessions.begin() as session:
+            original = await book_service.get_working_draft(session, book_id, self.owner_id)
+
+        payload = original.content_json.model_dump(mode="python")
+        payload["toc"][0]["content"]["body"] = "Неопубликованная редакция."
+        changed = BookDraftContent.model_validate(payload)
+        request = BookWorkingDraftUpdate(expected_revision=original.revision, content=changed)
+
+        async with self.sessions.begin() as session:
+            saved = await book_service.update_working_draft(session, book_id, self.owner_id, request)
+
+        async with self.sessions.begin() as session:
+            page = await book_authoring.list_author_books(session, self.owner_id, AuthorBookQuery())
+
+        self.assertTrue(next(item for item in page.items if item.id == book_id).has_unpublished_changes)
+
+        reverted = BookWorkingDraftUpdate(expected_revision=saved.revision, content=original.content_json)
+
+        async with self.sessions.begin() as session:
+            await book_service.update_working_draft(session, book_id, self.owner_id, reverted)
+
+        async with self.sessions.begin() as session:
+            page = await book_authoring.list_author_books(session, self.owner_id, AuthorBookQuery())
+
+        self.assertFalse(next(item for item in page.items if item.id == book_id).has_unpublished_changes)
+
+    async def test_working_editor_returns_matching_draft_and_publication_without_writes(self):
+        book_id = await self.create_working_book()
+        published = await self.publish_working_book(book_id)
+
+        async with self.sessions() as session:
+            statement = select(DRAFTS).where(DRAFTS.c.book_id == book_id)
+            before = dict((await session.execute(statement)).mappings().one())
+
+        async with self.sessions.begin() as session:
+            editor = await book_working_editor.get_working_editor(session, book_id, self.owner_id)
+
+        async with self.sessions() as session:
+            statement = select(DRAFTS).where(DRAFTS.c.book_id == book_id)
+            after = dict((await session.execute(statement)).mappings().one())
+
+        self.assertEqual(after, before)
+        self.assertEqual(editor.book.id, book_id)
+        self.assertEqual(editor.draft.revision, published.draft_revision)
+        self.assertEqual(editor.latest_publication.id, published.publication.id)
+        self.assertFalse(editor.has_unpublished_changes)
+        self.assertEqual(editor.draft.content_json.toc[0].kind, "text")
+        self.assertEqual(editor.latest_publication.content_json.toc[0].kind, "article")
+
+    async def test_working_editor_opens_unpublished_book(self):
+        book_id = await self.create_working_book()
+
+        async with self.sessions.begin() as session:
+            editor = await book_working_editor.get_working_editor(session, book_id, self.owner_id)
+
+        self.assertIsNone(editor.latest_publication)
+        self.assertTrue(editor.has_unpublished_changes)
+        self.assertEqual(editor.draft.revision, 2)
+
+    async def test_working_editor_opens_book_with_unavailable_external_material(self):
+        external_id = await self.create_article_version()
+        book_id = await self.create_book(self.book_content([]))
+        content = self.working_content([external_id])
+        request = BookWorkingDraftUpdate(expected_revision=1, content=content)
+
+        async with self.sessions.begin() as session:
+            await book_service.update_working_draft(session, book_id, self.owner_id, request)
+
+        await self.publish_working_book(book_id)
+        await self.change_article_access(external_id, active=False)
+
+        async with self.sessions.begin() as session:
+            editor = await book_working_editor.get_working_editor(session, book_id, self.owner_id)
+
+        self.assertEqual(editor.book.id, book_id)
+        self.assertFalse(editor.has_unpublished_changes)
+
+    async def test_http_working_editor_returns_state_only_to_owner(self):
+        book_id = await self.create_working_book(visibility="public")
+        published = await self.publish_working_book(book_id)
+        reader_id = await self.add_reader()
+        path = f"/rules/books/{book_id}/working-editor"
+
+        async with self.rules_http_client() as client:
+            own = await client.get(path)
+
+        self.assertEqual(own.status_code, 200, own.text)
+        self.assertEqual(own.headers["cache-control"], "no-store")
+        self.assertEqual(own.json()["draft"]["content_json"]["schema_version"], 2)
+        self.assertEqual(own.json()["latest_publication"]["id"], str(published.publication.id))
+        self.assertFalse(own.json()["has_unpublished_changes"])
+
+        async with self.rules_http_client(actor_id=reader_id) as client:
+            foreign = await client.get(path)
+
+        self.assertEqual(foreign.status_code, 404, foreign.text)
 
     async def create_working_book(self, *, visibility="private"):
         book_id = await self.create_book(self.book_content([]))

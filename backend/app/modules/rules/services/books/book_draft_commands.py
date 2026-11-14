@@ -1,11 +1,10 @@
-# backend/app/modules/rules/services/book_draft_commands.py
+# backend/app/modules/rules/services/books/book_draft_commands.py
 
 """Преобразования общего книжного черновика без записи в БД."""
 
 from copy import deepcopy
-from backend.app.modules.rules.schemas import book_draft_content as contracts
-from backend.app.modules.rules.schemas.books import BookContent
-
+from backend.app.modules.rules.schemas.books import book_draft_content as contracts
+from backend.app.modules.rules.schemas.books.books import BookContent
 
 _COMMANDS = (contracts.AddBookText, contracts.UpdateBookText, contracts.RemoveBookText)
 

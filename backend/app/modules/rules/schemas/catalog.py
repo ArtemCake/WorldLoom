@@ -8,7 +8,7 @@ from typing import Literal
 from uuid import UUID
 from pydantic import Field, field_validator
 from backend.app.modules.rules.schemas.articles import Revision, RuleArticleVersionRead, RulesContentModel, Title
-from backend.app.modules.rules.schemas.books import RuleBookVersionRead
+from backend.app.modules.rules.schemas.books.books import RuleBookVersionRead
 
 
 class CatalogQuery(RulesContentModel):

@@ -1,4 +1,4 @@
-# backend/app/modules/rules/schemas/books.py
+# backend/app/modules/rules/schemas/books/books.py
 
 """Контракты книг правил и их оглавлений."""
 

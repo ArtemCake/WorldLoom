@@ -1,10 +1,10 @@
-# backend/app/modules/rules/schemas/book_draft_content.py
+# backend/app/modules/rules/schemas/books/book_draft_content.py
 
 """Общий книжный черновик с собственными текстами и закреплёнными материалами."""
 
 from typing import Annotated, Literal
 from pydantic import Field, field_validator
-from backend.app.modules.rules.schemas import books
+from backend.app.modules.rules.schemas.books import books
 from backend.app.modules.rules.schemas.articles import ArticleContent, RulesContentModel, Slug, Title
 
 

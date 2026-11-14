@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 
-from backend.app.modules.rules.schemas import books as contracts
+from backend.app.modules.rules.schemas.books import books as contracts
 
 
 class BookContractTests(unittest.TestCase):

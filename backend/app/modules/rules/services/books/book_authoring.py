@@ -1,4 +1,4 @@
-# backend/app/modules/rules/services/book_authoring.py
+# backend/app/modules/rules/services/books/book_authoring.py
 
 """Список собственных книг, включая неопубликованные черновики.
 
@@ -12,7 +12,9 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.modules.rules import errors
 from backend.app.modules.rules.models.books import RuleBook, RuleBookDraft, RuleBookVersion
-from backend.app.modules.rules.schemas import book_authoring as contracts
+from backend.app.modules.rules.schemas.books import book_authoring as contracts
+from backend.app.modules.rules.schemas.books.books import BookContent
+from backend.app.modules.rules.services.books.book_publication_state import book_content_changed, load_owned_snapshots
 
 
 _BOOKS = RuleBook.__table__
@@ -76,7 +78,8 @@ def _statement(actor_id: UUID, query: contracts.AuthorBookQuery):
 			_DRAFTS.c.updated_at.label("draft_updated_at"),
 			_VERSIONS.c.id.label("version_id"),
 			_VERSIONS.c.version_number,
-			func.coalesce(content != _VERSIONS.c.content_json, True).label("has_unpublished_changes"),
+			content.label("draft_content"),
+			_VERSIONS.c.content_json.label("publication_content"),
 		)
 		.select_from(source)
 		.where(_BOOKS.c.owner_id == actor_id)
@@ -107,11 +110,35 @@ async def list_author_books(session: AsyncSession, actor_id: UUID, query: contra
 	query = _prepare(session, actor_id, query)
 	result = await session.execute(_statement(actor_id, query))
 	rows = result.mappings().all()
+	visible = [dict(row) for row in rows[:query.limit]]
 
 	try:
-		items = [contracts.AuthorBookItem.model_validate(dict(row)) for row in rows[:query.limit]]
-	except ValueError as exc:
+		publications = {}
+
+		for row in visible:
+			payload = row["publication_content"]
+
+			if payload is not None:
+				publications[row["id"]] = BookContent.model_validate(payload)
+
+		snapshots = await load_owned_snapshots(session, list(publications.values()))
+		items = []
+
+		for row in visible:
+			book_id = row["id"]
+			draft = row.pop("draft_content")
+			row.pop("publication_content")
+
+			row["has_unpublished_changes"] = book_content_changed(
+				book_id,
+				draft,
+				publications.get(book_id),
+				snapshots,
+			)
+			items.append(contracts.AuthorBookItem.model_validate(row))
+	except (KeyError, TypeError, ValueError) as exc:
 		raise errors.RuleBookStorageError("Сохранённые данные авторского каталога имеют неподдерживаемый формат") from exc
 
 	next_after = items[-1].id if len(rows) > query.limit else None
+
 	return contracts.AuthorBookPage(items=items, next_after=next_after)

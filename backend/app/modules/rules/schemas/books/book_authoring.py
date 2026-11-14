@@ -1,4 +1,4 @@
-# backend/app/modules/rules/schemas/book_authoring.py
+# backend/app/modules/rules/schemas/books/book_authoring.py
 
 """Контракты списка собственных книг для авторского сценария."""
 

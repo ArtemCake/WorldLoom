@@ -7,10 +7,10 @@
 """
 
 from collections.abc import Mapping
-from backend.app.modules.rules.schemas import book_draft_content as contracts
 from backend.app.modules.rules.schemas.articles import ArticleContent, RuleArticleVersionRead
-from backend.app.modules.rules.schemas.books import BookContent
-from backend.app.modules.rules.services.book_draft_commands import read_book_draft_content
+from backend.app.modules.rules.schemas.books import book_draft_content as contracts
+from backend.app.modules.rules.schemas.books.books import BookContent
+from backend.app.modules.rules.services.books.book_draft_commands import read_book_draft_content
 
 
 DraftContent = contracts.BookDraftContent

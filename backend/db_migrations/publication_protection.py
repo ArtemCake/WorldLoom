@@ -65,9 +65,13 @@ END;
 
 # Зависимость обязана ссылаться на статью, реально перечисленную в оглавлении
 # публикуемой версии книги. Иначе сервис мог бы приписать лишние источники.
+# Внутренний текст книги (``rule_book_texts``) нельзя переиспользовать в другой
+# книге: он не является самостоятельной публикацией.
 GUARD_DEPENDENCY_FUNCTION_SQL = _function_sql(
     "worldloom_guard_book_version_article",
     """
+DECLARE
+    owner_book_id uuid;
 BEGIN
     IF NOT EXISTS (
         SELECT 1
@@ -83,6 +87,23 @@ BEGIN
     ) THEN
         RAISE EXCEPTION
             'Book version depends on an article that its contents do not reference'
+            USING ERRCODE = '23514';
+    END IF;
+
+    SELECT version.book_id INTO owner_book_id
+    FROM rule_book_versions AS version
+    WHERE version.id = NEW.book_version_id;
+
+    IF EXISTS (
+        SELECT 1
+        FROM rule_book_texts AS binding
+        JOIN rule_article_versions AS publication
+          ON publication.article_id = binding.article_id
+        WHERE publication.id = NEW.article_version_id
+          AND binding.book_id IS DISTINCT FROM owner_book_id
+    ) THEN
+        RAISE EXCEPTION
+            'Internal book material cannot be published inside another book'
             USING ERRCODE = '23514';
     END IF;
 
@@ -149,10 +170,13 @@ EXECUTE FUNCTION worldloom_guard_publication_truncate();
 
 
 # Порядок важен: функции создаются раньше триггеров, которые на них ссылаются.
+# Привязка внутреннего текста к книге фиксируется при публикации: её нельзя ни
+# переписать, ни удалить, иначе опубликованная версия потеряет источник.
 PROTECTED_TABLES = (
     ("rule_article_versions", "rule_article_versions_immutable", "rule_article_versions_no_truncate"),
     ("rule_book_versions", "rule_book_versions_immutable", "rule_book_versions_no_truncate"),
     ("rule_book_version_articles", "rule_book_version_articles_immutable", "rule_book_version_articles_no_truncate"),
+    ("rule_book_texts", "rule_book_texts_immutable", "rule_book_texts_no_truncate"),
 )
 
 CREATE_FUNCTIONS_SQL = (

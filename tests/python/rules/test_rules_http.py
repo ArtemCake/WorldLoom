@@ -18,10 +18,10 @@ from backend.app.modules.rules import errors
 from backend.app.modules.rules.api import router
 from backend.app.modules.rules.http import rules_operation
 from backend.app.modules.rules.schemas.catalog import CatalogPage
-from backend.app.modules.rules.services import article_service, book_reader_service, book_service, catalog_service
+from backend.app.modules.rules.services import article_service, catalog_service
+from backend.app.modules.rules.services.books import book_service, book_reader_service, book_authoring
 from backend.app.web.csrf import enforce_csrf
-from backend.app.modules.rules.schemas.book_authoring import AuthorBookPage
-from backend.app.modules.rules.services import book_authoring
+from backend.app.modules.rules.schemas.books.book_authoring import AuthorBookPage
 
 
 class FakeSession:

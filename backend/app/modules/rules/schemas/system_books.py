@@ -4,7 +4,7 @@
 
 from uuid import UUID
 from backend.app.modules.rules.schemas.articles import Revision, RulesContentModel
-from backend.app.modules.rules.schemas.books import RuleBookCreate
+from backend.app.modules.rules.schemas.books.books import RuleBookCreate
 
 
 class SystemBookCreate(RuleBookCreate):

@@ -1,4 +1,4 @@
-# backend/app/modules/rules/services/book_service.py
+# backend/app/modules/rules/services/books/book_service.py
 
 """Операции с книгами правил и проверка закреплённых статей.
 
@@ -24,11 +24,10 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.modules.rules import errors
 from backend.app.modules.rules.models.articles import RuleArticle, RuleArticleVersion
-from backend.app.modules.rules.models.books import RuleBook, RuleBookDraft, RuleBookVersion
-from backend.app.modules.rules.schemas import books as contracts
+from backend.app.modules.rules.schemas.books import books as contracts
 from backend.app.modules.rules.schemas.articles import RulesContentModel
-from backend.app.modules.rules.schemas.book_working_draft import BookWorkingDraftRead, BookWorkingDraftUpdate
-from backend.app.modules.rules.services.book_draft_commands import read_book_draft_content
+from backend.app.modules.rules.schemas.books.book_working_draft import BookWorkingDraftRead, BookWorkingDraftUpdate
+from backend.app.modules.rules.services.books.book_draft_commands import read_book_draft_content
 from backend.app.modules.rules.models.books import RuleBook, RuleBookDraft, RuleBookText, RuleBookVersion
 
 

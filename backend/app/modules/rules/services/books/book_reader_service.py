@@ -1,4 +1,4 @@
-# backend/app/modules/rules/services/book_reader_service.py
+# backend/app/modules/rules/services/books/book_reader_service.py
 
 """Чтение опубликованной книги с закреплёнными снимками статей.
 
@@ -15,10 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.modules.rules import errors
 from backend.app.modules.rules.models.articles import RuleArticleVersion
 from backend.app.modules.rules.schemas.articles import RuleArticleVersionRead
-from backend.app.modules.rules.schemas.books import BookArticleNode, RuleBookVersionRead
+from backend.app.modules.rules.schemas.books.books import BookArticleNode, RuleBookVersionRead
 from backend.app.modules.rules.schemas.catalog import BookReadingNode, BookReadingRead
-from backend.app.modules.rules.services import book_service
-
+from backend.app.modules.rules.services.books import book_service
 
 _VERSIONS = RuleArticleVersion.__table__
 

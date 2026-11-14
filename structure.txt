@@ -212,23 +212,29 @@ WorldLoom/
 │   │   │   │   │   ├── articles.py
 │   │   │   │   │   └── books.py
 │   │   │   │   ├── schemas/
+│   │   │   │   │   ├── books/
+│   │   │   │   │   │   ├── __init__.py
+│   │   │   │   │   │   ├── book_authoring.py
+│   │   │   │   │   │   ├── book_draft_content.py
+│   │   │   │   │   │   ├── book_working_draft.py
+│   │   │   │   │   │   └── books.py
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── articles.py
-│   │   │   │   │   ├── book_authoring.py
-│   │   │   │   │   ├── book_draft_content.py
-│   │   │   │   │   ├── book_working_draft.py
-│   │   │   │   │   ├── books.py
 │   │   │   │   │   ├── catalog.py
 │   │   │   │   │   └── system_books.py
 │   │   │   │   ├── services/
+│   │   │   │   │   ├── books/
+│   │   │   │   │   │   ├── __init__.py
+│   │   │   │   │   │   ├── book_authoring.py
+│   │   │   │   │   │   ├── book_draft_commands.py
+│   │   │   │   │   │   ├── book_draft_publication.py
+│   │   │   │   │   │   ├── book_publication_state.py
+│   │   │   │   │   │   ├── book_reader_service.py
+│   │   │   │   │   │   ├── book_service.py
+│   │   │   │   │   │   ├── book_working_editor.py
+│   │   │   │   │   │   └── book_working_publication.py
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── article_service.py
-│   │   │   │   │   ├── book_authoring.py
-│   │   │   │   │   ├── book_draft_commands.py
-│   │   │   │   │   ├── book_draft_publication.py
-│   │   │   │   │   ├── book_reader_service.py
-│   │   │   │   │   ├── book_service.py
-│   │   │   │   │   ├── book_working_publication.py
 │   │   │   │   │   ├── catalog_service.py
 │   │   │   │   │   ├── system_books.py
 │   │   │   │   │   └── system_catalog.py
@@ -287,6 +293,7 @@ WorldLoom/
 │   │   └── migrate.py
 │   ├── db_migrations/
 │   │   ├── versions/
+│   │   │   ├── 47b059d75bdc_publication_protection.py
 │   │   │   └── ce197d4917e3_созданиепроекта.py
 │   │   ├── __init__.py
 │   │   ├── env.py
@@ -667,6 +674,7 @@ WorldLoom/
 │   │   │   ├── test_book_draft_content.py
 │   │   │   ├── test_book_models.py
 │   │   │   ├── test_book_postgresql.py
+│   │   │   ├── test_book_publication_state.py
 │   │   │   ├── test_rules_http.py
 │   │   │   ├── test_rules_pages.py
 │   │   │   └── test_system_catalog.py

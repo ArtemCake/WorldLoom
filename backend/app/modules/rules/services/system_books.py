@@ -10,10 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.modules.game_systems.models.game_systems import GameSystem
 from backend.app.modules.rules import errors
 from backend.app.modules.rules.models.books import RuleBook, RuleBookDraft
-from backend.app.modules.rules.schemas import books as book_contracts
+from backend.app.modules.rules.schemas.books import books as book_contracts
 from backend.app.modules.rules.schemas import system_books as contracts
-from backend.app.modules.rules.services import book_service
-
+from backend.app.modules.rules.services.books import book_service
 
 _SYSTEMS = GameSystem.__table__
 _BOOKS = RuleBook.__table__

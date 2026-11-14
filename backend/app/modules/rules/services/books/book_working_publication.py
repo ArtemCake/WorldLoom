@@ -1,4 +1,4 @@
-# backend/app/modules/rules/services/book_working_publication.py
+# backend/app/modules/rules/services/books/book_working_publication.py
 
 """Атомарный выпуск общего книжного черновика и его внутренних текстов.
 
@@ -15,9 +15,9 @@ from backend.app.modules.rules import errors
 from backend.app.modules.rules.models.articles import RuleArticle, RuleArticleVersion
 from backend.app.modules.rules.models.books import RuleBookText, RuleBookVersion
 from backend.app.modules.rules.schemas.articles import RuleArticleVersionRead
-from backend.app.modules.rules.schemas.books import RuleBookPublish, RuleBookPublishRead, RuleBookVersionRead
-from backend.app.modules.rules.services import book_service
-from backend.app.modules.rules.services.book_draft_publication import collect_owned_texts, compile_book_publication
+from backend.app.modules.rules.schemas.books.books import RuleBookPublish, RuleBookPublishRead, RuleBookVersionRead
+from backend.app.modules.rules.services.books import book_service
+from backend.app.modules.rules.services.books.book_draft_publication import collect_owned_texts, compile_book_publication
 
 
 _ARTICLES = RuleArticle.__table__

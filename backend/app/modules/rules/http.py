@@ -21,7 +21,7 @@ from backend.app.modules.rules import errors
 from backend.app.modules.rules.schemas.catalog import CatalogQuery
 from backend.app.modules.users.models.user import User
 from uuid import UUID
-from backend.app.modules.rules.schemas.book_authoring import AuthorBookQuery
+from backend.app.modules.rules.schemas.books.book_authoring import AuthorBookQuery
 
 
 logger = logging.getLogger(__name__)

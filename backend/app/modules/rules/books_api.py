@@ -7,18 +7,19 @@ from typing import Annotated
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from backend.app.modules.rules.http import HttpCatalogQuery, RulesEditor, RulesRoute, RulesSession, RulesUser, rules_operation
-from backend.app.modules.rules.schemas import books as contracts
+from backend.app.modules.rules.schemas.books import books as contracts
 from backend.app.modules.rules.schemas.catalog import BookReadingRead, CatalogPage
-from backend.app.modules.rules.services import book_reader_service, book_service, catalog_service
+from backend.app.modules.rules.services import catalog_service
+from backend.app.modules.rules.services.books import book_service, book_working_publication, book_reader_service, book_authoring
 from backend.app.web.csrf import enforce_csrf
 from backend.app.modules.rules.http import HttpBookCatalogQuery
 from backend.app.modules.rules.schemas import system_books as system_contracts
 from backend.app.modules.rules.services import system_books as system_book_service
 from backend.app.modules.rules.http import HttpAuthorBookQuery
-from backend.app.modules.rules.schemas.book_authoring import AuthorBookPage
-from backend.app.modules.rules.services import book_authoring
-from backend.app.modules.rules.schemas.book_working_draft import BookWorkingDraftRead, BookWorkingDraftUpdate
-from backend.app.modules.rules.services import book_working_publication
+from backend.app.modules.rules.schemas.books.book_authoring import AuthorBookPage
+from backend.app.modules.rules.schemas.books.book_working_draft import BookWorkingDraftRead, BookWorkingDraftUpdate
+from backend.app.modules.rules.schemas.books.book_working_draft import BookWorkingEditorRead
+from backend.app.modules.rules.services.books import book_working_editor
 
 
 router = APIRouter(prefix="/rules/books", tags=["rules-books"], route_class=RulesRoute)
@@ -114,3 +115,8 @@ async def save_working_draft(book_id: UUID, data: WorkingUpdate, session: RulesS
 async def publish_working_draft(book_id: UUID, data: Publish, session: RulesSession, user: RulesEditor) -> PublishRead:
 	async with rules_operation(session, write=True):
 		return await book_working_publication.publish_working_book(session, book_id, user.id, data)
+
+@router.get("/{book_id}/working-editor", response_model=BookWorkingEditorRead, operation_id="getRuleBookWorkingEditor")
+async def get_working_editor(book_id: UUID, session: RulesSession, user: RulesEditor) -> BookWorkingEditorRead:
+	async with rules_operation(session):
+		return await book_working_editor.get_working_editor(session, book_id, user.id)

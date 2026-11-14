@@ -15,6 +15,7 @@ from backend.app.modules.rules.models.articles import RuleArticle, RuleArticleVe
 from backend.app.modules.rules.models.books import RuleBook, RuleBookVersion, RuleBookVersionArticle
 from backend.app.modules.rules.schemas.catalog import CatalogItem, CatalogPage, CatalogQuery
 from backend.app.modules.game_systems.models.game_systems import GameSystem
+from backend.app.modules.rules.models.books import RuleBookText
 
 
 _ARTICLES = RuleArticle.__table__
@@ -23,6 +24,8 @@ _BOOKS = RuleBook.__table__
 _BOOK_VERSIONS = RuleBookVersion.__table__
 _DEPENDENCIES = RuleBookVersionArticle.__table__
 _SYSTEMS = GameSystem.__table__
+_BOOK_TEXTS = RuleBookText.__table__
+
 
 class InvalidCatalogQuery(ValueError):
 	"""Некорректный контекст или фильтры каталога."""
@@ -107,22 +110,31 @@ def _filter_statement(statement, cards: Table, versions: Table, actor_id: UUID, 
 	return statement.order_by(cards.c.id).limit(query.limit + 1)
 
 def _book_dependencies_allowed(actor_id: UUID):
-	"""Запретить выдачу книги с отсутствующей или недоступной зависимостью."""
+	"""Проверить внешние материалы и принадлежность внутренних снимков."""
+
 	dependencies = _DEPENDENCIES.alias("catalog_dependencies")
 	versions = _ARTICLE_VERSIONS.alias("catalog_article_versions")
 	articles = _ARTICLES.alias("catalog_articles")
+	bindings = _BOOK_TEXTS.alias("catalog_book_texts")
 
 	source = (
 		dependencies
 		.outerjoin(versions, versions.c.id == dependencies.c.article_version_id)
 		.outerjoin(articles, articles.c.id == versions.c.article_id)
+		.outerjoin(bindings, bindings.c.article_id == articles.c.id)
 	)
 
-	visible = or_(
+	external_visible = or_(
 		articles.c.visibility == "public",
 		and_(_BOOKS.c.visibility == "private", articles.c.owner_id == actor_id),
 		)
-	allowed = and_(articles.c.is_active.is_(True), visible)
+	external_allowed = and_(
+		bindings.c.article_id.is_(None),
+		articles.c.is_active.is_(True),
+		external_visible,
+	)
+	internal_allowed = bindings.c.book_id == _BOOKS.c.id
+	allowed = or_(external_allowed, internal_allowed)
 
 	unavailable = (
 		select(1)
@@ -156,6 +168,13 @@ async def _page(session: AsyncSession, statement, limit: int) -> CatalogPage:
 async def list_articles(session: AsyncSession, actor_id: UUID, query: CatalogQuery) -> CatalogPage:
 	query = _prepare(session, actor_id, query)
 	statement = _latest_statement(_ARTICLES, _ARTICLE_VERSIONS, "article_id", actor_id)
+	internal = (
+		select(1)
+		.select_from(_BOOK_TEXTS)
+		.where(_BOOK_TEXTS.c.article_id == _ARTICLES.c.id)
+		.correlate(_ARTICLES)
+	)
+	statement = statement.where(~exists(internal))
 	statement = _filter_statement(statement, _ARTICLES, _ARTICLE_VERSIONS, actor_id, query)
 
 	return await _page(session, statement, query.limit)

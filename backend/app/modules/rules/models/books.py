@@ -22,6 +22,15 @@ BOOK_CONTENT_CHECK = (
 	"AND jsonb_array_length(content_json->'toc') <= 2000"
 )
 
+BOOK_DRAFT_CONTENT_CHECK = (
+	"jsonb_typeof(content_json) = 'object' "
+	"AND content_json->'schema_version' IN ('1'::jsonb, '2'::jsonb) "
+	"AND jsonb_typeof(content_json->'title') = 'string' "
+	"AND length(btrim(content_json->>'title')) BETWEEN 1 AND 200 "
+	"AND jsonb_typeof(content_json->'toc') = 'array' "
+	"AND jsonb_array_length(content_json->'toc') <= 2000"
+)
+
 BOOK_PUBLICATION_CHECK = "content_json @> '{\"toc\": [{\"kind\": \"article\"}]}'::jsonb"
 
 class RuleBook(Base):
@@ -51,7 +60,7 @@ class RuleBookDraft(Base):
 	__table_args__ = (
 		UniqueConstraint("book_id", name="uq_rule_book_drafts_book"),
 		CheckConstraint("revision >= 1", name="ck_rule_book_drafts_revision"),
-		CheckConstraint(f"({BOOK_CONTENT_CHECK}) IS TRUE", name="ck_rule_book_drafts_content"),
+		CheckConstraint(f"({BOOK_DRAFT_CONTENT_CHECK}) IS TRUE", name="ck_rule_book_drafts_content"),
 	)
 
 	id: Mapped[UUID] = mapped_column(UUID_TYPE, primary_key=True, default=uuid4)
@@ -100,3 +109,16 @@ class RuleBookVersionArticle(Base):
 		primary_key=True,
 		index=True,
 	)
+
+class RuleBookText(Base):
+	"""Неизменяемая принадлежность внутреннего материала книге и ключу раздела."""
+
+	__tablename__ = "rule_book_texts"
+	__table_args__ = (
+		UniqueConstraint("book_id", "node_key", name="uq_rule_book_texts_key"),
+		CheckConstraint("node_key ~ '^[a-z0-9]+([-_][a-z0-9]+)*$'", name="ck_rule_book_texts_key"),
+	)
+
+	article_id: Mapped[UUID] = mapped_column(UUID_TYPE, ForeignKey("rule_articles.id", ondelete="RESTRICT"), primary_key=True)
+	book_id: Mapped[UUID] = mapped_column(UUID_TYPE, ForeignKey("rule_books.id", ondelete="RESTRICT"))
+	node_key: Mapped[str] = mapped_column(String(100))

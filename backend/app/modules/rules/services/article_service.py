@@ -18,15 +18,13 @@ actor_id передаётся из проверенной аутентифика
 """
 
 from __future__ import annotations
-
+from backend.app.modules.rules.models.books import RuleBookText
 from collections.abc import Mapping
 from typing import Any, TypeVar
 from uuid import UUID
-
-from sqlalchemy import func, insert, select, update
+from sqlalchemy import exists, func, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from backend.app.modules.rules import errors
 from backend.app.modules.rules.models.articles import RuleArticle, RuleArticleDraft, RuleArticleVersion
 from backend.app.modules.rules.schemas import articles as contracts
@@ -35,6 +33,7 @@ from backend.app.modules.rules.schemas import articles as contracts
 _ARTICLES = RuleArticle.__table__
 _DRAFTS = RuleArticleDraft.__table__
 _VERSIONS = RuleArticleVersion.__table__
+_BOOK_TEXTS = RuleBookText.__table__
 
 ReadModel = TypeVar("ReadModel", bound=contracts.RulesContentModel)
 DraftRead = contracts.RuleArticleDraftRead
@@ -84,9 +83,15 @@ def _check_revision(draft: Mapping[str, Any], expected_revision: int) -> None:
 
 async def _article(session: AsyncSession, article_id: UUID, actor_id: UUID, *, owner_only: bool, write: bool):
 	"""Заблокировать карточку и проверить доступ."""
+	internal = (
+		select(1)
+		.select_from(_BOOK_TEXTS)
+		.where(_BOOK_TEXTS.c.article_id == _ARTICLES.c.id)
+		.correlate(_ARTICLES)
+	)
 	statement = (
 		select(_ARTICLES)
-		.where(_ARTICLES.c.id == article_id)
+		.where(_ARTICLES.c.id == article_id, ~exists(internal))
 		.with_for_update(read=not write)
 	)
 	result = await session.execute(statement)

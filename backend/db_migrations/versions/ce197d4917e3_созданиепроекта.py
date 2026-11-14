@@ -1,8 +1,8 @@
 """СозданиеПроекта
 
-Revision ID: 1372661e8ac9
+Revision ID: ce197d4917e3
 Revises: 
-Create Date: 2026-11-13 23:47:15.241870
+Create Date: 2026-11-14 13:09:51.539165
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '1372661e8ac9'
+revision: str = 'ce197d4917e3'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -776,11 +776,21 @@ def upgrade() -> None:
     sa.Column('revision', sa.Integer(), server_default=sa.text('1'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.CheckConstraint('(jsonb_typeof(content_json) = \'object\' AND content_json @> \'{"schema_version": 1}\'::jsonb AND jsonb_typeof(content_json->\'title\') = \'string\' AND length(btrim(content_json->>\'title\')) BETWEEN 1 AND 200 AND jsonb_typeof(content_json->\'toc\') = \'array\' AND jsonb_array_length(content_json->\'toc\') <= 2000) IS TRUE', name='ck_rule_book_drafts_content'),
+    sa.CheckConstraint("(jsonb_typeof(content_json) = 'object' AND content_json->'schema_version' IN ('1'::jsonb, '2'::jsonb) AND jsonb_typeof(content_json->'title') = 'string' AND length(btrim(content_json->>'title')) BETWEEN 1 AND 200 AND jsonb_typeof(content_json->'toc') = 'array' AND jsonb_array_length(content_json->'toc') <= 2000) IS TRUE", name='ck_rule_book_drafts_content'),
     sa.CheckConstraint('revision >= 1', name='ck_rule_book_drafts_revision'),
     sa.ForeignKeyConstraint(['book_id'], ['rule_books.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('book_id', name='uq_rule_book_drafts_book')
+    )
+    op.create_table('rule_book_texts',
+    sa.Column('article_id', sa.UUID(), nullable=False),
+    sa.Column('book_id', sa.UUID(), nullable=False),
+    sa.Column('node_key', sa.String(length=100), nullable=False),
+    sa.CheckConstraint("node_key ~ '^[a-z0-9]+([-_][a-z0-9]+)*$'", name='ck_rule_book_texts_key'),
+    sa.ForeignKeyConstraint(['article_id'], ['rule_articles.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['book_id'], ['rule_books.id'], ondelete='RESTRICT'),
+    sa.PrimaryKeyConstraint('article_id'),
+    sa.UniqueConstraint('book_id', 'node_key', name='uq_rule_book_texts_key')
     )
     op.create_table('rule_book_versions',
     sa.Column('id', sa.UUID(), nullable=False),
@@ -1795,6 +1805,7 @@ def downgrade() -> None:
     op.drop_table('rule_engine_versions')
     op.drop_table('rule_engine_drafts')
     op.drop_table('rule_book_versions')
+    op.drop_table('rule_book_texts')
     op.drop_table('rule_book_drafts')
     op.drop_table('rule_article_versions')
     op.drop_table('rule_article_drafts')

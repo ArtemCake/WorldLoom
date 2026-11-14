@@ -17,6 +17,8 @@ from backend.app.modules.rules.services import system_books as system_book_servi
 from backend.app.modules.rules.http import HttpAuthorBookQuery
 from backend.app.modules.rules.schemas.book_authoring import AuthorBookPage
 from backend.app.modules.rules.services import book_authoring
+from backend.app.modules.rules.schemas.book_working_draft import BookWorkingDraftRead, BookWorkingDraftUpdate
+from backend.app.modules.rules.services import book_working_publication
 
 
 router = APIRouter(prefix="/rules/books", tags=["rules-books"], route_class=RulesRoute)
@@ -32,11 +34,19 @@ PublishRead = contracts.RuleBookPublishRead
 VersionRead = contracts.RuleBookVersionRead
 AssignSystem = system_contracts.BookSystemAssign
 AssignmentRead = system_contracts.BookSystemAssignmentRead
+WorkingRead = BookWorkingDraftRead
+WorkingUpdate = BookWorkingDraftUpdate
 
 ASSIGN_SYSTEM_OPTIONS = {
 	"response_model": AssignmentRead,
 	"dependencies": [Depends(enforce_csrf)],
 	"operation_id": "assignRuleBookSystem",
+}
+
+WORKING_PUBLISH_OPTIONS = {
+	"response_model": PublishRead,
+	"dependencies": [Depends(enforce_csrf)],
+	"operation_id": "publishRuleBookWorkingDraft",
 }
 
 @router.get("", response_model=CatalogPage, operation_id="listRuleBooks")
@@ -89,3 +99,18 @@ async def get_version(book_id: UUID, version_id: UUID, session: RulesSession, us
 async def read_book(book_id: UUID, version_id: UUID, session: RulesSession, user: RulesUser) -> BookReadingRead:
 	async with rules_operation(session):
 		return await book_reader_service.read_book(session, book_id, version_id, user.id)
+
+@router.get("/{book_id}/working-draft", response_model=WorkingRead, operation_id="getRuleBookWorkingDraft")
+async def get_working_draft(book_id: UUID, session: RulesSession, user: RulesEditor) -> WorkingRead:
+	async with rules_operation(session):
+		return await book_service.get_working_draft(session, book_id, user.id)
+
+@router.put("/{book_id}/working-draft", response_model=WorkingRead, dependencies=[Depends(enforce_csrf)], operation_id="saveRuleBookWorkingDraft")
+async def save_working_draft(book_id: UUID, data: WorkingUpdate, session: RulesSession, user: RulesEditor) -> WorkingRead:
+	async with rules_operation(session, write=True):
+		return await book_service.update_working_draft(session, book_id, user.id, data)
+
+@router.post("/{book_id}/working-draft/publish", **WORKING_PUBLISH_OPTIONS)
+async def publish_working_draft(book_id: UUID, data: Publish, session: RulesSession, user: RulesEditor) -> PublishRead:
+	async with rules_operation(session, write=True):
+		return await book_working_publication.publish_working_book(session, book_id, user.id, data)

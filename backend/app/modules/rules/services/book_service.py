@@ -27,6 +27,9 @@ from backend.app.modules.rules.models.articles import RuleArticle, RuleArticleVe
 from backend.app.modules.rules.models.books import RuleBook, RuleBookDraft, RuleBookVersion
 from backend.app.modules.rules.schemas import books as contracts
 from backend.app.modules.rules.schemas.articles import RulesContentModel
+from backend.app.modules.rules.schemas.book_working_draft import BookWorkingDraftRead, BookWorkingDraftUpdate
+from backend.app.modules.rules.services.book_draft_commands import read_book_draft_content
+from backend.app.modules.rules.models.books import RuleBook, RuleBookDraft, RuleBookText, RuleBookVersion
 
 
 _BOOKS = RuleBook.__table__
@@ -34,6 +37,7 @@ _DRAFTS = RuleBookDraft.__table__
 _VERSIONS = RuleBookVersion.__table__
 _ARTICLES = RuleArticle.__table__
 _ARTICLE_VERSIONS = RuleArticleVersion.__table__
+_BOOK_TEXTS = RuleBookText.__table__
 
 ReadModel = TypeVar("ReadModel", bound=RulesContentModel)
 
@@ -45,6 +49,10 @@ DraftRead = contracts.RuleBookDraftRead
 EditorRead = contracts.RuleBookEditorRead
 PublishRead = contracts.RuleBookPublishRead
 VersionRead = contracts.RuleBookVersionRead
+WorkingRead = BookWorkingDraftRead
+WorkingUpdate = BookWorkingDraftUpdate
+DraftResult = DraftRead | WorkingRead
+DraftRow = Mapping[str, Any]
 
 
 def _prepare(session: AsyncSession, actor_id: UUID, *identifiers: UUID) -> None:
@@ -73,10 +81,27 @@ def _request(model: type[ReadModel], value: ReadModel) -> ReadModel:
 		raise errors.InvalidRuleBook("Данные книги не прошли проверку") from exc
 
 def _read(model: type[ReadModel], row: Mapping[str, Any]) -> ReadModel:
+	raw_content = row.get("content_json")
+
+	if model is DraftRead and isinstance(raw_content, dict) and raw_content.get("schema_version") == 2:
+		_working_read(row)
+		raise errors.RuleBookConflict("Черновик содержит собственные тексты. Требуется редактор нового формата")
+
 	try:
 		return model.model_validate(dict(row))
 	except ValueError as exc:
 		raise errors.RuleBookStorageError("Сохранённые данные книги имеют неподдерживаемый формат") from exc
+
+def _working_read(row: DraftRow) -> WorkingRead:
+	payload = dict(row)
+
+	try:
+		content = read_book_draft_content(payload["content_json"])
+	except (KeyError, TypeError, ValueError) as exc:
+		raise errors.RuleBookStorageError("Сохранённый черновик книги имеет неподдерживаемый формат") from exc
+
+	payload["content_json"] = content.model_dump(mode="python")
+	return _read(WorkingRead, payload)
 
 def _check_revision(draft: Mapping[str, Any], expected_revision: int) -> None:
 	if draft["revision"] != expected_revision:
@@ -116,12 +141,16 @@ async def _draft(session: AsyncSession, book_id: UUID, *, write: bool):
 
 	return row
 
-async def _dependencies(session: AsyncSession, content: BookContent, actor_id: UUID, *, public_only: bool) -> None:
-	"""Проверить все публикации и удержать карточки статей до конца транзакции."""
+async def _dependencies(session: AsyncSession, content, actor_id: UUID, *, public_only: bool, book_id: UUID | None = None) -> None:
+	"""Проверить внешние ссылки либо внутренние снимки конкретной книги."""
+
 	identifiers = content.article_version_ids()
 
 	if not identifiers:
 		return
+
+	source = _ARTICLE_VERSIONS.join(_ARTICLES, _ARTICLE_VERSIONS.c.article_id == _ARTICLES.c.id)
+	source = source.outerjoin(_BOOK_TEXTS, _BOOK_TEXTS.c.article_id == _ARTICLES.c.id)
 
 	statement = (
 		select(
@@ -129,8 +158,9 @@ async def _dependencies(session: AsyncSession, content: BookContent, actor_id: U
 			_ARTICLES.c.owner_id,
 			_ARTICLES.c.visibility,
 			_ARTICLES.c.is_active,
+			_BOOK_TEXTS.c.book_id.label("internal_book_id"),
 		)
-		.select_from(_ARTICLE_VERSIONS.join(_ARTICLES, _ARTICLE_VERSIONS.c.article_id == _ARTICLES.c.id))
+		.select_from(source)
 		.where(_ARTICLE_VERSIONS.c.id.in_(identifiers))
 		.order_by(_ARTICLES.c.id, _ARTICLE_VERSIONS.c.id)
 		.with_for_update(read=True, of=_ARTICLES)
@@ -139,17 +169,24 @@ async def _dependencies(session: AsyncSession, content: BookContent, actor_id: U
 	rows = result.mappings().all()
 
 	if {row["version_id"] for row in rows} != set(identifiers):
-		raise errors.RuleBookDependencyUnavailable("Некоторые публикации статей отсутствуют или недоступны")
+		raise errors.RuleBookDependencyUnavailable("Некоторые публикации отсутствуют или недоступны")
 
 	for row in rows:
+		internal_book_id = row["internal_book_id"]
+
+		if internal_book_id is not None:
+			if book_id != internal_book_id:
+				raise errors.RuleBookDependencyUnavailable("Внутренний материал нельзя использовать как внешнюю статью")
+			continue
+
 		is_public = row["visibility"] == "public"
 		is_owner = row["owner_id"] == actor_id
 		allowed = is_public if public_only else is_public or is_owner
 
 		if not row["is_active"] or not allowed:
-			raise errors.RuleBookDependencyUnavailable("Некоторые публикации статей отсутствуют или недоступны")
+			raise errors.RuleBookDependencyUnavailable("Некоторые публикации отсутствуют или недоступны")
 
-async def _save_draft(session: AsyncSession, draft: Mapping[str, Any], payload: dict | None = None) -> DraftRead:
+async def _save_draft(session: AsyncSession, draft: DraftRow, payload: dict | None = None, *, working: bool = False) -> DraftResult:
 	values = {
 		"revision": _DRAFTS.c.revision + 1,
 		"updated_at": func.now(),
@@ -174,7 +211,7 @@ async def _save_draft(session: AsyncSession, draft: Mapping[str, Any], payload: 
 	if row is None:
 		raise errors.RuleBookConflict("Черновик книги изменился во время операции")
 
-	return _read(DraftRead, row)
+	return _working_read(row) if working else _read(DraftRead, row)
 
 async def _touch_book(session: AsyncSession, book_id: UUID) -> None:
 	statement = update(_BOOKS).where(_BOOKS.c.id == book_id).values(updated_at=func.now())
@@ -338,8 +375,38 @@ async def get_book_version(session: AsyncSession, book_id: UUID, version_id: UUI
 			publication.content_json,
 			actor_id,
 			public_only=book["visibility"] == "public",
+			book_id=book_id,
 		)
 	except errors.RuleBookDependencyUnavailable as exc:
 		raise errors.RuleBookNotFound("Публикация книги недоступна") from exc
 
 	return publication
+
+async def get_working_draft(session: AsyncSession, book_id: UUID, actor_id: UUID) -> WorkingRead:
+	"""Прочитать общий черновик; преобразование формата 1 не записывается в БД."""
+
+	_prepare(session, actor_id, book_id)
+	await _book(session, book_id, actor_id, owner_only=True, write=False)
+	draft = await _draft(session, book_id, write=False)
+
+	return _working_read(draft)
+
+async def update_working_draft(session: AsyncSession, book_id: UUID, actor_id: UUID, data: WorkingUpdate) -> WorkingRead:
+	"""Сохранить сведения, оглавление и собственные тексты под общей ревизией."""
+
+	_prepare(session, actor_id, book_id)
+	data = _request(WorkingUpdate, data)
+
+	await _book(session, book_id, actor_id, owner_only=True, write=True)
+	draft = await _draft(session, book_id, write=True)
+
+	_check_revision(draft, data.expected_revision)
+	_working_read(draft)
+
+	await _dependencies(session, data.content, actor_id, public_only=False)
+
+	payload = data.content.model_dump(mode="json")
+	saved = await _save_draft(session, draft, payload, working=True)
+	await _touch_book(session, book_id)
+
+	return saved

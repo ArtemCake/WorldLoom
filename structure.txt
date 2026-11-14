@@ -216,6 +216,7 @@ WorldLoom/
 │   │   │   │   │   ├── articles.py
 │   │   │   │   │   ├── book_authoring.py
 │   │   │   │   │   ├── book_draft_content.py
+│   │   │   │   │   ├── book_working_draft.py
 │   │   │   │   │   ├── books.py
 │   │   │   │   │   ├── catalog.py
 │   │   │   │   │   └── system_books.py
@@ -227,6 +228,7 @@ WorldLoom/
 │   │   │   │   │   ├── book_draft_publication.py
 │   │   │   │   │   ├── book_reader_service.py
 │   │   │   │   │   ├── book_service.py
+│   │   │   │   │   ├── book_working_publication.py
 │   │   │   │   │   ├── catalog_service.py
 │   │   │   │   │   ├── system_books.py
 │   │   │   │   │   └── system_catalog.py
@@ -285,8 +287,7 @@ WorldLoom/
 │   │   └── migrate.py
 │   ├── db_migrations/
 │   │   ├── versions/
-│   │   │   ├── 1372661e8ac9_созданиепроекта.py
-│   │   │   └── 20261114_publication_protection.py
+│   │   │   └── ce197d4917e3_созданиепроекта.py
 │   │   ├── __init__.py
 │   │   ├── env.py
 │   │   ├── publication_protection.py

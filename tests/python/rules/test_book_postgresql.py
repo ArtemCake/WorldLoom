@@ -33,14 +33,13 @@ from backend.app.modules.rules.schemas import system_books as system_contracts
 from backend.app.modules.rules.schemas.book_authoring import AuthorBookQuery
 from backend.app.modules.rules.services import book_authoring
 from backend.app.modules.rules.services import system_books
-from tests.python.rules.pg_support import (
-    USER_INSERT_SQL,
-    PostgresTestCase,
-    apply_migrations,
-    require_connection,
-    system_values,
-    user_values,
-)
+from tests.python.rules.pg_support import (USER_INSERT_SQL, PostgresTestCase, apply_migrations,
+    require_connection, system_values, user_values)
+from backend.app.modules.rules.schemas.book_draft_content import BookDraftContent
+from backend.app.modules.rules.schemas.book_working_draft import BookWorkingDraftUpdate
+from unittest.mock import patch
+from backend.app.modules.rules.models.books import RuleBookText
+from backend.app.modules.rules.services import book_working_publication
 
 
 BOOKS = RuleBook.__table__
@@ -74,6 +73,474 @@ def sqlstate(error: DBAPIError):
 
 
 class BookPostgreSQLTests(PostgresTestCase):
+
+    async def create_working_book(self, *, visibility="private"):
+        book_id = await self.create_book(self.book_content([]))
+        content = self.working_content()
+        request = BookWorkingDraftUpdate(expected_revision=1, content=content)
+
+        async with self.sessions.begin() as session:
+            statement = update(BOOKS).where(BOOKS.c.id == book_id).values(visibility=visibility)
+            await session.execute(statement)
+            await book_service.update_working_draft(session, book_id, self.owner_id, request)
+
+        return book_id
+
+    async def publish_working_book(self, book_id, revision=2):
+        request = book_contracts.RuleBookPublish(expected_revision=revision)
+
+        async with self.sessions.begin() as session:
+            return await book_working_publication.publish_working_book(session, book_id, self.owner_id, request)
+
+    async def owned_binding(self, book_id):
+        bindings = RuleBookText.__table__
+        statement = select(bindings).where(bindings.c.book_id == book_id)
+
+        async with self.sessions() as session:
+            return (await session.execute(statement)).mappings().one()
+
+
+    async def test_working_publication_keeps_editable_text_in_draft(self):
+        book_id = await self.create_working_book()
+        published = await self.publish_working_book(book_id)
+        binding = await self.owned_binding(book_id)
+
+        self.assertEqual(published.publication.content_json.schema_version, 1)
+        self.assertEqual(published.publication.source_draft_revision, 2)
+        self.assertEqual(published.draft_revision, 3)
+        self.assertEqual(binding["node_key"], "own-text")
+
+        async with self.sessions.begin() as session:
+            draft = await book_service.get_working_draft(session, book_id, self.owner_id)
+
+        self.assertEqual(draft.revision, 3)
+        self.assertEqual(draft.content_json.schema_version, 2)
+        self.assertEqual(draft.content_json.toc[0].kind, "text")
+        self.assertEqual(draft.content_json.toc[0].content.body, "Текст непосредственно в книге.")
+
+        version_ids = published.publication.content_json.article_version_ids()
+        self.assertEqual(await self.dependency_ids(published.publication.id), set(version_ids))
+
+    async def test_public_working_book_is_readable_without_public_internal_articles(self):
+        book_id = await self.create_working_book(visibility="public")
+        published = await self.publish_working_book(book_id)
+        reader_id = await self.add_reader()
+        version_id = published.publication.id
+
+        async with self.sessions.begin() as session:
+            loaded = await book_reader_service.read_book(session, book_id, version_id, reader_id)
+            catalog = await catalog_service.list_books(session, reader_id, CatalogQuery())
+
+        self.assertEqual(loaded.publication.id, version_id)
+        self.assertIn(book_id, [item.id for item in catalog.items])
+
+        binding = await self.owned_binding(book_id)
+        articles = RuleArticle.__table__
+
+        async with self.sessions() as session:
+            statement = select(articles).where(articles.c.id == binding["article_id"])
+            article = (await session.execute(statement)).mappings().one()
+
+        self.assertIsNone(article["owner_id"])
+        self.assertEqual(article["visibility"], "private")
+
+    async def test_internal_text_is_not_an_independent_article_even_if_card_becomes_public(self):
+        book_id = await self.create_working_book(visibility="public")
+        published = await self.publish_working_book(book_id)
+        binding = await self.owned_binding(book_id)
+        article_id = binding["article_id"]
+        version_id = next(iter(published.publication.content_json.article_version_ids()))
+        articles = RuleArticle.__table__
+
+        async with self.sessions.begin() as session:
+            statement = update(articles).where(articles.c.id == article_id).values(visibility="public")
+            await session.execute(statement)
+
+        async with self.rules_http_client() as client:
+            response = await client.get(f"/rules/articles/{article_id}/versions/{version_id}")
+            draft = await client.get(f"/rules/articles/{article_id}/draft")
+
+        self.assertEqual(response.status_code, 404, response.text)
+        self.assertEqual(draft.status_code, 404, draft.text)
+
+        async with self.sessions.begin() as session:
+            page = await catalog_service.list_articles(session, self.owner_id, CatalogQuery())
+
+        self.assertNotIn(article_id, [item.id for item in page.items])
+
+    async def test_internal_publication_cannot_be_saved_as_external_material(self):
+        source_book = await self.create_working_book()
+        published = await self.publish_working_book(source_book)
+        version_id = next(iter(published.publication.content_json.article_version_ids()))
+        target_book = await self.create_book(self.book_content([]))
+        content = self.working_content([version_id])
+        request = BookWorkingDraftUpdate(expected_revision=1, content=content)
+
+        with self.assertRaises(errors.RuleBookDependencyUnavailable):
+            async with self.sessions.begin() as session:
+                await book_service.update_working_draft(session, target_book, self.owner_id, request)
+
+    async def test_database_rejects_internal_material_in_another_book(self):
+        source_book = await self.create_working_book()
+        published = await self.publish_working_book(source_book)
+        version_id = next(iter(published.publication.content_json.article_version_ids()))
+        target_book = await self.create_book(self.book_content([]))
+        statement = self.version_insert(target_book, self.book_content([version_id]))
+
+        await self.expect_database_error(statement, "23514")
+
+    async def test_internal_binding_is_immutable(self):
+        book_id = await self.create_working_book()
+        await self.publish_working_book(book_id)
+        binding = await self.owned_binding(book_id)
+        bindings = RuleBookText.__table__
+        condition = bindings.c.article_id == binding["article_id"]
+
+        await self.expect_database_error(update(bindings).where(condition).values(node_key="other-key"), "55000")
+        await self.expect_database_error(delete(bindings).where(condition), "55000")
+        await self.expect_database_error(text("TRUNCATE rule_book_texts"), "55000")
+
+    async def test_working_publication_failure_rolls_back_every_created_record(self):
+        book_id = await self.create_working_book()
+        tables = (RuleArticle.__table__, RuleArticleVersion.__table__, RuleBookText.__table__, VERSIONS)
+        before = [await self.count_rows(table) for table in tables]
+
+        async def abort(session, identifier):
+            raise RuntimeError("abort complete publication")
+
+        request = book_contracts.RuleBookPublish(expected_revision=2)
+
+        with patch.object(book_service, "_touch_book", new=abort):
+            with self.assertRaisesRegex(RuntimeError, "abort complete publication"):
+                async with self.sessions.begin() as session:
+                    await book_working_publication.publish_working_book(session, book_id, self.owner_id, request)
+
+        after = [await self.count_rows(table) for table in tables]
+        self.assertEqual(after, before)
+
+        async with self.sessions.begin() as session:
+            draft = await book_service.get_working_draft(session, book_id, self.owner_id)
+
+        self.assertEqual(draft.revision, 2)
+        self.assertEqual(draft.content_json.toc[0].kind, "text")
+
+    async def test_concurrent_working_publications_accept_only_one_request(self):
+        book_id = await self.create_working_book()
+
+        async def publish():
+            try:
+                return await self.publish_working_book(book_id)
+            except errors.RuleBookConflict as exc:
+                return exc
+
+        results = await asyncio.gather(publish(), publish())
+        conflicts = [item for item in results if isinstance(item, errors.RuleBookConflict)]
+        accepted = [item for item in results if not isinstance(item, errors.RuleBookConflict)]
+
+        self.assertEqual(len(conflicts), 1)
+        self.assertEqual(len(accepted), 1)
+
+        statement = select(func.count()).select_from(VERSIONS).where(VERSIONS.c.book_id == book_id)
+
+        async with self.sessions() as session:
+            count = (await session.execute(statement)).scalar_one()
+
+        self.assertEqual(count, 1)
+
+    async def test_new_owned_text_version_preserves_previous_book_publication(self):
+        book_id = await self.create_working_book()
+        first = await self.publish_working_book(book_id)
+        original_binding = await self.owned_binding(book_id)
+
+        async with self.sessions.begin() as session:
+            draft = await book_service.get_working_draft(session, book_id, self.owner_id)
+
+        payload = draft.content_json.model_dump(mode="python")
+        payload["toc"][0]["content"]["body"] = "Вторая редакция текста."
+        content = BookDraftContent.model_validate(payload)
+        request = BookWorkingDraftUpdate(expected_revision=3, content=content)
+
+        async with self.sessions.begin() as session:
+            await book_service.update_working_draft(session, book_id, self.owner_id, request)
+
+        second = await self.publish_working_book(book_id, revision=4)
+        current_binding = await self.owned_binding(book_id)
+
+        first_id = next(iter(first.publication.content_json.article_version_ids()))
+        second_id = next(iter(second.publication.content_json.article_version_ids()))
+        versions = RuleArticleVersion.__table__
+
+        async with self.sessions() as session:
+            statement = select(versions).where(versions.c.id.in_([first_id, second_id]))
+            rows = (await session.execute(statement)).mappings().all()
+
+        snapshots = {row["id"]: row for row in rows}
+
+        self.assertEqual(current_binding["article_id"], original_binding["article_id"])
+        self.assertNotEqual(first_id, second_id)
+        self.assertEqual(snapshots[first_id]["content_json"]["body"], "Текст непосредственно в книге.")
+        self.assertEqual(snapshots[second_id]["content_json"]["body"], "Вторая редакция текста.")
+        self.assertEqual(snapshots[first_id]["article_id"], snapshots[second_id]["article_id"])
+
+    async def test_http_working_publication_commits_and_rejects_repeated_revision(self):
+        book_id = await self.create_working_book()
+        path = f"/rules/books/{book_id}/working-draft/publish"
+        payload = {"expected_revision": 2}
+
+        async with self.rules_http_client() as client:
+            published = await client.post(path, json=payload)
+            self.assertEqual(published.status_code, 200, published.text)
+            self.assertEqual(published.json()["draft_revision"], 3)
+
+            repeated = await client.post(path, json=payload)
+            self.assertEqual(repeated.status_code, 409, repeated.text)
+
+            publication_id = published.json()["publication"]["id"]
+            loaded = await client.get(f"/rules/books/{book_id}/versions/{publication_id}")
+
+        self.assertEqual(loaded.status_code, 200, loaded.text)
+        self.assertEqual(loaded.json()["id"], publication_id)
+
+    async def test_public_working_publication_still_requires_public_external_materials(self):
+        external_id = await self.create_article_version()
+        book_id = await self.create_book(self.book_content([]))
+        content = self.working_content([external_id])
+        request = BookWorkingDraftUpdate(expected_revision=1, content=content)
+
+        async with self.sessions.begin() as session:
+            statement = update(BOOKS).where(BOOKS.c.id == book_id).values(visibility="public")
+            await session.execute(statement)
+            await book_service.update_working_draft(session, book_id, self.owner_id, request)
+
+        before = await self.count_rows(RuleBookText.__table__)
+
+        with self.assertRaises(errors.RuleBookDependencyUnavailable):
+            await self.publish_working_book(book_id)
+
+        self.assertEqual(await self.count_rows(RuleBookText.__table__), before)
+
+    def working_content(self, version_ids=()):
+        payload = self.book_content(version_ids).model_dump(mode="python")
+        payload["schema_version"] = 2
+        payload["toc"].append({
+            "kind": "text",
+            "key": "own-text",
+            "parent_key": None,
+            "position": len(version_ids),
+            "title": "Название внутри книги",
+            "content": {
+                "schema_version": 1,
+                "title": "Собственный раздел",
+                "body": "Текст непосредственно в книге.",
+                "sources": [{"title": "Источник собственного текста"}],
+            },
+        })
+        return BookDraftContent.model_validate(payload)
+
+    async def test_working_read_does_not_upgrade_stored_content(self):
+        original = self.book_content([])
+        book_id = await self.create_book(original)
+
+        async with self.sessions.begin() as session:
+            loaded = await book_service.get_working_draft(session, book_id, self.owner_id)
+
+        self.assertEqual(loaded.content_json.schema_version, 2)
+        self.assertEqual(loaded.revision, 1)
+
+        async with self.sessions() as session:
+            statement = select(DRAFTS).where(DRAFTS.c.book_id == book_id)
+            stored = (await session.execute(statement)).mappings().one()
+
+        self.assertEqual(stored["content_json"], original.model_dump(mode="json"))
+        self.assertEqual(stored["revision"], 1)
+
+    async def test_working_save_persists_owned_text_and_metadata(self):
+        book_id = await self.create_book(self.book_content([]))
+        payload = self.working_content().model_dump(mode="python")
+        payload["introduction"] = "Введение книги."
+        payload["sources"] = [{"title": "Источник всей книги"}]
+        content = BookDraftContent.model_validate(payload)
+        request = BookWorkingDraftUpdate(expected_revision=1, content=content)
+
+        async with self.sessions.begin() as session:
+            saved = await book_service.update_working_draft(session, book_id, self.owner_id, request)
+
+        async with self.sessions.begin() as session:
+            loaded = await book_service.get_working_draft(session, book_id, self.owner_id)
+
+        self.assertEqual(saved.revision, 2)
+        self.assertEqual(loaded.revision, 2)
+        self.assertEqual(loaded.content_json, content)
+        self.assertEqual(loaded.content_json.toc[0].content.body, "Текст непосредственно в книге.")
+        self.assertEqual(loaded.content_json.toc[0].title, "Название внутри книги")
+        self.assertEqual(loaded.content_json.sources[0].title, "Источник всей книги")
+
+    async def test_working_stale_save_does_not_overwrite_text(self):
+        book_id = await self.create_book(self.book_content([]))
+        request = BookWorkingDraftUpdate(expected_revision=1, content=self.working_content())
+
+        async with self.sessions.begin() as session:
+            await book_service.update_working_draft(session, book_id, self.owner_id, request)
+
+        stale_payload = request.content.model_dump(mode="python")
+        stale_payload["toc"][0]["content"]["body"] = "Устаревшая правка."
+        stale = BookWorkingDraftUpdate(expected_revision=1, content=BookDraftContent.model_validate(stale_payload))
+
+        with self.assertRaises(errors.RuleBookConflict):
+            async with self.sessions.begin() as session:
+                await book_service.update_working_draft(session, book_id, self.owner_id, stale)
+
+        async with self.sessions.begin() as session:
+            loaded = await book_service.get_working_draft(session, book_id, self.owner_id)
+
+        self.assertEqual(loaded.revision, 2)
+        self.assertEqual(loaded.content_json.toc[0].content.body, "Текст непосредственно в книге.")
+
+    async def test_legacy_publication_rejects_working_draft_without_side_effects(self):
+        book_id = await self.create_book(self.book_content([]))
+        request = BookWorkingDraftUpdate(expected_revision=1, content=self.working_content())
+
+        async with self.sessions.begin() as session:
+            await book_service.update_working_draft(session, book_id, self.owner_id, request)
+
+        before = await self.count_rows(VERSIONS)
+        publish = book_contracts.RuleBookPublish(expected_revision=2)
+
+        with self.assertRaises(errors.RuleBookConflict):
+            async with self.sessions.begin() as session:
+                await book_service.publish_book(session, book_id, self.owner_id, publish)
+
+        self.assertEqual(await self.count_rows(VERSIONS), before)
+
+        async with self.sessions.begin() as session:
+            loaded = await book_service.get_working_draft(session, book_id, self.owner_id)
+
+        self.assertEqual(loaded.revision, 2)
+
+    async def test_working_save_rolls_back_with_outer_transaction(self):
+        original = self.book_content([])
+        book_id = await self.create_book(original)
+        request = BookWorkingDraftUpdate(expected_revision=1, content=self.working_content())
+
+        with self.assertRaisesRegex(RuntimeError, "abort working save"):
+            async with self.sessions.begin() as session:
+                await book_service.update_working_draft(session, book_id, self.owner_id, request)
+                raise RuntimeError("abort working save")
+
+        async with self.sessions() as session:
+            statement = select(DRAFTS).where(DRAFTS.c.book_id == book_id)
+            stored = (await session.execute(statement)).mappings().one()
+
+        self.assertEqual(stored["revision"], 1)
+        self.assertEqual(stored["content_json"], original.model_dump(mode="json"))
+
+    async def test_working_save_checks_external_publications(self):
+        book_id = await self.create_book(self.book_content([]))
+        content = self.working_content([uuid4()])
+        request = BookWorkingDraftUpdate(expected_revision=1, content=content)
+
+        with self.assertRaises(errors.RuleBookDependencyUnavailable):
+            async with self.sessions.begin() as session:
+                await book_service.update_working_draft(session, book_id, self.owner_id, request)
+
+        async with self.sessions.begin() as session:
+            loaded = await book_service.get_working_draft(session, book_id, self.owner_id)
+
+        self.assertEqual(loaded.revision, 1)
+        self.assertEqual(loaded.content_json.toc, [])
+
+    async def test_concurrent_working_saves_accept_only_one_revision(self):
+        book_id = await self.create_book(self.book_content([]))
+
+        async def save(title):
+            payload = self.working_content().model_dump(mode="python")
+            payload["title"] = title
+            content = BookDraftContent.model_validate(payload)
+            request = BookWorkingDraftUpdate(expected_revision=1, content=content)
+
+            try:
+                async with self.sessions.begin() as session:
+                    saved = await book_service.update_working_draft(session, book_id, self.owner_id, request)
+                return saved
+            except errors.RuleBookConflict as exc:
+                return exc
+
+        results = await asyncio.gather(save("Первая правка"), save("Вторая правка"))
+        conflicts = [item for item in results if isinstance(item, errors.RuleBookConflict)]
+        accepted = [item for item in results if not isinstance(item, errors.RuleBookConflict)]
+
+        self.assertEqual(len(conflicts), 1)
+        self.assertEqual(len(accepted), 1)
+
+        async with self.sessions.begin() as session:
+            loaded = await book_service.get_working_draft(session, book_id, self.owner_id)
+
+        self.assertEqual(loaded.revision, 2)
+        self.assertEqual(loaded.content_json.title, accepted[0].content_json.title)
+
+    async def test_http_working_draft_round_trip_and_legacy_guard(self):
+        book_id = await self.create_book(self.book_content([]))
+        path = f"/rules/books/{book_id}/working-draft"
+        content = self.working_content()
+        payload = {"expected_revision": 1, "content": content.model_dump(mode="json")}
+
+        async with self.rules_http_client() as client:
+            saved = await client.put(path, json=payload)
+            self.assertEqual(saved.status_code, 200, saved.text)
+            self.assertEqual(saved.json()["revision"], 2)
+            self.assertEqual(saved.headers["cache-control"], "no-store")
+
+            loaded = await client.get(path)
+            self.assertEqual(loaded.status_code, 200, loaded.text)
+            self.assertEqual(loaded.json()["content_json"], content.model_dump(mode="json"))
+
+            legacy_read = await client.get(f"/rules/books/{book_id}/draft")
+            self.assertEqual(legacy_read.status_code, 409, legacy_read.text)
+
+            legacy_payload = {
+                "expected_revision": 2,
+                "content": self.book_content([]).model_dump(mode="json"),
+            }
+            rejected = await client.put(f"/rules/books/{book_id}/draft", json=legacy_payload)
+            self.assertEqual(rejected.status_code, 409, rejected.text)
+
+            unchanged = await client.get(path)
+
+        self.assertEqual(unchanged.status_code, 200, unchanged.text)
+        self.assertEqual(unchanged.json()["revision"], 2)
+        self.assertEqual(unchanged.json()["content_json"], content.model_dump(mode="json"))
+
+    async def test_http_working_draft_is_private_even_for_public_book(self):
+        book_id = await self.create_book(self.book_content([]))
+        reader_id = await self.add_reader()
+
+        async with self.sessions.begin() as session:
+            statement = update(BOOKS).where(BOOKS.c.id == book_id).values(visibility="public")
+            await session.execute(statement)
+
+        payload = {
+            "expected_revision": 1,
+            "content": self.working_content().model_dump(mode="json"),
+        }
+        path = f"/rules/books/{book_id}/working-draft"
+
+        async with self.rules_http_client(actor_id=reader_id) as client:
+            loaded = await client.get(path)
+            saved = await client.put(path, json=payload)
+
+        self.assertEqual(loaded.status_code, 404, loaded.text)
+        self.assertEqual(saved.status_code, 404, saved.text)
+
+        async with self.sessions.begin() as session:
+            own = await book_service.get_working_draft(session, book_id, self.owner_id)
+
+        self.assertEqual(own.revision, 1)
+
+    async def test_database_rejects_working_content_as_book_publication(self):
+        book_id = await self.create_book(self.book_content([]))
+        statement = self.version_insert(book_id, self.working_content())
+
+        await self.expect_database_error(statement, "23514")
 
     async def test_http_editor_opens_unpublished_own_book(self):
         book_id = await self.create_book(self.book_content([]))

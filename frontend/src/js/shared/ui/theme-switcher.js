@@ -55,7 +55,7 @@ function applyThemeBackground(themeName, forceReroll) {
         return;
     }
 
-    const images = Array.from({ length: 5 }, (_, index) => `/frontend/static/images/backgrounds/${folder}/fantasy-${index + 1}.webp`);
+    const images = Array.from({ length: 5 }, (_, index) => `/frontend/public/images/backgrounds/${folder}/fantasy-${index + 1}.webp`);
     const key = `theme-bg-${themeName}`;
     let chosen = forceReroll ? null : backgroundCache.get(key) || readStorage('sessionStorage', key);
 

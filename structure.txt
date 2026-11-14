@@ -464,7 +464,12 @@ WorldLoom/
 │   │   │   │   │   ├── draft/
 │   │   │   │   │   │   ├── draft-editor-panel.js
 │   │   │   │   │   │   ├── draft-editor-state.js
+│   │   │   │   │   │   ├── draft-publication-data.js
+│   │   │   │   │   │   ├── draft-publication-panel.js
 │   │   │   │   │   │   ├── draft-section-data.js
+│   │   │   │   │   │   ├── draft-section-replacement-data.js
+│   │   │   │   │   │   ├── draft-section-replacement-panel.js
+│   │   │   │   │   │   ├── draft-section-replacement-state.js
 │   │   │   │   │   │   ├── draft-toc-data.js
 │   │   │   │   │   │   └── draft-toc-panel.js
 │   │   │   │   │   ├── articles-api.js
@@ -630,8 +635,10 @@ WorldLoom/
 │   │       ├── rules-book-reader.test.mjs
 │   │       ├── rules-catalog.test.mjs
 │   │       ├── rules-draft-editor-state.test.mjs
+│   │       ├── rules-draft-publication.test.mjs
 │   │       ├── rules-draft-section-data.test.mjs
 │   │       ├── rules-draft-toc-data.test.mjs
+│   │       ├── rules-section-replacement.test.mjs
 │   │       └── rules-system-books-api.test.mjs
 │   ├── python/
 │   │   ├── game_systems/

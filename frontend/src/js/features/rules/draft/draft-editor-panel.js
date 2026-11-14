@@ -86,7 +86,12 @@ export function createDraftEditorPanel({ host, onInput, onSave, onReload }) {
         reload.disabled = Boolean(state.busy);
 
         if (state.busy) {
-            status.textContent = state.busy === 'save' ? 'Ожидаем результат сохранения…' : 'Загружаем серверный черновик…';
+            const messages = {
+                save: 'Ожидаем результат сохранения…',
+                reload: 'Загружаем серверный черновик…',
+                publish: 'Ожидаем результат публикации…'
+            };
+            status.textContent = messages[state.busy] || 'Ожидаем результат операции…';
         } else {
             status.textContent = state.message || (state.dirty ? 'Есть несохранённые изменения.' : `Ревизия ${state.revision}.`);
         }

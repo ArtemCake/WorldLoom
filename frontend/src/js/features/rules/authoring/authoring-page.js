@@ -11,6 +11,9 @@ import { createDraftTocPanel } from '../draft/draft-toc-panel.js';
 import { articlesApi } from '../articles-api.js';
 import { createSectionPicker } from './section-picker-state.js';
 import { createSectionPickerPanel } from './section-picker-panel.js';
+import { createDraftPublicationPanel } from '../draft/draft-publication-panel.js';
+import { createSectionReplacement } from '../draft/draft-section-replacement-state.js';
+import { createSectionReplacementPanel } from '../draft/draft-section-replacement-panel.js';
 
 const instances = new Map();
 let cleanupBound = false;
@@ -94,7 +97,26 @@ function mountWorkspace(root) {
         onClose: () => picker.close()
     });
 
-    const picker = createSectionPicker({ api: articlesApi, onChange: pickerPanel.renderPicker });
+    const replacementPanel = createSectionReplacementPanel({
+        host,
+        onCompare: (key) => act(() => compareSection(key)),
+        onApply: () => act(applyReplacement),
+        onClose: () => replacement.close()
+    });
+
+    const replacement = createSectionReplacement({
+        api: articlesApi,
+        onChange: replacementPanel.renderComparison
+    });
+
+    const picker = createSectionPicker({
+        api: articlesApi,
+        onChange: (state) => {
+            pickerPanel.renderPicker(state);
+            replacementPanel.renderPicker(state);
+        }
+    });
+    const publicationPanel = createDraftPublicationPanel({ host, onPublish: () => act(publishDraft) });
 
     function attachSection(parentKey) {
         if (!editor) return;
@@ -115,10 +137,50 @@ function mountWorkspace(root) {
         view.showNotice('Раздел добавлен в локальное оглавление. Сохраните черновик, чтобы записать изменения.');
     }
 
+    async function compareSection(key) {
+        if (!editor) return;
+
+        const current = editor.getState();
+        if (current.busy || current.blocked) return;
+
+        const node = current.toc.find((item) => item.key === key && item.kind === 'article');
+        const selected = picker.getState();
+
+        if (!node || !selected.opened || selected.reading || !selected.publication) return;
+
+        await replacement.compare({ node, publication: selected.publication });
+    }
+
+    function applyReplacement() {
+        if (!editor) return;
+
+        const current = editor.getState();
+        if (current.busy || current.blocked) return;
+
+        const command = replacement.getCommand();
+        const selected = picker.getState();
+
+        if (!selected.opened || selected.reading || selected.publication?.id !== command.publication.id) {
+            throw new TypeError('Выбранный материал изменился. Откройте сравнение заново.');
+        }
+
+        const window = root.ownerDocument.defaultView;
+        const question = 'Заменить публикацию только в выбранном пункте книги? Изменение потребуется сохранить.';
+        if (!window.confirm(question)) return;
+
+        if (!editor.section(command)) return;
+
+        replacement.close();
+        picker.close();
+        view.showNotice('Публикация раздела заменена в локальном оглавлении. Сохраните черновик.');
+    }
+
     function renderEditor(state) {
         panel.render(state);
         tocPanel.render(state);
         pickerPanel.renderEditor(state);
+        publicationPanel.render(state);
+        replacementPanel.renderEditor(state);
     }
 
     function renderWorkspace(state) {
@@ -131,6 +193,9 @@ function mountWorkspace(root) {
             tocPanel.clear();
             picker.close();
             pickerPanel.clear();
+            publicationPanel.clear();
+            replacement.close();
+            replacementPanel.clear();
             return;
         }
 
@@ -158,10 +223,29 @@ function mountWorkspace(root) {
         if (saved && !events.signal.aborted) controller.acceptDraft(saved);
     }
 
+    async function publishDraft() {
+        const current = editor;
+        if (!current?.getState().canPublish) return;
+
+        const window = root.ownerDocument.defaultView;
+        const question = 'Выпустить новую неизменяемую версию сохранённой книги? Видимость книги не изменится.';
+        if (!window.confirm(question)) return;
+
+        picker.close();
+        replacement.close();
+        const result = await current.publish();
+
+        if (!result || events.signal.aborted || editor !== current) return;
+        if (result.draft) controller.acceptDraft(result.draft);
+
+        await controller.reload();
+    }
+
     async function reloadDraft() {
         if (!editor || !navigation.allow()) return;
         const loaded = await editor.reload();
         if (loaded && !events.signal.aborted) {
+            replacement.close();
             picker.close();
             controller.acceptDraft(loaded);
         }
@@ -217,6 +301,9 @@ function mountWorkspace(root) {
         tocPanel.dispose();
         picker.dispose();
         pickerPanel.dispose();
+        publicationPanel.dispose();
+        replacement.dispose();
+        replacementPanel.dispose();
     }
 
     instances.set(root, { dispose });

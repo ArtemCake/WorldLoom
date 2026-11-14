@@ -215,6 +215,7 @@ WorldLoom/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── articles.py
 │   │   │   │   │   ├── book_authoring.py
+│   │   │   │   │   ├── book_draft_content.py
 │   │   │   │   │   ├── books.py
 │   │   │   │   │   ├── catalog.py
 │   │   │   │   │   └── system_books.py
@@ -222,6 +223,8 @@ WorldLoom/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── article_service.py
 │   │   │   │   │   ├── book_authoring.py
+│   │   │   │   │   ├── book_draft_commands.py
+│   │   │   │   │   ├── book_draft_publication.py
 │   │   │   │   │   ├── book_reader_service.py
 │   │   │   │   │   ├── book_service.py
 │   │   │   │   │   ├── catalog_service.py
@@ -660,6 +663,7 @@ WorldLoom/
 │   │   │   ├── test_article_postgresql.py
 │   │   │   ├── test_article_service.py
 │   │   │   ├── test_book_contracts.py
+│   │   │   ├── test_book_draft_content.py
 │   │   │   ├── test_book_models.py
 │   │   │   ├── test_book_postgresql.py
 │   │   │   ├── test_rules_http.py

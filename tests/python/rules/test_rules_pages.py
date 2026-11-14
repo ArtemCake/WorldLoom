@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi_csrf_protect import CsrfProtect
 from httpx import ASGITransport, AsyncClient
 from jinja2 import ChoiceLoader, DictLoader, Environment, FileSystemLoader, select_autoescape
@@ -15,9 +15,48 @@ from backend.app.infrastructure.database.session import get_async_session
 from backend.app.modules.rules.services import system_catalog
 from backend.app.modules.auth.dependencies import get_optional_user
 from backend.app.modules.rules.pages import router
+from backend.app.modules.admin.dependencies import require_content_manager
 
 
 class RulesPageTests(unittest.IsolatedAsyncioTestCase):
+
+	async def test_workspace_uses_author_permission_and_system_options(self):
+		actor = SimpleNamespace(id="test-author")
+		systems = [{"id": "system-one", "name": "Тестовая система"}]
+		self.system_options.return_value = systems
+
+		async def author():
+			return actor
+
+		self.app.dependency_overrides[require_content_manager] = author
+		renderer = Mock(return_value=HTMLResponse("<main>Мастерская</main>"))
+
+		with patch("backend.app.modules.rules.pages.render_page", renderer):
+			response = await self.client.get("/rules/workspace")
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.headers["cache-control"], "no-store")
+		self.assertEqual(renderer.call_args.args[1], "rules/workspace.html")
+		self.assertIs(renderer.call_args.args[2]["user"], actor)
+		self.assertEqual(renderer.call_args.args[2]["rule_systems"], systems)
+		self.system_options.assert_awaited_once_with(self.session)
+		self.session.rollback.assert_awaited_once()
+		self.session.commit.assert_not_awaited()
+
+	async def test_workspace_does_not_render_when_author_permission_denied(self):
+		from fastapi import HTTPException
+
+		async def denied():
+			raise HTTPException(status_code=403, detail="Недостаточно прав")
+
+		self.app.dependency_overrides[require_content_manager] = denied
+
+		with patch("backend.app.modules.rules.pages.render_page") as renderer:
+			response = await self.client.get("/rules/workspace")
+
+		self.assertEqual(response.status_code, 403)
+		renderer.assert_not_called()
+		self.system_options.assert_not_awaited()
 
 	async def test_authorized_page_passes_system_options_to_renderer(self):
 		self.actor = SimpleNamespace(id="test-user")
@@ -115,7 +154,7 @@ class RulesPageTests(unittest.IsolatedAsyncioTestCase):
 
 	def test_page_router_does_not_register_json_api(self):
 		paths = {route.path for route in router.routes}
-		self.assertEqual(paths, {"/rules/catalog"})
+		self.assertEqual(paths, {"/rules/catalog", "/rules/workspace"})
 
 class RulesTemplateTests(unittest.TestCase):
 
@@ -141,6 +180,7 @@ class RulesTemplateTests(unittest.TestCase):
 		base = DictLoader({"base.html": "{% block content %}{% endblock %}"})
 		files = FileSystemLoader(str(root / "frontend" / "templates"))
 		environment = Environment(loader=ChoiceLoader([base, files]), autoescape=select_autoescape(["html"]))
+		cls.workspace = environment.get_template("rules/workspace.html")
 		cls.template = environment.get_template("rules/catalog.html")
 
 	def test_guest_sees_login_without_catalog_loader(self):
@@ -160,6 +200,25 @@ class RulesTemplateTests(unittest.TestCase):
 		self.assertIn("data-rules-reader", html)
 		self.assertIn("data-rules-reader-back", html)
 		self.assertIn("К списку книг", html)
+
+	def test_workspace_contains_list_and_saved_draft_panels(self):
+		html = self.workspace.render(project_name="WorldLoom", rule_systems=[])
+
+		for marker in ("data-rules-workspace", "data-author-filters", "data-author-list", "data-author-draft"):
+			self.assertIn(marker, html)
+
+		self.assertIn("data-author-back", html)
+		self.assertIn("data-author-draft-retry", html)
+		self.assertNotIn('name="scope"', html)
+		self.assertNotIn("data-author-publish", html)
+
+	def test_workspace_escapes_system_names(self):
+		systems = [{"id": "system-one", "name": "<script>unsafe()</script>"}]
+		html = self.workspace.render(project_name="WorldLoom", rule_systems=systems)
+
+		self.assertNotIn("<script>unsafe()</script>", html)
+		self.assertIn("&lt;script&gt;unsafe()&lt;/script&gt;", html)
+
 
 
 if __name__ == "__main__":

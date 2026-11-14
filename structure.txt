@@ -214,12 +214,14 @@ WorldLoom/
 │   │   │   │   ├── schemas/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── articles.py
+│   │   │   │   │   ├── book_authoring.py
 │   │   │   │   │   ├── books.py
 │   │   │   │   │   ├── catalog.py
 │   │   │   │   │   └── system_books.py
 │   │   │   │   ├── services/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── article_service.py
+│   │   │   │   │   ├── book_authoring.py
 │   │   │   │   │   ├── book_reader_service.py
 │   │   │   │   │   ├── book_service.py
 │   │   │   │   │   ├── catalog_service.py
@@ -280,9 +282,11 @@ WorldLoom/
 │   │   └── migrate.py
 │   ├── db_migrations/
 │   │   ├── versions/
-│   │   │   └── 1372661e8ac9_созданиепроекта.py
+│   │   │   ├── 1372661e8ac9_созданиепроекта.py
+│   │   │   └── 20261114_publication_protection.py
 │   │   ├── __init__.py
 │   │   ├── env.py
+│   │   ├── publication_protection.py
 │   │   ├── README
 │   │   ├── rule_engine_protection.py
 │   │   └── script.py.mako
@@ -442,13 +446,22 @@ WorldLoom/
 │   │   │   │   │   ├── maps.js
 │   │   │   │   │   └── stored-game-map.js
 │   │   │   │   ├── rules/
+│   │   │   │   │   ├── authoring/
+│   │   │   │   │   │   ├── authoring-controller.js
+│   │   │   │   │   │   ├── authoring-navigation.js
+│   │   │   │   │   │   ├── authoring-page.js
+│   │   │   │   │   │   ├── authoring-view.js
+│   │   │   │   │   │   ├── draft-editor-panel.js
+│   │   │   │   │   │   └── draft-editor-state.js
+│   │   │   │   │   ├── books/
+│   │   │   │   │   │   ├── book-authoring-api.js
+│   │   │   │   │   │   ├── book-reader.js
+│   │   │   │   │   │   └── books-api.js
 │   │   │   │   │   ├── catalog/
 │   │   │   │   │   │   ├── catalog-controller.js
 │   │   │   │   │   │   ├── catalog-page.js
 │   │   │   │   │   │   └── catalog-view.js
 │   │   │   │   │   ├── articles-api.js
-│   │   │   │   │   ├── book-reader.js
-│   │   │   │   │   ├── books-api.js
 │   │   │   │   │   └── rules-http.js
 │   │   │   │   └── users/
 │   │   │   │       ├── avatar-preview.js
@@ -554,7 +567,8 @@ WorldLoom/
 │   │   │   ├── map_view.html
 │   │   │   └── maps.html
 │   │   ├── rules/
-│   │   │   └── catalog.html
+│   │   │   ├── catalog.html
+│   │   │   └── workspace.html
 │   │   ├── shared/
 │   │   │   └── menu.html
 │   │   ├── users/
@@ -576,8 +590,11 @@ WorldLoom/
 │   ├── worldloom.log.2026-11-09
 │   ├── worldloom.log.2026-11-10
 │   ├── worldloom.log.2026-11-12
+│   ├── worldloom.log.2026-11-13
 │   └── worldloom_error.log
 ├── staging/
+│   ├── probe_pg_publication.py
+│   └── probe_script_dir.py
 ├── tests/
 │   ├── js/
 │   │   ├── book/
@@ -603,8 +620,12 @@ WorldLoom/
 │   │   │   └── rule-sections.test.mjs
 │   │   └── rules/
 │   │       ├── rules-api.test.mjs
+│   │       ├── rules-authoring-controller.test.mjs
+│   │       ├── rules-authoring-navigation.test.mjs
+│   │       ├── rules-book-authoring-api.test.mjs
 │   │       ├── rules-book-reader.test.mjs
 │   │       ├── rules-catalog.test.mjs
+│   │       ├── rules-draft-editor-state.test.mjs
 │   │       └── rules-system-books-api.test.mjs
 │   ├── python/
 │   │   ├── game_systems/
@@ -621,6 +642,7 @@ WorldLoom/
 │   │   │   └── test_rulebook_contract.py
 │   │   ├── rules/
 │   │   │   ├── __init__.py
+│   │   │   ├── pg_support.py
 │   │   │   ├── test_article_foundation.py
 │   │   │   ├── test_article_postgresql.py
 │   │   │   ├── test_article_service.py

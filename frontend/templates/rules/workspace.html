@@ -1,0 +1,73 @@
+<!-- frontend/templates/rules/workspace.html -->
+
+{% extends "base.html" %}
+
+{% block title %}Мастерская книг — {{ project_name }}{% endblock %}
+
+{% block content %}
+<section class="rules-catalog" data-rules-workspace hx-boost="false" hx-history="false">
+	<header class="rules-catalog__header">
+		<h1>Мастерская книг</h1>
+		<p>Собственные книги и их сохранённые черновики.</p>
+		<a href="/rules/catalog" class="btn btn-outline-primary">К опубликованным правилам</a>
+	</header>
+	
+	<p data-author-notice role="alert" hidden></p>
+	
+	<div data-author-catalog>
+		<form class="rules-catalog__filters" data-author-filters>
+			<label>
+				<span>Игровая система</span>
+				<select name="system_id">
+					<option value="">Все системы</option>
+					{% for system in rule_systems %}
+					<option value="{{ system.id }}">{{ system.name }}</option>
+					{% endfor %}
+				</select>
+			</label>
+			
+			<label>
+				<span>Поиск по черновикам</span>
+				<input type="search" name="q" maxlength="100" autocomplete="off">
+			</label>
+			
+			<label>
+				<span>Код редакции</span>
+				<input type="text" name="edition_key" maxlength="100" autocomplete="off">
+			</label>
+			
+			<label>
+				<span>Код языка</span>
+				<input type="text" name="language" minlength="2" maxlength="20" autocomplete="off">
+			</label>
+			
+			<div class="rules-catalog__actions">
+				<button type="submit" class="btn btn-primary">Применить</button>
+				<button type="button" class="btn btn-outline-primary" data-author-reload>Обновить</button>
+			</div>
+		</form>
+		
+		<p data-author-message role="status" aria-live="polite"></p>
+		<p data-author-access hidden>Проверьте вход в аккаунт и разрешение на работу с контентом.</p>
+		<div class="rules-catalog__list" data-author-list></div>
+		
+		<div class="rules-catalog__actions">
+			<button type="button" class="btn btn-outline-primary" data-author-more hidden>Показать ещё</button>
+			<button type="button" class="btn btn-outline-primary" data-author-retry hidden>Повторить загрузку</button>
+		</div>
+	</div>
+	
+	<section class="rules-catalog__reader" data-author-draft hidden>
+		<button type="button" class="btn btn-outline-primary" data-author-back>К моим книгам</button>
+		<h2 data-author-heading tabindex="-1">Сохранённый черновик</h2>
+		<p data-author-draft-message role="status" aria-live="polite"></p>
+		<button type="button" class="btn btn-outline-primary" data-author-draft-retry hidden>Повторить открытие</button>
+		<div data-author-content></div>
+		<section data-author-edit hidden></section>
+	</section>
+	
+	<noscript>
+		<p>Для загрузки собственных книг и открытия черновиков нужен JavaScript.</p>
+	</noscript>
+</section>
+{% endblock %}

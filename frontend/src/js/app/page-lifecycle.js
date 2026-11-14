@@ -10,6 +10,7 @@ import { initGlobalUI } from '../shared/ui/ui.js';
 import { initGameSystemsCatalog } from '../features/game-systems/pages/catalog-page.js';
 import { initGameSystemEditor } from '../features/game-systems/pages/editor-page.js';
 import { initRulesCatalog } from '../features/rules/catalog/catalog-page.js';
+import { initRulesWorkspace } from '../features/rules/authoring/authoring-page.js';
 
 let lifecycleBound = false;
 
@@ -20,6 +21,7 @@ export function initPage() {
     initProfile();
     initMfaSetup();
     initDeleteAccountModal();
+    initRulesWorkspace();
     initAdminPanel();
     initGameSystemsCatalog();
     initRulesCatalog();

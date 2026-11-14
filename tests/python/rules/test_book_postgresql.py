@@ -3,7 +3,6 @@
 """Проверки миграции книг и зависимостей на отдельной PostgreSQL."""
 
 from __future__ import annotations
-import importlib
 import os
 import unittest
 from uuid import UUID, uuid4
@@ -11,8 +10,6 @@ import asyncio
 from backend.app.modules.rules import errors
 from backend.app.modules.rules.models.articles import RuleArticle, RuleArticleVersion
 from backend.app.modules.rules.services import book_service
-from alembic.migration import MigrationContext
-from alembic.operations import Operations
 from sqlalchemy import delete, func, insert, select, text, update
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import DBAPIError
@@ -32,23 +29,24 @@ from backend.app.modules.admin.dependencies import require_content_manager
 from backend.app.modules.auth.dependencies import get_current_user
 from backend.app.modules.rules.api import router as rules_router
 from backend.app.web.csrf import enforce_csrf
-from backend.app.modules.rules import errors
 from backend.app.modules.rules.schemas import system_books as system_contracts
-from backend.app.modules.rules.schemas.catalog import CatalogQuery
 from backend.app.modules.rules.schemas.book_authoring import AuthorBookQuery
 from backend.app.modules.rules.services import book_authoring
-from backend.app.modules.rules.services import catalog_service, system_books
+from backend.app.modules.rules.services import system_books
+from tests.python.rules.pg_support import (
+    USER_INSERT_SQL,
+    PostgresTestCase,
+    apply_migrations,
+    require_connection,
+    system_values,
+    user_values,
+)
 
 
 BOOKS = RuleBook.__table__
 DRAFTS = RuleBookDraft.__table__
 VERSIONS = RuleBookVersion.__table__
 DEPENDENCIES = RuleBookVersionArticle.__table__
-
-MIGRATIONS = (
-    "backend.db_migrations.versions.1372661e8ac9_созданиепроекта",
-    "backend.db_migrations.versions.20261111_rule_books",
-)
 
 
 def database_url():
@@ -71,19 +69,11 @@ def database_url():
     return url
 
 
-def apply_migrations(connection):
-    context = MigrationContext.configure(connection)
-
-    with Operations.context(context):
-        for module_name in MIGRATIONS:
-            importlib.import_module(module_name).upgrade()
-
-
 def sqlstate(error: DBAPIError):
     return getattr(error.orig, "sqlstate", None) or getattr(error.orig, "pgcode", None)
 
 
-class BookPostgreSQLTests(unittest.IsolatedAsyncioTestCase):
+class BookPostgreSQLTests(PostgresTestCase):
 
     async def test_http_editor_opens_unpublished_own_book(self):
         book_id = await self.create_book(self.book_content([]))
@@ -368,15 +358,15 @@ class BookPostgreSQLTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(page.next_after)
 
     async def create_test_system(self, *, active=True):
-        system_id = uuid4()
+        values = system_values(active=active)
 
         async with self.sessions.begin() as session:
-            await session.execute(
-                text("INSERT INTO game_systems (id, is_active) VALUES (:id, :active)"),
-                {"id": system_id, "active": active},
-            )
+            await session.execute(text(
+                "INSERT INTO game_systems (id, name, slug, rules_engine_version, is_active) "
+                "VALUES (:id, :name, :slug, '1.0', :is_active)"
+            ), values)
 
-        return system_id
+        return values["id"]
 
     async def read_book_system(self, book_id):
         statement = select(BOOKS.c.system_id).where(BOOKS.c.id == book_id)
@@ -474,7 +464,8 @@ class BookPostgreSQLTests(unittest.IsolatedAsyncioTestCase):
         await self.assign_test_system(book_id, system_id)
 
         statement = text("DELETE FROM game_systems WHERE id = :id").bindparams(id=system_id)
-        await self.expect_database_error(statement, "23503")
+        # ON DELETE RESTRICT отдаёт restrict_violation, а не foreign_key_violation.
+        await self.expect_database_error(statement, "23001")
 
     async def test_assignment_does_not_rewrite_publication(self):
         article_id = await self.create_article_version()
@@ -636,7 +627,12 @@ class BookPostgreSQLTests(unittest.IsolatedAsyncioTestCase):
     async def test_http_book_publication_pins_article_and_can_be_read(self):
         article_version_id = await self.create_article_version()
         content = self.book_content([article_version_id])
-        payload = {"slug": f"http-book-{uuid4().hex}", "content": content.model_dump(mode="json")}
+        system_id = await self.create_test_system()
+        payload = {
+            "system_id": str(system_id),
+            "slug": f"http-book-{uuid4().hex}",
+            "content": content.model_dump(mode="json"),
+        }
 
         async with self.rules_http_client() as client:
             created = await client.post("/rules/books", json=payload)
@@ -659,14 +655,29 @@ class BookPostgreSQLTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await self.count_rows(DEPENDENCIES), 1)
 
     async def test_http_failed_book_publication_leaves_no_partial_rows(self):
-        missing_version_id = uuid4()
-        content = self.book_content([missing_version_id])
-        payload = {"slug": f"http-invalid-book-{uuid4().hex}", "content": content.model_dump(mode="json")}
+        # Создание отклоняет недоступные источники, поэтому недоступную статью
+        # подкладываем прямо в черновик — проверяем именно публикацию.
+        existing_version_id = await self.create_article_version()
+        valid_content = self.book_content([existing_version_id])
+        broken_content = self.book_content([uuid4()])
+        system_id = await self.create_test_system()
+        payload = {
+            "system_id": str(system_id),
+            "slug": f"http-invalid-book-{uuid4().hex}",
+            "content": valid_content.model_dump(mode="json"),
+        }
 
         async with self.rules_http_client() as client:
             created = await client.post("/rules/books", json=payload)
             self.assertEqual(created.status_code, 201, created.text)
             book_id = created.json()["book"]["id"]
+
+            async with self.sessions.begin() as session:
+                await session.execute(
+                    update(DRAFTS)
+                    .where(DRAFTS.c.book_id == UUID(book_id))
+                    .values(content_json=broken_content.model_dump(mode="json"))
+                )
 
             response = await client.post(f"/rules/books/{book_id}/publish", json={"expected_revision": 1})
             draft = await client.get(f"/rules/books/{book_id}/draft")
@@ -919,6 +930,7 @@ class BookPostgreSQLTests(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         url = database_url()
+        await require_connection(url)
 
         self.schema = f"wl_books_test_{uuid4().hex}"
         self.owner_id = uuid4()
@@ -945,14 +957,8 @@ class BookPostgreSQLTests(unittest.IsolatedAsyncioTestCase):
         self.sessions = async_sessionmaker(self.engine, expire_on_commit=False)
 
         async with self.engine.begin() as connection:
-            await connection.execute(text("CREATE TABLE users (id uuid PRIMARY KEY)"))
             await connection.run_sync(apply_migrations)
-            await connection.execute(text("INSERT INTO users (id) VALUES (:id)"), {"id": self.owner_id})
-            await connection.execute(text(
-                "CREATE TABLE game_systems ("
-                "id uuid PRIMARY KEY, "
-                "is_active boolean NOT NULL DEFAULT true)"
-            ))
+            await connection.execute(USER_INSERT_SQL, user_values(self.owner_id))
 
     async def cleanup_database(self):
         if self.engine is not None:
@@ -1153,7 +1159,7 @@ class BookPostgreSQLTests(unittest.IsolatedAsyncioTestCase):
         book_id = await self.create_book(content)
         await self.publish_directly(book_id, content)
 
-        await self.expect_database_error(delete(BOOKS).where(BOOKS.c.id == book_id), "23503")
+        await self.expect_database_error(delete(BOOKS).where(BOOKS.c.id == book_id), "23001")
 
     async def test_duplicate_source_revision_is_rejected(self):
         article_id = await self.create_article_version()
@@ -1260,12 +1266,12 @@ class BookPostgreSQLTests(unittest.IsolatedAsyncioTestCase):
             await session.execute(statement)
 
     async def add_reader(self):
-        actor_id = uuid4()
+        values = user_values()
 
         async with self.sessions.begin() as session:
-            await session.execute(text("INSERT INTO users (id) VALUES (:id)"), {"id": actor_id})
+            await session.execute(USER_INSERT_SQL, values)
 
-        return actor_id
+        return values["id"]
 
     async def test_service_creates_book_and_first_draft(self):
         created = await self.create_service_book([])

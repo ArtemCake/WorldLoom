@@ -9,12 +9,9 @@
 
 from __future__ import annotations
 import asyncio
-import importlib
 import os
 import unittest
 from uuid import uuid4
-from alembic.migration import MigrationContext
-from alembic.operations import Operations
 from sqlalchemy import delete, func, insert, select, text, update
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import DBAPIError
@@ -24,13 +21,18 @@ from backend.app.modules.rules import errors
 from backend.app.modules.rules.models.articles import RuleArticle, RuleArticleDraft, RuleArticleVersion
 from backend.app.modules.rules.schemas import articles as contracts
 from backend.app.modules.rules.services import article_service as service
+from tests.python.rules.pg_support import (
+    USER_INSERT_SQL,
+    PostgresTestCase,
+    apply_migrations,
+    require_connection,
+    user_values,
+)
 
 
 ARTICLES = RuleArticle.__table__
 DRAFTS = RuleArticleDraft.__table__
 VERSIONS = RuleArticleVersion.__table__
-
-MIGRATION_MODULE = "backend.db_migrations.versions.1e297517fb5c_созданиепроекта"
 
 
 def test_database_url():
@@ -58,22 +60,14 @@ def test_database_url():
 test_database_url.__test__ = False
 
 
-def apply_article_migration(connection):
-    """Выполнить реальный upgrade миграции в текущей временной схеме."""
-    migration = importlib.import_module(MIGRATION_MODULE)
-    context = MigrationContext.configure(connection)
-
-    with Operations.context(context):
-        migration.upgrade()
-
-
 def sqlstate(error: DBAPIError):
     return getattr(error.orig, "sqlstate", None) or getattr(error.orig, "pgcode", None)
 
 
-class ArticlePostgreSQLTests(unittest.IsolatedAsyncioTestCase):
+class ArticlePostgreSQLTests(PostgresTestCase):
     async def asyncSetUp(self):
         url = test_database_url()
+        await require_connection(url)
 
         self.schema = f"wl_rules_test_{uuid4().hex}"
         self.owner_id = uuid4()
@@ -102,11 +96,9 @@ class ArticlePostgreSQLTests(unittest.IsolatedAsyncioTestCase):
         self.sessions = async_sessionmaker(self.engine, expire_on_commit=False)
 
         async with self.engine.begin() as connection:
-            await connection.execute(text("CREATE TABLE users (id uuid PRIMARY KEY)"))
-            await connection.run_sync(apply_article_migration)
-
-            statement = text("INSERT INTO users (id) VALUES (:owner), (:other)")
-            await connection.execute(statement, {"owner": self.owner_id, "other": self.other_id})
+            await connection.run_sync(apply_migrations)
+            await connection.execute(USER_INSERT_SQL, user_values(self.owner_id))
+            await connection.execute(USER_INSERT_SQL, user_values(self.other_id))
 
     async def cleanup_database(self):
         if self.engine is not None:
@@ -166,7 +158,10 @@ class ArticlePostgreSQLTests(unittest.IsolatedAsyncioTestCase):
                 "WHERE n.nspname = current_schema() "
                 "AND c.relname = 'rule_article_versions' AND NOT t.tgisinternal"
             ))
-            guards = dict(result.all())
+            guards = {
+                name: mode.decode() if isinstance(mode, bytes) else mode
+                for name, mode in result.all()
+            }
 
         self.assertTrue({"rule_articles", "rule_article_drafts", "rule_article_versions"} <= tables)
         self.assertEqual(guards.get("rule_article_versions_immutable"), "O")
@@ -308,7 +303,7 @@ class ArticlePostgreSQLTests(unittest.IsolatedAsyncioTestCase):
         statements = (
             update(VERSIONS).where(VERSIONS.c.id == version_id).values(version_number=99),
             delete(VERSIONS).where(VERSIONS.c.id == version_id),
-            text("TRUNCATE TABLE rule_article_versions"),
+            text("TRUNCATE TABLE rule_article_versions CASCADE"),
         )
 
         for statement in statements:
@@ -322,7 +317,8 @@ class ArticlePostgreSQLTests(unittest.IsolatedAsyncioTestCase):
         await self.publish(created.article.id)
 
         statement = delete(ARTICLES).where(ARTICLES.c.id == created.article.id)
-        await self.expect_database_error(statement, "23503")
+        # ON DELETE RESTRICT отдаёт restrict_violation, а не foreign_key_violation.
+        await self.expect_database_error(statement, "23001")
 
         self.assertEqual(await self.count_versions(created.article.id), 1)
 

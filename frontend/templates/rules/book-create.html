@@ -1,0 +1,93 @@
+<!-- frontend/templates/rules/book-create.html -->
+
+{% extends "base.html" %}
+
+{% block title %}Создание книги правил — {{ project_name }}{% endblock %}
+
+{% block content %}
+<section class="rules-catalog rules-book-create" data-rules-book-create-page hx-boost="false" hx-history="false">
+	<header class="rules-catalog__header">
+		<h1>Новая книга правил</h1>
+		<p>Сначала заполните сведения о книге. Главы, тексты и источники добавляются в редакторе.</p>
+		<a href="/rules/workspace" class="btn btn-outline-primary">К моим книгам</a>
+	</header>
+	
+	<p data-book-create-notice role="alert" hidden></p>
+	
+	<section data-book-create aria-label="Сведения о новой книге">
+		<form class="rules-book-create__form" data-book-create-form aria-labelledby="book-create-heading">
+			<h2 id="book-create-heading" tabindex="-1" data-book-create-heading>Сведения о книге</h2>
+			
+			<p>Название, игровая система и язык обязательны. Остальные поля можно оставить пустыми.</p>
+			
+			<div class="rules-book-create__fields">
+				<label class="rules-book-create__field">
+					<span>Название книги</span>
+					<input type="text" name="title" maxlength="200" aria-describedby="book-title-help" required>
+					<small id="book-title-help">Название в списке книг и при чтении правил.</small>
+				</label>
+				
+				<label class="rules-book-create__field">
+					<span>Игровая система</span>
+					<select name="system_id" aria-describedby="book-system-help" required>
+						<option value="">Выберите игровую систему</option>
+						{% for system in rule_systems %}
+						<option value="{{ system.id }}">{{ system.name }}</option>
+						{% endfor %}
+					</select>
+					<small id="book-system-help">
+						Система, объединяющая эту книгу, механики и правила. Подходит система в разработке.
+					</small>
+				</label>
+				
+				<label class="rules-book-create__field rules-book-create__field--wide">
+					<span>Краткое описание — необязательно</span>
+					<textarea name="summary" rows="4" maxlength="5000" aria-describedby="book-summary-help"></textarea>
+					<small id="book-summary-help">
+						О чём книга и кому она пригодится. Основной текст правил добавляется позже.
+					</small>
+				</label>
+				
+				<label class="rules-book-create__field">
+					<span>Язык книги</span>
+					<input type="text" name="language" value="ru" minlength="2" maxlength="20"
+					       aria-describedby="book-language-help" required>
+					<small id="book-language-help">Код языка: ru — русский, en — английский.</small>
+				</label>
+				
+				<label class="rules-book-create__field">
+					<span>Код редакции — необязательно</span>
+					<input type="text" name="edition_key" maxlength="100" aria-describedby="book-edition-help">
+					<small id="book-edition-help">
+						Обозначение редакции правил. Оставьте пустым, если разделение по редакциям не требуется.
+					</small>
+				</label>
+			</div>
+			
+			<p>Будет создана закрытая книга. Это действие не публикует её содержание.</p>
+			
+			<p class="rules-book-create__error" data-book-create-error role="alert" hidden></p>
+			
+			<div class="rules-catalog__actions">
+				<button type="submit" class="btn btn-primary" data-book-create-submit>
+					Создать и открыть черновик
+				</button>
+				<button type="button" class="btn btn-outline-primary" data-book-create-cancel>
+					Отмена
+				</button>
+			</div>
+		</form>
+		
+		{% if not rule_systems %}
+		<p class="rules-book-create__error">
+			Нет доступных игровых систем. Для книги сначала нужна система-контейнер.
+			Публиковать систему не требуется.
+		</p>
+		{% endif %}
+	</section>
+	
+	<noscript>
+		<p>Для создания книги необходимо включить JavaScript.</p>
+	</noscript>
+</section>
+{% endblock %}

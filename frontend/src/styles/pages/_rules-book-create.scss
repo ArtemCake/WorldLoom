@@ -1,0 +1,147 @@
+/* frontend/src/styles/pages/_rules-book-create.scss */
+
+.rules-book-create {
+    width: 100%;
+    max-width: 64rem;
+    min-width: 0;
+    margin-inline: auto;
+    color: var(--color-text-primary);
+    font-family: var(--font-family-base);
+
+    &,
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
+    [hidden] {
+        display: none !important;
+    }
+
+    > .rules-catalog__header h1 {
+        text-align: left;
+    }
+
+    > .rules-catalog__header p {
+        color: var(--color-text-secondary);
+    }
+
+    &__form {
+        display: grid;
+        gap: 1.25rem;
+        min-width: 0;
+        margin: 0;
+        padding: clamp(1rem, 3vw, 2rem);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: var(--radius-md);
+        color: var(--color-text-primary);
+        background: var(--color-bg-panel);
+    }
+
+    &__form > h2,
+    &__form > p {
+        margin: 0;
+        text-align: left;
+    }
+
+    &__form > p {
+        line-height: 1.6;
+    }
+
+    &__fields {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 1.25rem 1.5rem;
+        min-width: 0;
+    }
+
+    &__field {
+        display: grid;
+        align-content: start;
+        gap: 0.5rem;
+        min-width: 0;
+        margin: 0;
+        color: var(--color-text-primary);
+    }
+
+    &__field--wide {
+        grid-column: 1 / -1;
+    }
+
+    &__field > span {
+        font-weight: 600;
+        line-height: 1.5;
+    }
+
+    &__field > small {
+        color: var(--color-text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.55;
+    }
+
+    &__field > input,
+    &__field > select,
+    &__field > textarea {
+        width: 100%;
+        min-width: 0;
+        min-height: 2.75rem;
+        font: inherit;
+    }
+
+    &__field > textarea {
+        min-height: 8rem;
+        resize: vertical;
+    }
+
+    &__field > select option {
+        color: var(--color-text-primary);
+        background: var(--color-bg-panel);
+    }
+
+    &__field > input[readonly],
+    &__field > textarea[readonly] {
+        cursor: default;
+    }
+
+    &__field > :disabled {
+        cursor: not-allowed;
+    }
+
+    &__error,
+    [data-book-create-notice] {
+        padding: 0.9rem 1rem;
+        border: 1px solid var(--color-border-subtle);
+        border-inline-start: 0.25rem solid var(--color-text-error);
+        border-radius: var(--radius-md);
+        color: var(--color-text-primary);
+        background: var(--color-bg-panel-alt);
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+    }
+
+    [data-book-create-notice]:not([hidden]) {
+        margin-bottom: 1rem;
+    }
+
+    [data-book-create] > &__error {
+        margin-top: 1rem;
+    }
+
+    .rules-catalog__actions > .btn {
+        max-width: 100%;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 48rem) {
+        &__fields {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .rules-catalog__actions > .btn {
+            flex: 1 1 12rem;
+        }
+    }
+}

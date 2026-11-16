@@ -1,48 +1,70 @@
 <!-- frontend/templates/rules/partials/book-create.html -->
 
-<section data-book-create aria-label="Создание книги правил">
+<section class="rules-workspace__card" data-book-create aria-label="Создание книги правил">
 	<button type="button" class="btn btn-primary" data-book-create-open>
 		Создать книгу правил
 	</button>
 	
-	<form class="rules-catalog__filters" data-book-create-form hidden>
-		<h2 tabindex="-1" data-book-create-heading>Новая книга правил</h2>
+	<form class="rules-workspace__form" data-book-create-form aria-labelledby="book-create-heading" hidden>
+		<header class="rules-workspace__section-header">
+			<h2 id="book-create-heading" tabindex="-1" data-book-create-heading>Новая книга правил</h2>
+			<p>Заполните сведения о новой книге. Главы и тексты можно добавить после создания.</p>
+			<p class="rules-workspace__hint">Обязательные поля отмечены словом «обязательно».</p>
+		</header>
 		
-		<label>
-			<span>Игровая система</span>
-			<select name="system_id" required>
-				<option value="">Выберите игровую систему</option>
-				{% for system in rule_systems %}
-				<option value="{{ system.id }}">{{ system.name }}</option>
-				{% endfor %}
-			</select>
-		</label>
+		<div class="rules-workspace__fields">
+			<label class="rules-workspace__field">
+				<span>Название книги <small>обязательно</small></span>
+				<input type="text" name="title" maxlength="200" aria-describedby="book-create-title-hint" required>
+				<small id="book-create-title-hint">Название, которое будет показано в списке книг и при чтении.</small>
+			</label>
+			
+			<label class="rules-workspace__field">
+				<span>Игровая система <small>обязательно</small></span>
+				<select name="system_id" aria-describedby="book-create-system-hint" required>
+					<option value="">Выберите игровую систему</option>
+					{% for system in rule_systems %}
+					<option value="{{ system.id }}">{{ system.name }}</option>
+					{% endfor %}
+				</select>
+				<small id="book-create-system-hint">
+					Система, к которой относится книга. Подходит и система в разработке — публикация не требуется.
+				</small>
+			</label>
+			
+			<label class="rules-workspace__field rules-workspace__field--wide">
+				<span>Краткое описание <small>необязательно</small></span>
+				<textarea name="summary" rows="4" maxlength="5000" aria-describedby="book-create-summary-hint"></textarea>
+				<small id="book-create-summary-hint">
+					О чём эта книга и кому она пригодится. Это описание, а не основной текст правил.
+				</small>
+			</label>
+			
+			<label class="rules-workspace__field">
+				<span>Язык книги <small>обязательно</small></span>
+				<input type="text" name="language" value="ru" minlength="2" maxlength="20"
+				       aria-describedby="book-create-language-hint" required>
+				<small id="book-create-language-hint">
+					Код языка: например, ru — русский, en — английский.
+				</small>
+			</label>
+			
+			<label class="rules-workspace__field">
+				<span>Код редакции <small>необязательно</small></span>
+				<input type="text" name="edition_key" maxlength="100" aria-describedby="book-create-edition-hint">
+				<small id="book-create-edition-hint">
+					Обозначение редакции правил. Если редакции не разделяются, оставьте поле пустым.
+				</small>
+			</label>
+		</div>
 		
-		<label>
-			<span>Название книги</span>
-			<input type="text" name="title" maxlength="200" required>
-		</label>
+		<p class="rules-workspace__note">
+			Книга будет создана закрытой. После создания откроется редактор её черновика.
+		</p>
 		
-		<label>
-			<span>Описание</span>
-			<textarea name="summary" rows="4" maxlength="5000"></textarea>
-		</label>
+		<p class="rules-workspace__error" data-book-create-error role="alert" hidden></p>
 		
-		<label>
-			<span>Код языка</span>
-			<input type="text" name="language" value="ru" minlength="2" maxlength="20" required>
-		</label>
-		
-		<label>
-			<span>Код редакции, если нужен</span>
-			<input type="text" name="edition_key" maxlength="100">
-		</label>
-		
-		<p>Книга будет создана закрытой. Главы, тексты и источники добавляются в редакторе.</p>
-		
-		<p data-book-create-error role="alert" hidden></p>
-		
-		<div class="rules-catalog__actions">
+		<div class="rules-workspace__actions">
 			<button type="submit" class="btn btn-primary" data-book-create-submit>
 				Создать и открыть
 			</button>
@@ -53,6 +75,9 @@
 	</form>
 	
 	{% if not rule_systems %}
-	<p>Сначала создайте игровую систему-контейнер. Публиковать её для добавления книг не требуется.</p>
+	<p class="rules-workspace__note">
+		Для создания книги сначала нужна игровая система-контейнер.
+		Публиковать систему не требуется.
+	</p>
 	{% endif %}
 </section>

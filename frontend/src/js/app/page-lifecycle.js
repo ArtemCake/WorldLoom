@@ -11,6 +11,7 @@ import { initGameSystemsCatalog } from '../features/game-systems/pages/catalog-p
 import { initGameSystemEditor } from '../features/game-systems/pages/editor-page.js';
 import { initRulesCatalog } from '../features/rules/catalog/catalog-page.js';
 import { initRulesWorkspace } from '../features/rules/authoring/authoring-page.js';
+import { initRulesBookCreation } from '../features/rules/books/book-create-page.js';
 
 let lifecycleBound = false;
 
@@ -22,6 +23,7 @@ export function initPage() {
     initMfaSetup();
     initDeleteAccountModal();
     initRulesWorkspace();
+    initRulesBookCreation();
     initAdminPanel();
     initGameSystemsCatalog();
     initRulesCatalog();

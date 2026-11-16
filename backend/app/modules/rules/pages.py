@@ -29,6 +29,16 @@ async def workspace_page(request: Request, user: RulesEditor, csrf_protect: Page
 	response.headers["Cache-Control"] = "no-store"
 	return response
 
+@router.get("/workspace/create", response_class=HTMLResponse, name="rules_book_create_get")
+async def book_create_page(request: Request, user: RulesEditor, csrf_protect: PageCsrf, session: RulesSession) -> HTMLResponse:
+	async with rules_operation(session):
+		systems = await system_catalog.list_author_system_options(session)
+		context = {"user": user, "rule_systems": systems}
+		response = render_page(request, "rules/book-create.html", context, csrf_protect)
+
+	response.headers["Cache-Control"] = "no-store"
+	return response
+
 @router.get("/catalog", response_class=HTMLResponse, name="rules_catalog_get")
 async def catalog_page(request: Request, user: OptionalUser, csrf_protect: PageCsrf, session: RulesSession) -> HTMLResponse:
 	context = {"user": user, "rule_systems": []}

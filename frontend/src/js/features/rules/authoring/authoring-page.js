@@ -15,8 +15,7 @@ import { createDraftPublicationPanel } from '../draft/draft-publication-panel.js
 import { createSectionReplacement } from '../draft/draft-section-replacement-state.js';
 import { createSectionReplacementPanel } from '../draft/draft-section-replacement-panel.js';
 import { createDraftTextPanel } from '../draft/draft-text-panel.js';
-import { createBookCreation } from '../books/book-create-state.js';
-import { createBookCreationPanel } from '../books/book-create-panel.js';
+import { ruleId } from '../rules-http.js';
 import { createDraftPreviewSession } from '../draft/draft-book-preview-session.js';
 import { createDraftBookPreviewPanel } from '../draft/draft-book-preview-panel.js';
 
@@ -280,57 +279,12 @@ function mountWorkspace(root) {
         list: (...args) => bookAuthoringApi.list(...args),
         getEditor: (...args) => booksApi.getWorkingEditor(...args)
     });
-    const controller = createAuthoringController({ api: bookAuthoringApi, onChange: renderWorkspace });
-    const creationPanel = createBookCreationPanel({
-        root,
-        onOpen: () => act(openCreation),
-        onCancel: () => act(closeCreation),
-        onInput: (name, value) => creation.change(name, value),
-        onSubmit: () => act(() => creation.submit())
-    });
-
-    const creation = createBookCreation({
-        api: booksApi,
-        onChange: creationPanel.render,
-        openBook: openCreatedBook
-    });
-
-    creationPanel.render(creation.getState());
+    const controller = createAuthoringController({ api: workspaceApi, onChange: renderWorkspace });
     const navigation = createAuthoringNavigation({
         root,
-        getState: () => creation.getState().opened ? creation.getState() : editor?.getState(),
+        getState: () => editor?.getState(),
         notify: view.showNotice
     });
-
-    function openCreation() {
-        if (!navigation.allow()) return;
-
-        controller.close();
-        if (creation.open(system.value)) creationPanel.focus();
-    }
-
-    function closeCreation() {
-        if (!navigation.allow()) return;
-
-        if (creation.close()) creationPanel.focusOpen();
-    }
-
-    async function openCreatedBook(bookId) {
-        if (events.signal.aborted) return;
-
-        await controller.open(bookId);
-        if (events.signal.aborted) return;
-
-        const state = controller.getState();
-
-        if (state.selectedId !== bookId || !state.editor) {
-            const message = state.draftError || 'Повторите открытие созданного черновика.';
-            controller.close();
-            throw new Error(message);
-        }
-
-        heading.focus();
-    }
 
     async function saveDraft() {
         if (!editor) return;
@@ -390,7 +344,6 @@ function mountWorkspace(root) {
 
         act(() => {
             if (!navigation.allow()) return;
-            creation.close();
             const pending = controller.open(button.dataset.authorOpen);
             heading.focus();
             return pending;
@@ -413,8 +366,6 @@ function mountWorkspace(root) {
         events.abort();
         preview.dispose();
         previewPanel.dispose();
-        creation.dispose();
-        creationPanel.dispose();
         navigation.dispose();
         editor?.dispose();
         controller.dispose();
@@ -429,7 +380,25 @@ function mountWorkspace(root) {
     }
 
     instances.set(root, { dispose });
-    submit();
+
+    act(async () => {
+        await controller.reload(formFilters(form));
+        if (events.signal.aborted) return;
+
+        const window = root.ownerDocument.defaultView;
+        const location = new URL(window.location.href);
+        const requestedBook = location.searchParams.get('book_id');
+        if (requestedBook === null) return;
+
+        location.searchParams.delete('book_id');
+        window.history.replaceState(window.history.state, '', location.href);
+
+        const bookId = ruleId(requestedBook);
+        await controller.open(bookId);
+
+        if (!events.signal.aborted) heading.focus();
+    });
+
 }
 
 export function initRulesWorkspace() {

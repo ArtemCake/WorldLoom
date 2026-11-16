@@ -2,73 +2,133 @@
 
 {% extends "base.html" %}
 
-{% block title %}Мастерская книг — {{ project_name }}{% endblock %}
+{% block title %}Мои книги — {{ project_name }}{% endblock %}
 
 {% block content %}
-<section class="rules-catalog" data-rules-workspace hx-boost="false" hx-history="false">
-	<header class="rules-catalog__header">
-		<h1>Мастерская книг</h1>
-		<p>Собственные книги и их сохранённые черновики.</p>
-		<a href="/rules/catalog" class="btn btn-outline-primary">К опубликованным правилам</a>
+<section class="rules-catalog rules-workspace" data-rules-workspace hx-boost="false" hx-history="false">
+	<header class="rules-workspace__header">
+		<div>
+			<h1>Мои книги</h1>
+			<p>Собственные книги правил и работа с их черновиками.</p>
+		</div>
+		
+		<a href="/rules/catalog" class="btn btn-outline-primary">
+			К опубликованным правилам
+		</a>
 	</header>
 	
-	<p data-author-notice role="alert" hidden></p>
+	<p class="rules-workspace__note" data-author-notice role="alert" hidden></p>
 	
-	<div data-author-catalog>
-		{% include "rules/partials/book-create.html" %}
-		<form class="rules-catalog__filters" data-author-filters>
-			<label>
-				<span>Игровая система</span>
-				<select name="system_id">
-					<option value="">Все системы</option>
-					{% for system in rule_systems %}
-					<option value="{{ system.id }}">{{ system.name }}</option>
-					{% endfor %}
-				</select>
-			</label>
-			
-			<label>
-				<span>Поиск по черновикам</span>
-				<input type="search" name="q" maxlength="100" autocomplete="off">
-			</label>
-			
-			<label>
-				<span>Код редакции</span>
-				<input type="text" name="edition_key" maxlength="100" autocomplete="off">
-			</label>
-			
-			<label>
-				<span>Код языка</span>
-				<input type="text" name="language" minlength="2" maxlength="20" autocomplete="off">
-			</label>
-			
-			<div class="rules-catalog__actions">
-				<button type="submit" class="btn btn-primary">Применить</button>
-				<button type="button" class="btn btn-outline-primary" data-author-reload>Обновить</button>
-			</div>
-		</form>
-		
-		<p data-author-message role="status" aria-live="polite"></p>
-		<p data-author-access hidden>Проверьте вход в аккаунт и разрешение на работу с контентом.</p>
-		<div class="rules-catalog__list" data-author-list></div>
-		
-		<div class="rules-catalog__actions">
-			<button type="button" class="btn btn-outline-primary" data-author-more hidden>Показать ещё</button>
-			<button type="button" class="btn btn-outline-primary" data-author-retry hidden>Повторить загрузку</button>
+	<div class="rules-workspace__stack" data-author-catalog>
+		<div class="rules-workspace__actions">
+			<a href="/rules/workspace/create" class="btn btn-primary" hx-boost="false">
+				Создать книгу правил
+			</a>
 		</div>
+		
+		<section class="rules-workspace__card" aria-labelledby="author-books-heading">
+			<header class="rules-workspace__section-header">
+				<h2 id="author-books-heading">Поиск книг</h2>
+				<p id="author-filters-hint">
+					Фильтры применяются только к списку уже созданных книг и не изменяют их содержание.
+				</p>
+			</header>
+			
+			<form class="rules-workspace__form" data-author-filters aria-describedby="author-filters-hint">
+				<div class="rules-workspace__fields">
+					<label class="rules-workspace__field">
+						<span>Поиск по черновикам</span>
+						<input type="search" name="q" maxlength="100" autocomplete="off"
+						       aria-describedby="author-search-hint">
+						<small id="author-search-hint">
+							Оставьте пустым, чтобы не ограничивать поиск текстом.
+						</small>
+					</label>
+					
+					<label class="rules-workspace__field">
+						<span>Игровая система</span>
+						<select name="system_id" aria-describedby="author-system-hint">
+							<option value="">Все системы</option>
+							{% for system in rule_systems %}
+							<option value="{{ system.id }}">{{ system.name }}</option>
+							{% endfor %}
+						</select>
+						<small id="author-system-hint">
+							Показывать книги выбранной системы или всех систем.
+						</small>
+					</label>
+					
+					<label class="rules-workspace__field">
+						<span>Код редакции</span>
+						<input type="text" name="edition_key" maxlength="100" autocomplete="off"
+						       aria-describedby="author-edition-hint">
+						<small id="author-edition-hint">
+							Пустое поле — без ограничения по редакции.
+						</small>
+					</label>
+					
+					<label class="rules-workspace__field">
+						<span>Язык книги</span>
+						<input type="text" name="language" minlength="2" maxlength="20" autocomplete="off"
+						       aria-describedby="author-language-hint">
+						<small id="author-language-hint">
+							Код языка, например ru. Пустое поле — книги на всех языках.
+						</small>
+					</label>
+				</div>
+				
+				<div class="rules-workspace__actions">
+					<button type="submit" class="btn btn-primary">
+						Применить
+					</button>
+					<button type="button" class="btn btn-outline-primary" data-author-reload>
+						Обновить
+					</button>
+				</div>
+			</form>
+			
+			<div class="rules-workspace__results">
+				<p class="rules-workspace__status" data-author-message role="status" aria-live="polite"></p>
+				
+				<p class="rules-workspace__error" data-author-access hidden>
+					Проверьте вход в аккаунт и разрешение на работу с контентом.
+				</p>
+				
+				<div class="rules-catalog__list" data-author-list></div>
+				
+				<div class="rules-workspace__actions">
+					<button type="button" class="btn btn-outline-primary" data-author-more hidden>
+						Показать ещё
+					</button>
+					<button type="button" class="btn btn-outline-primary" data-author-retry hidden>
+						Повторить загрузку
+					</button>
+				</div>
+			</div>
+		</section>
 	</div>
 	
-	<section class="rules-catalog__reader" data-author-draft hidden>
-		<button type="button" class="btn btn-outline-primary" data-author-back>К моим книгам</button>
+	<section class="rules-catalog__reader rules-workspace__card" data-author-draft hidden>
+		<button type="button" class="btn btn-outline-primary" data-author-back>
+			К моим книгам
+		</button>
+		
 		<h2 data-author-heading tabindex="-1">Сохранённый черновик</h2>
-		<p data-author-draft-message role="status" aria-live="polite"></p>
-		<button type="button" class="btn btn-outline-primary" data-author-draft-retry hidden>Повторить открытие</button>
+		
+		<p class="rules-workspace__status" data-author-draft-message role="status" aria-live="polite"></p>
+		
+		<button type="button" class="btn btn-outline-primary" data-author-draft-retry hidden>
+			Повторить открытие
+		</button>
+		
 		<div data-author-content></div>
 		<section data-author-edit hidden></section>
 	</section>
 	
 	<noscript>
-		<p>Для загрузки собственных книг и открытия черновиков нужен JavaScript.</p>
+		<p class="rules-workspace__note">
+			Для загрузки собственных книг и открытия черновиков нужен JavaScript.
+		</p>
 	</noscript>
 </section>
 {% endblock %}

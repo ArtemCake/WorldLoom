@@ -20,6 +20,59 @@ from backend.app.modules.admin.dependencies import require_content_manager
 
 class RulesPageTests(unittest.IsolatedAsyncioTestCase):
 
+	async def test_creation_page_uses_author_systems_and_disables_cache(self):
+		actor = SimpleNamespace(id="test-author")
+		systems = [{"id": "system-one", "name": "Система в разработке"}]
+		self.author_system_options.return_value = systems
+
+		async def author():
+			return actor
+
+		self.app.dependency_overrides[require_content_manager] = author
+		renderer = Mock(return_value=HTMLResponse("<main>Создание книги</main>"))
+
+		with patch("backend.app.modules.rules.pages.render_page", renderer):
+			response = await self.client.get("/rules/workspace/create")
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.headers["cache-control"], "no-store")
+		self.assertEqual(renderer.call_args.args[1], "rules/book-create.html")
+		self.assertIs(renderer.call_args.args[2]["user"], actor)
+		self.assertEqual(renderer.call_args.args[2]["rule_systems"], systems)
+		self.author_system_options.assert_awaited_once_with(self.session)
+		self.system_options.assert_not_awaited()
+		self.session.rollback.assert_awaited_once()
+		self.session.commit.assert_not_awaited()
+
+	async def test_creation_page_requires_author_permission(self):
+		async def denied():
+			raise HTTPException(status_code=403, detail="Недостаточно прав")
+
+		self.app.dependency_overrides[require_content_manager] = denied
+
+		with patch("backend.app.modules.rules.pages.render_page") as renderer:
+			response = await self.client.get("/rules/workspace/create")
+
+		self.assertEqual(response.status_code, 403)
+		renderer.assert_not_called()
+		self.author_system_options.assert_not_awaited()
+		self.system_options.assert_not_awaited()
+
+	async def test_creation_options_failure_releases_transaction(self):
+		async def author():
+			return SimpleNamespace(id="test-author")
+
+		self.app.dependency_overrides[require_content_manager] = author
+		self.author_system_options.side_effect = RuntimeError("Ошибка чтения систем")
+
+		with patch("backend.app.modules.rules.pages.render_page") as renderer:
+			with self.assertRaisesRegex(RuntimeError, "Ошибка чтения систем"):
+				await self.client.get("/rules/workspace/create")
+
+		renderer.assert_not_called()
+		self.session.rollback.assert_awaited_once()
+		self.session.commit.assert_not_awaited()
+
 	async def test_workspace_options_failure_releases_read_transaction(self):
 		async def author():
 			return SimpleNamespace(id="test-author")
@@ -176,9 +229,45 @@ class RulesPageTests(unittest.IsolatedAsyncioTestCase):
 
 	def test_page_router_does_not_register_json_api(self):
 		paths = {route.path for route in router.routes}
-		self.assertEqual(paths, {"/rules/catalog", "/rules/workspace"})
+		self.assertEqual(paths, {"/rules/catalog", "/rules/workspace", "/rules/workspace/create"})
 
 class RulesTemplateTests(unittest.TestCase):
+
+	def test_workspace_has_creation_link_without_creation_form(self):
+		html = self.workspace.render(project_name="WorldLoom", rule_systems=[])
+
+		self.assertIn('href="/rules/workspace/create"', html)
+		self.assertIn("data-author-list", html)
+		self.assertIn("data-author-filters", html)
+		self.assertNotIn("data-book-create-form", html)
+		self.assertNotIn("data-rules-book-create-page", html)
+
+	def test_creation_page_has_form_without_author_catalog(self):
+		html = self.creation.render(project_name="WorldLoom", rule_systems=[])
+
+		self.assertIn("data-rules-book-create-page", html)
+		self.assertIn("data-book-create-form", html)
+		self.assertIn('href="/rules/workspace"', html)
+		self.assertNotIn("data-author-list", html)
+		self.assertNotIn("data-author-filters", html)
+		self.assertNotIn("data-rules-workspace", html)
+		self.assertNotIn("data-book-create-open", html)
+
+	def test_creation_form_keeps_all_fields(self):
+		systems = [{"id": "system-one", "name": "Система в разработке"}]
+		html = self.creation.render(project_name="WorldLoom", rule_systems=systems)
+
+		for name in ("title", "system_id", "summary", "language", "edition_key"):
+			self.assertIn(f'name="{name}"', html)
+
+		self.assertIn('<option value="system-one">Система в разработке</option>', html)
+
+	def test_creation_escapes_system_names(self):
+		systems = [{"id": "system-one", "name": "<script>unsafe()</script>"}]
+		html = self.creation.render(project_name="WorldLoom", rule_systems=systems)
+
+		self.assertNotIn("<script>unsafe()</script>", html)
+		self.assertIn("&lt;script&gt;unsafe()&lt;/script&gt;", html)
 
 	def test_system_selector_keeps_general_catalog_option(self):
 		systems = [{"id": "system-one", "name": "Первая система"}]
@@ -203,6 +292,7 @@ class RulesTemplateTests(unittest.TestCase):
 		files = FileSystemLoader(str(root / "frontend" / "templates"))
 		environment = Environment(loader=ChoiceLoader([base, files]), autoescape=select_autoescape(["html"]))
 		cls.workspace = environment.get_template("rules/workspace.html")
+		cls.creation = environment.get_template("rules/book-create.html")
 		cls.template = environment.get_template("rules/catalog.html")
 
 	def test_guest_sees_login_without_catalog_loader(self):

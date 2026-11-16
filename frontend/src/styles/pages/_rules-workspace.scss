@@ -1,0 +1,242 @@
+/* frontend/src/styles/pages/_rules-workspace.scss */
+
+.rules-workspace {
+    width: 100%;
+    min-width: 0;
+    padding: clamp(1rem, 3vw, 2rem);
+    color: var(--color-text-primary);
+    font-family: var(--font-family-base);
+    line-height: 1.6;
+
+    &,
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
+    [hidden] {
+        display: none !important;
+    }
+
+    &__header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    &__header > div {
+        flex: 1 1 20rem;
+        min-width: 0;
+    }
+
+    &__header h1 {
+        margin: 0;
+        text-align: left;
+    }
+
+    &__header p {
+        margin: 0.6rem 0 0;
+        color: var(--color-text-secondary);
+    }
+
+    &__stack {
+        display: grid;
+        gap: 1.5rem;
+        min-width: 0;
+    }
+
+    &__card {
+        min-width: 0;
+        padding: clamp(1rem, 2.5vw, 1.5rem);
+        border: 1px solid var(--color-border-subtle);
+        border-radius: var(--radius-md);
+        color: var(--color-text-primary);
+        background: var(--color-bg-panel);
+        overflow-wrap: anywhere;
+    }
+
+    &__section-header {
+        display: grid;
+        gap: 0.6rem;
+        min-width: 0;
+    }
+
+    &__section-header h2 {
+        margin: 0;
+        text-align: left;
+    }
+
+    &__section-header p {
+        margin: 0;
+        color: var(--color-text-secondary);
+    }
+
+    &__form {
+        display: grid;
+        gap: 1.25rem;
+        margin: 0;
+    }
+
+    &__section-header + &__form {
+        margin-top: 1.25rem;
+    }
+
+    &__fields {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 1.25rem 1.5rem;
+        min-width: 0;
+    }
+
+    &__field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-width: 0;
+        margin: 0;
+        color: var(--color-text-primary);
+    }
+
+    &__field--wide {
+        grid-column: 1 / -1;
+    }
+
+    &__field > span {
+        font-weight: 600;
+        line-height: 1.5;
+    }
+
+    &__field small,
+    &__hint {
+        color: var(--color-text-secondary);
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.55;
+    }
+
+    &__field > span > small {
+        display: inline-block;
+        margin-inline-start: 0.4rem;
+    }
+
+    &__field > input,
+    &__field > select,
+    &__field > textarea {
+        width: 100%;
+        min-width: 0;
+        min-height: 2.75rem;
+        font: inherit;
+    }
+
+    &__field > textarea {
+        min-height: 8rem;
+        resize: vertical;
+    }
+
+    &__field > select option {
+        color: var(--color-text-primary);
+        background: var(--color-bg-panel);
+    }
+
+    &__field > input[readonly],
+    &__field > textarea[readonly] {
+        cursor: default;
+    }
+
+    &__field > :disabled {
+        cursor: not-allowed;
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    &__actions > .btn,
+    &__header > .btn {
+        max-width: 100%;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    &__note,
+    &__error {
+        margin: 0;
+        padding: 0.9rem 1rem;
+        border: 1px solid var(--color-border-subtle);
+        border-inline-start: 0.25rem solid var(--color-border-accent);
+        border-radius: var(--radius-md);
+        color: var(--color-text-primary);
+        background: var(--color-bg-panel-alt);
+        overflow-wrap: anywhere;
+    }
+
+    &__error {
+        border-inline-start-color: var(--color-text-error);
+    }
+
+    &__note:not([hidden]) {
+        margin-bottom: 1rem;
+    }
+
+    &__results {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--color-border-subtle);
+    }
+
+    &__status {
+        margin: 0 0 1rem;
+        color: var(--color-text-secondary);
+        overflow-wrap: anywhere;
+    }
+
+    &__status:empty {
+        display: none;
+    }
+
+    &__results > &__error:not([hidden]) {
+        margin-bottom: 1rem;
+    }
+
+    .rules-catalog__card {
+        border-color: var(--color-border-subtle);
+        color: var(--color-text-primary);
+        background: var(--color-bg-panel-alt);
+    }
+
+    .rules-catalog__meta {
+        color: var(--color-text-secondary);
+    }
+
+    [data-author-draft] {
+        max-width: none;
+        margin: 0;
+    }
+
+    [data-author-heading] {
+        margin-top: 1rem;
+        text-align: left;
+    }
+
+    @media (max-width: 48rem) {
+        &__fields {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        &__actions > .btn {
+            flex: 1 1 12rem;
+        }
+
+        &__header > .btn {
+            width: 100%;
+        }
+    }
+}

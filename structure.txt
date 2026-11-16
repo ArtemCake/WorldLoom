@@ -469,6 +469,7 @@ WorldLoom/
 │   │   │   │   │   │   ├── book-authoring-api.js
 │   │   │   │   │   │   ├── book-content-view.js
 │   │   │   │   │   │   ├── book-create-data.js
+│   │   │   │   │   │   ├── book-create-page.js
 │   │   │   │   │   │   ├── book-create-panel.js
 │   │   │   │   │   │   ├── book-create-state.js
 │   │   │   │   │   │   ├── book-prose-data.js
@@ -558,7 +559,9 @@ WorldLoom/
 │   │       │   ├── _legal.scss
 │   │       │   ├── _lobby.scss
 │   │       │   ├── _profile.scss
+│   │       │   ├── _rules-book-create.scss
 │   │       │   ├── _rules-catalog.scss
+│   │       │   ├── _rules-workspace.scss
 │   │       │   └── _session-dice.scss
 │   │       ├── style.min.css
 │   │       └── style.scss
@@ -609,6 +612,7 @@ WorldLoom/
 │   │   ├── rules/
 │   │   │   ├── partials/
 │   │   │   │   └── book-create.html
+│   │   │   ├── book-create.html
 │   │   │   ├── catalog.html
 │   │   │   └── workspace.html
 │   │   ├── shared/
@@ -625,6 +629,8 @@ WorldLoom/
 │           │   └── Тест-Юзер_3dfd4ad3-420c-49b2-8806-7fb3ffebb8ec/
 │           └── maps/
 ├── logs/
+│   ├── worldloom.log
+│   └── worldloom_error.log
 ├── staging/
 ├── tests/
 │   ├── js/

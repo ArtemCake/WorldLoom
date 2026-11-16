@@ -65,7 +65,7 @@ test('Редактор запрашивает карточку и чернови
 
     const result = await api.getEditor(BOOK_ID);
 
-    assert.equal(calls[0].path, `/rules/books/${BOOK_ID}/editor`);
+    assert.equal(calls[0].path, `/rules/books/${BOOK_ID}/working-editor`);
     assert.strictEqual(result, expected);
     assert.throws(() => api.getEditor('../book'), TypeError);
     assert.equal(calls.length, 1);
@@ -89,5 +89,5 @@ test('Новые пути проходят действующую проверк
 
     assert.equal(paths.length, 2);
     assert.equal(paths[0], '/rules/books/authoring?scope=mine');
-    assert.equal(paths[1], `/rules/books/${BOOK_ID}/editor`);
+    assert.equal(paths[1], `/rules/books/${BOOK_ID}/working-editor`);
 });

@@ -1021,14 +1021,17 @@ class BookPostgreSQLTests(PostgresTestCase):
 
         self.assertIsNone(await self.read_book_system(book_id))
 
-    async def test_system_assignment_rejects_inactive_system(self):
+    async def test_system_assignment_allows_inactive_system(self):
+        # Разрешение автора проверяет вызывающий слой; сервис присваивает
+        # существующую систему независимо от её активности.
         book_id = await self.create_book(self.book_content([]))
         system_id = await self.create_test_system(active=False)
 
-        with self.assertRaises(errors.RuleBookNotFound):
-            await self.assign_test_system(book_id, system_id)
+        result = await self.assign_test_system(book_id, system_id)
 
-        self.assertIsNone(await self.read_book_system(book_id))
+        self.assertEqual(result.book_id, book_id)
+        self.assertEqual(result.system_id, system_id)
+        self.assertEqual(await self.read_book_system(book_id), system_id)
 
     async def test_system_assignment_rejects_missing_system(self):
         book_id = await self.create_book(self.book_content([]))

@@ -11,6 +11,7 @@ from backend.app.modules.rules.schemas import articles as contracts
 from backend.app.modules.rules.schemas.catalog import CatalogPage
 from backend.app.modules.rules.services import article_service, catalog_service
 from backend.app.web.csrf import enforce_csrf
+from backend.app.modules.rules.services import article_version_lookup
 
 
 router = APIRouter(prefix="/rules/articles", tags=["rules-articles"], route_class=RulesRoute)
@@ -34,6 +35,10 @@ async def create_article(data: Create, session: RulesSession, user: RulesEditor)
 	async with rules_operation(session, write=True):
 		return await article_service.create_article(session, user.id, data)
 
+@router.get("/versions/{version_id}", response_model=VersionRead, operation_id="getRuleArticleVersionById")
+async def get_version_by_id(version_id: UUID, session: RulesSession, user: RulesEditor) -> VersionRead:
+	async with rules_operation(session):
+		return await article_version_lookup.get_version_by_id(session, version_id, user.id)
 
 @router.get("/{article_id}/draft", response_model=DraftRead, operation_id="getRuleArticleDraft")
 async def get_draft(article_id: UUID, session: RulesSession, user: RulesEditor) -> DraftRead:

@@ -82,7 +82,10 @@ function appendSections(document, host, navigation, sections, prefix, tocId) {
     }
 }
 
-export function createBookContent(document, book) {
+export function createBookContent(document, book, { mode = 'published' } = {}) {
+    if (!['published', 'draft'].includes(mode)) {
+        throw new TypeError('Неизвестный режим представления книги.');
+    }
     const prefix = `rules-book-content-${++sequence}`;
     const tocId = `${prefix}-toc`;
     const titleId = `${prefix}-title`;
@@ -92,7 +95,11 @@ export function createBookContent(document, book) {
     title.id = titleId;
     host.setAttribute('aria-labelledby', titleId);
     host.append(title);
-    host.append(element(document, 'p', 'rules-catalog__meta', `Опубликованная версия ${book.version}`));
+    const caption = mode === 'draft'
+        ? 'Предпросмотр локального черновика. Это не опубликованная версия.'
+        : `Опубликованная версия ${book.version}`;
+
+    host.append(element(document, 'p', 'rules-catalog__meta', caption));
 
     if (book.introduction) {
         host.append(element(document, 'h3', '', 'Введение'));

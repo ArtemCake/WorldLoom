@@ -31,7 +31,11 @@ export function createArticlesApi(request = requestRulesJson) {
         getVersion(articleId, versionId, { signal } = {}) {
             const path = `/rules/articles/${ruleId(articleId)}/versions/${ruleId(versionId)}`;
             return request(path, { signal });
-        }
+        },
+
+        getVersionById(versionId, { signal } = {}) {
+            return request(`/rules/articles/versions/${ruleId(versionId)}`, { signal });
+        },
     });
 }
 

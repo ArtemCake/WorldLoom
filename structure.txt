@@ -235,6 +235,7 @@ WorldLoom/
 │   │   │   │   │   │   └── book_working_publication.py
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── article_service.py
+│   │   │   │   │   ├── article_version_lookup.py
 │   │   │   │   │   ├── catalog_service.py
 │   │   │   │   │   ├── system_books.py
 │   │   │   │   │   └── system_catalog.py
@@ -480,6 +481,10 @@ WorldLoom/
 │   │   │   │   │   │   ├── catalog-page.js
 │   │   │   │   │   │   └── catalog-view.js
 │   │   │   │   │   ├── draft/
+│   │   │   │   │   │   ├── draft-book-preview-data.js
+│   │   │   │   │   │   ├── draft-book-preview-panel.js
+│   │   │   │   │   │   ├── draft-book-preview-session.js
+│   │   │   │   │   │   ├── draft-book-preview-state.js
 │   │   │   │   │   │   ├── draft-editor-panel.js
 │   │   │   │   │   │   ├── draft-editor-state.js
 │   │   │   │   │   │   ├── draft-prose-preview.js
@@ -620,15 +625,6 @@ WorldLoom/
 │           │   └── Тест-Юзер_3dfd4ad3-420c-49b2-8806-7fb3ffebb8ec/
 │           └── maps/
 ├── logs/
-│   ├── worldloom.log
-│   ├── worldloom.log.2026-11-07
-│   ├── worldloom.log.2026-11-08
-│   ├── worldloom.log.2026-11-09
-│   ├── worldloom.log.2026-11-10
-│   ├── worldloom.log.2026-11-12
-│   ├── worldloom.log.2026-11-13
-│   ├── worldloom.log.2026-11-14
-│   └── worldloom_error.log
 ├── staging/
 ├── tests/
 │   ├── js/
@@ -664,7 +660,9 @@ WorldLoom/
 │   │       ├── rules-book-reader.test.mjs
 │   │       ├── rules-book-sources.test.mjs
 │   │       ├── rules-catalog.test.mjs
+│   │       ├── rules-draft-book-preview.test.mjs
 │   │       ├── rules-draft-editor-state.test.mjs
+│   │       ├── rules-draft-preview-session.test.mjs
 │   │       ├── rules-draft-publication.test.mjs
 │   │       ├── rules-draft-section-data.test.mjs
 │   │       ├── rules-draft-text-data.test.mjs
@@ -694,6 +692,7 @@ WorldLoom/
 │   │   │   ├── test_article_foundation.py
 │   │   │   ├── test_article_postgresql.py
 │   │   │   ├── test_article_service.py
+│   │   │   ├── test_article_version_lookup.py
 │   │   │   ├── test_author_system_catalog.py
 │   │   │   ├── test_book_contracts.py
 │   │   │   ├── test_book_draft_content.py

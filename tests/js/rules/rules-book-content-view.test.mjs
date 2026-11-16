@@ -248,3 +248,19 @@ test('Отсутствующий родитель не маскируется в
 
     assert.throws(() => createBookContent(testDocument(), data), TypeError);
 });
+
+test('Режим черновика явно обозначен и не показывает номер публикации', () => {
+    const data = book({ version: null });
+    const view = createBookContent(testDocument(), data, { mode: 'draft' });
+
+    assert.ok(view.textContent.includes('Предпросмотр локального черновика'));
+    assert.equal(view.textContent.includes('Опубликованная версия null'), false);
+    assert.equal(view.textContent.includes('Опубликованная версия'), false);
+});
+
+test('Обычное чтение сохраняет подпись публикации, неизвестный режим отклоняется', () => {
+    const view = createBookContent(testDocument(), book({ version: 2 }));
+
+    assert.ok(view.textContent.includes('Опубликованная версия 2'));
+    assert.throws(() => createBookContent(testDocument(), book(), { mode: 'unknown' }), TypeError);
+});

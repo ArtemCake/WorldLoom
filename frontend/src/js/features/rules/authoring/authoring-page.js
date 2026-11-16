@@ -17,6 +17,8 @@ import { createSectionReplacementPanel } from '../draft/draft-section-replacemen
 import { createDraftTextPanel } from '../draft/draft-text-panel.js';
 import { createBookCreation } from '../books/book-create-state.js';
 import { createBookCreationPanel } from '../books/book-create-panel.js';
+import { createDraftPreviewSession } from '../draft/draft-book-preview-session.js';
+import { createDraftBookPreviewPanel } from '../draft/draft-book-preview-panel.js';
 
 const instances = new Map();
 let cleanupBound = false;
@@ -130,6 +132,18 @@ function mountWorkspace(root) {
         }
     });
     const publicationPanel = createDraftPublicationPanel({ host, onPublish: () => act(publishDraft) });
+    const previewPanel = createDraftBookPreviewPanel({
+        host,
+        onOpen: () => preview.open(),
+        onClose: () => preview.close()
+    });
+
+    const preview = createDraftPreviewSession({
+        loadVersion: (versionId, options) => articlesApi.getVersionById(versionId, options),
+        onChange: previewPanel.render
+    });
+
+    previewPanel.render(preview.getState());
 
     function addText(parentKey) {
         if (!editor) return;
@@ -229,12 +243,14 @@ function mountWorkspace(root) {
         publicationPanel.render(state);
         replacementPanel.renderEditor(state);
         textPanel.render(state);
+        preview.update(state);
     }
 
     function renderWorkspace(state) {
         view.render(state);
 
         if (!state.editor) {
+            preview.reset();
             editor?.dispose();
             editor = null;
             panel.clear();
@@ -395,6 +411,8 @@ function mountWorkspace(root) {
 
     function dispose() {
         events.abort();
+        preview.dispose();
+        previewPanel.dispose();
         creation.dispose();
         creationPanel.dispose();
         navigation.dispose();

@@ -22,7 +22,7 @@ router = APIRouter(prefix="/rules", tags=["rules-pages"])
 @router.get("/workspace", response_class=HTMLResponse, name="rules_workspace_get")
 async def workspace_page(request: Request, user: RulesEditor, csrf_protect: PageCsrf, session: RulesSession) -> HTMLResponse:
 	async with rules_operation(session):
-		systems = await system_catalog.list_active_system_options(session)
+		systems = await system_catalog.list_author_system_options(session)
 		context = {"user": user, "rule_systems": systems}
 		response = render_page(request, "rules/workspace.html", context, csrf_protect)
 

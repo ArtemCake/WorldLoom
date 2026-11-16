@@ -20,10 +20,26 @@ from backend.app.modules.admin.dependencies import require_content_manager
 
 class RulesPageTests(unittest.IsolatedAsyncioTestCase):
 
+	async def test_workspace_options_failure_releases_read_transaction(self):
+		async def author():
+			return SimpleNamespace(id="test-author")
+
+		self.app.dependency_overrides[require_content_manager] = author
+		self.author_system_options.side_effect = RuntimeError("Ошибка чтения систем")
+
+		with patch("backend.app.modules.rules.pages.render_page") as renderer:
+			with self.assertRaisesRegex(RuntimeError, "Ошибка чтения систем"):
+				await self.client.get("/rules/workspace")
+
+		renderer.assert_not_called()
+		self.session.rollback.assert_awaited_once()
+		self.session.commit.assert_not_awaited()
+		self.system_options.assert_not_awaited()
+
 	async def test_workspace_uses_author_permission_and_system_options(self):
 		actor = SimpleNamespace(id="test-author")
-		systems = [{"id": "system-one", "name": "Тестовая система"}]
-		self.system_options.return_value = systems
+		systems = [{"id": "system-one", "name": "Система в разработке"}]
+		self.author_system_options.return_value = systems
 
 		async def author():
 			return actor
@@ -39,7 +55,8 @@ class RulesPageTests(unittest.IsolatedAsyncioTestCase):
 		self.assertEqual(renderer.call_args.args[1], "rules/workspace.html")
 		self.assertIs(renderer.call_args.args[2]["user"], actor)
 		self.assertEqual(renderer.call_args.args[2]["rule_systems"], systems)
-		self.system_options.assert_awaited_once_with(self.session)
+		self.author_system_options.assert_awaited_once_with(self.session)
+		self.system_options.assert_not_awaited()
 		self.session.rollback.assert_awaited_once()
 		self.session.commit.assert_not_awaited()
 
@@ -57,6 +74,7 @@ class RulesPageTests(unittest.IsolatedAsyncioTestCase):
 		self.assertEqual(response.status_code, 403)
 		renderer.assert_not_called()
 		self.system_options.assert_not_awaited()
+		self.author_system_options.assert_not_awaited()
 
 	async def test_authorized_page_passes_system_options_to_renderer(self):
 		self.actor = SimpleNamespace(id="test-user")
@@ -105,6 +123,10 @@ class RulesPageTests(unittest.IsolatedAsyncioTestCase):
 			rollback=AsyncMock(),
 		)
 		self.system_options = AsyncMock(return_value=[])
+		self.author_system_options = AsyncMock(return_value=[])
+		author_patch = patch.object(system_catalog, "list_author_system_options", self.author_system_options)
+		author_patch.start()
+		self.addCleanup(author_patch.stop)
 		service_patch = patch.object(system_catalog, "list_active_system_options", self.system_options)
 		service_patch.start()
 		self.addCleanup(service_patch.stop)
@@ -218,7 +240,6 @@ class RulesTemplateTests(unittest.TestCase):
 
 		self.assertNotIn("<script>unsafe()</script>", html)
 		self.assertIn("&lt;script&gt;unsafe()&lt;/script&gt;", html)
-
 
 
 if __name__ == "__main__":

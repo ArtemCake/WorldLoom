@@ -48,12 +48,12 @@ export function createDraftPublicationPanel({ host, onPublish }) {
             hint.textContent = 'Перед публикацией необходимо загрузить актуальный серверный черновик.';
         } else if (state.dirty) {
             hint.textContent = 'Сначала сохраните изменения. Публикация выпускает только сохранённое содержание.';
-        } else if (!state.toc.some((node) => node.kind === 'article')) {
-            hint.textContent = 'Добавьте в книгу хотя бы один опубликованный раздел и сохраните черновик.';
+        } else if (!state.toc.some((node) => ['article', 'text'].includes(node.kind))) {
+            hint.textContent = 'Добавьте собственный текст или опубликованный материал и сохраните черновик.';
         } else if (!allowed) {
-            hint.textContent = 'Это состояние уже опубликовано в текущем сеансе редактирования.';
+            hint.textContent = 'Для текущего состояния повторный выпуск недоступен.';
         } else {
-            hint.textContent = 'Будет создана неизменяемая версия книги. Видимость и закреплённые материалы не меняются.';
+            hint.textContent = 'Будет создана неизменяемая версия книги со снимками собственных текстов. Внешние ссылки и видимость сохраняются.';
         }
     }
 

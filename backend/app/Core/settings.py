@@ -55,11 +55,6 @@ class WebAppSettings(BaseSettings):
 	MAIL_SUPPORT_EMAIL: str
 	MAIL_FALLBACK_SENDER_EMAIL: str | None = None
 
-	MAIL_SENDER_NAME: str
-	MAIL_SENDER_EMAIL: str
-	MAIL_SUPPORT_EMAIL: str
-
-
 # Приложение.
 	API_V1_STR: str = "/api/v1"
 	PROJECT_NAME: str = "WorldLoom"

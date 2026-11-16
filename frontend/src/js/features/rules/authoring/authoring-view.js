@@ -54,7 +54,9 @@ function toc(document, nodes) {
 
         for (const node of children) {
             const item = document.createElement('li');
-            const fallback = node.kind === 'article' ? 'Раздел: название берётся из публикации' : 'Глава';
+            const fallback = node.kind === 'text'
+                ? `Собственный текст: ${node.content.title || 'Без названия'}`
+                : node.kind === 'article' ? 'Раздел: название берётся из публикации' : 'Глава';
             item.append(element(document, 'span', '', node.title || fallback));
 
             if (groups.has(node.key)) item.append(branch(node.key));

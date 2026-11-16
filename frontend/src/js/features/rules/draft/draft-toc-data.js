@@ -1,6 +1,7 @@
 // frontend/src/js/features/rules/draft/draft-toc-data.js
 
 import { ruleId } from '../rules-http.js';
+import { MAX_DRAFT_SOURCES } from './draft-source-data.js';
 
 const MAX_NODES = 2000;
 const MAX_DEPTH = 32;
@@ -48,6 +49,15 @@ function sourceUrl(value) {
     }
 
     ensure(['http:', 'https:'].includes(parsed.protocol), 'Источник должен использовать HTTP или HTTPS.');
+}
+
+export function readBookSources(value) {
+    ensure(Array.isArray(value), 'Источники должны быть списком.');
+    ensure(value.length <= MAX_DRAFT_SOURCES, 'Превышено максимальное количество источников.');
+
+    for (const source of value) validateTextSource(source);
+
+    return structuredClone(value);
 }
 
 function validateTextSource(source) {
@@ -98,9 +108,7 @@ export function readBookTextContent(value) {
 
     ensure(['players', 'gm', 'both'].includes(content.audience), 'Неизвестная аудитория текста.');
     ensure(['base', 'optional', 'supplement', 'homebrew'].includes(content.rule_kind), 'Неизвестный вид правила.');
-    ensure(Array.isArray(content.sources) && content.sources.length <= 100, 'Некорректный список источников текста.');
-
-    for (const source of content.sources) validateTextSource(source);
+    content.sources = readBookSources(content.sources);
 
     return content;
 }

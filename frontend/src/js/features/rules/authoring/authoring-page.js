@@ -14,6 +14,9 @@ import { createSectionPickerPanel } from './section-picker-panel.js';
 import { createDraftPublicationPanel } from '../draft/draft-publication-panel.js';
 import { createSectionReplacement } from '../draft/draft-section-replacement-state.js';
 import { createSectionReplacementPanel } from '../draft/draft-section-replacement-panel.js';
+import { createDraftTextPanel } from '../draft/draft-text-panel.js';
+import { createBookCreation } from '../books/book-create-state.js';
+import { createBookCreationPanel } from '../books/book-create-panel.js';
 
 const instances = new Map();
 let cleanupBound = false;
@@ -79,13 +82,23 @@ function mountWorkspace(root) {
         host,
         onInput: (field, value) => editor?.change(field, value),
         onSave: () => act(saveDraft),
-        onReload: () => act(reloadDraft)
+        onReload: () => act(reloadDraft),
+        onBookSource: (command) => act(() => editor?.bookSource(command))
     });
 
     const tocPanel = createDraftTocPanel({
         host,
         onCommand: (command) => act(() => editor?.chapter(command)),
-        onSectionCommand: (command) => act(() => editor?.section(command))
+        onSectionCommand: (command) => act(() => editor?.section(command)),
+        onTextCommand: (command) => act(() => editor?.text(command))
+    });
+
+    const textPanel = createDraftTextPanel({
+        host,
+        onAdd: (parentKey) => act(() => addText(parentKey)),
+        onInput: (key, field, value) => act(() => editor?.changeText(key, field, value)),
+        onRemove: (key) => act(() => editor?.text({ type: 'remove', key })),
+        onSource: (key, command) => act(() => editor?.textSource(key, command))
     });
 
     const pickerPanel = createSectionPickerPanel({
@@ -117,6 +130,40 @@ function mountWorkspace(root) {
         }
     });
     const publicationPanel = createDraftPublicationPanel({ host, onPublish: () => act(publishDraft) });
+
+    function addText(parentKey) {
+        if (!editor) return;
+
+        const state = editor.getState();
+        if (state.busy || state.blocked || state.schemaVersion !== 2) return;
+
+        const siblings = state.toc.filter((node) => node.parent_key === parentKey);
+        const position = siblings.reduce((maximum, node) => Math.max(maximum, node.position), -1) + 1;
+        const key = `text-${root.ownerDocument.defaultView.crypto.randomUUID()}`;
+        const node = {
+            kind: 'text',
+            key,
+            parent_key: parentKey,
+            position,
+            title: null,
+            content: {
+                schema_version: 1,
+                title: 'Новый раздел',
+                summary: '',
+                body: '',
+                language: state.values.language,
+                edition_key: state.values.edition_key,
+                audience: 'both',
+                rule_kind: 'base',
+                sources: []
+            }
+        };
+
+        if (!editor.text({ type: 'add', node })) return;
+
+        textPanel.select(key);
+        view.showNotice('Собственный текст добавлен в локальный черновик. Заполните содержание и сохраните книгу.');
+    }
 
     function attachSection(parentKey) {
         if (!editor) return;
@@ -181,6 +228,7 @@ function mountWorkspace(root) {
         pickerPanel.renderEditor(state);
         publicationPanel.render(state);
         replacementPanel.renderEditor(state);
+        textPanel.render(state);
     }
 
     function renderWorkspace(state) {
@@ -193,6 +241,7 @@ function mountWorkspace(root) {
             tocPanel.clear();
             picker.close();
             pickerPanel.clear();
+            textPanel.clear();
             publicationPanel.clear();
             replacement.close();
             replacementPanel.clear();
@@ -202,6 +251,7 @@ function mountWorkspace(root) {
         if (!editor) {
             editor = createBookDraftEditor({
                 draft: state.editor.draft,
+                workingState: state.editor,
                 api: booksApi,
                 onChange: renderEditor
             });
@@ -210,12 +260,61 @@ function mountWorkspace(root) {
         renderEditor(editor.getState());
     }
 
+    const workspaceApi = Object.freeze({
+        list: (...args) => bookAuthoringApi.list(...args),
+        getEditor: (...args) => booksApi.getWorkingEditor(...args)
+    });
     const controller = createAuthoringController({ api: bookAuthoringApi, onChange: renderWorkspace });
+    const creationPanel = createBookCreationPanel({
+        root,
+        onOpen: () => act(openCreation),
+        onCancel: () => act(closeCreation),
+        onInput: (name, value) => creation.change(name, value),
+        onSubmit: () => act(() => creation.submit())
+    });
+
+    const creation = createBookCreation({
+        api: booksApi,
+        onChange: creationPanel.render,
+        openBook: openCreatedBook
+    });
+
+    creationPanel.render(creation.getState());
     const navigation = createAuthoringNavigation({
         root,
-        getState: () => editor?.getState(),
+        getState: () => creation.getState().opened ? creation.getState() : editor?.getState(),
         notify: view.showNotice
     });
+
+    function openCreation() {
+        if (!navigation.allow()) return;
+
+        controller.close();
+        if (creation.open(system.value)) creationPanel.focus();
+    }
+
+    function closeCreation() {
+        if (!navigation.allow()) return;
+
+        if (creation.close()) creationPanel.focusOpen();
+    }
+
+    async function openCreatedBook(bookId) {
+        if (events.signal.aborted) return;
+
+        await controller.open(bookId);
+        if (events.signal.aborted) return;
+
+        const state = controller.getState();
+
+        if (state.selectedId !== bookId || !state.editor) {
+            const message = state.draftError || 'Повторите открытие созданного черновика.';
+            controller.close();
+            throw new Error(message);
+        }
+
+        heading.focus();
+    }
 
     async function saveDraft() {
         if (!editor) return;
@@ -275,6 +374,7 @@ function mountWorkspace(root) {
 
         act(() => {
             if (!navigation.allow()) return;
+            creation.close();
             const pending = controller.open(button.dataset.authorOpen);
             heading.focus();
             return pending;
@@ -284,6 +384,7 @@ function mountWorkspace(root) {
     back.addEventListener('click', () => {
         if (!navigation.allow()) return;
         controller.close();
+        act(() => controller.reload());
         search.focus();
     }, options);
 
@@ -294,6 +395,8 @@ function mountWorkspace(root) {
 
     function dispose() {
         events.abort();
+        creation.dispose();
+        creationPanel.dispose();
         navigation.dispose();
         editor?.dispose();
         controller.dispose();
@@ -304,6 +407,7 @@ function mountWorkspace(root) {
         publicationPanel.dispose();
         replacement.dispose();
         replacementPanel.dispose();
+        textPanel.dispose();
     }
 
     instances.set(root, { dispose });

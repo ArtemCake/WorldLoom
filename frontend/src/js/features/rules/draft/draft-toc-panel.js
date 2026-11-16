@@ -15,7 +15,7 @@ function actionButton(document, action, title, key = null) {
     return button;
 }
 
-export function createDraftTocPanel({ host, onCommand, onSectionCommand }) {
+export function createDraftTocPanel({ host, onCommand, onSectionCommand, onTextCommand = () => {} }) {
     const document = host.ownerDocument;
     const window = document.defaultView;
     const events = new AbortController();
@@ -39,7 +39,9 @@ export function createDraftTocPanel({ host, onCommand, onSectionCommand }) {
 
         for (const [index, node] of siblings.entries()) {
             const item = element(document, 'li');
-            const fallback = 'Раздел: название берётся из закреплённой публикации';
+            const fallback = node.kind === 'text'
+                ? `Собственный текст: ${node.content.title || 'Без названия'}`
+                : 'Раздел: название берётся из закреплённой публикации';
             const label = node.kind === 'chapter' ? `Глава: ${node.title}` : node.title || fallback;
             item.append(element(document, 'span', label));
 
@@ -81,6 +83,38 @@ export function createDraftTocPanel({ host, onCommand, onSectionCommand }) {
                 item.append(actions);
             }
 
+            if (node.kind === 'text') {
+                const actions = element(document, 'div');
+                actions.className = 'rules-catalog__actions';
+
+                const up = actionButton(document, 'text-up', 'Выше', node.key);
+                const down = actionButton(document, 'text-down', 'Ниже', node.key);
+                const apply = actionButton(document, 'text-reparent', 'Перенести', node.key);
+                const label = element(document, 'label', 'Размещение текста');
+                const parent = element(document, 'select');
+                const rootOption = element(document, 'option', 'Корень книги');
+
+                parent.dataset.tocTextParent = node.key;
+                rootOption.value = '';
+                parent.append(rootOption);
+
+                for (const chapter of current.filter((item) => item.kind === 'chapter')) {
+                    const choice = element(document, 'option', `${chapter.title} (${chapter.key})`);
+                    choice.value = chapter.key;
+                    parent.append(choice);
+                }
+
+                parent.value = node.parent_key || '';
+                parent.disabled = locked;
+                up.disabled = locked || index === 0;
+                down.disabled = locked || index === siblings.length - 1;
+                apply.disabled = locked;
+
+                label.append(parent);
+                actions.append(up, down, label, apply);
+                item.append(actions);
+            }
+
             if (groups.has(node.key)) item.append(buildBranch(node.key, groups));
             result.append(item);
         }
@@ -114,6 +148,23 @@ export function createDraftTocPanel({ host, onCommand, onSectionCommand }) {
                 }
             } else {
                 onSectionCommand({ type: 'move', key, delta: action === 'section-up' ? -1 : 1 });
+            }
+
+            return;
+        }
+
+        if (['text-up', 'text-down', 'text-reparent'].includes(action)) {
+            const node = current.find((item) => item.key === key && item.kind === 'text');
+            if (!node) return;
+
+            if (action === 'text-reparent') {
+                const selectors = [...section.querySelectorAll('[data-toc-text-parent]')];
+                const parent = selectors.find((input) => input.dataset.tocTextParent === key);
+                if (!parent || parent.disabled) return;
+
+                onTextCommand({ type: 'reparent', key, parent_key: parent.value || null });
+            } else {
+                onTextCommand({ type: 'move', key, delta: action === 'text-up' ? -1 : 1 });
             }
 
             return;

@@ -1,5 +1,7 @@
 // frontend/src/js/features/rules/draft/draft-editor-panel.js
 
+import { createDraftSourcesPanel } from './draft-text-sources-panel.js';
+
 const FIELDS = [
     { name: 'title', label: 'Название', limit: 200 },
     { name: 'summary', label: 'Описание', limit: 5000, multiline: true },
@@ -16,7 +18,7 @@ function button(document, title) {
     return node;
 }
 
-export function createDraftEditorPanel({ host, onInput, onSave, onReload }) {
+export function createDraftEditorPanel({ host, onInput, onSave, onReload, onBookSource }) {
     const document = host.ownerDocument;
     const events = new AbortController();
     const options = { signal: events.signal };
@@ -29,7 +31,15 @@ export function createDraftEditorPanel({ host, onInput, onSave, onReload }) {
     const actions = document.createElement('div');
     const save = button(document, 'Сохранить черновик');
     const reload = button(document, 'Загрузить серверный черновик');
+    const sourcesHost = document.createElement('section');
+    const sourcesPanel = createDraftSourcesPanel({
+        host: sourcesHost,
+        onCommand: onBookSource,
+        title: 'Общие источники книги',
+        hintText: 'Этот список относится ко всей книге и не заменяет источники её разделов.'
+    });
 
+    sourcesHost.dataset.authorBookSources = '';
     form.className = 'rules-book__definition-form';
     form.dataset.authorEditForm = '';
     form.noValidate = true;
@@ -40,7 +50,7 @@ export function createDraftEditorPanel({ host, onInput, onSave, onReload }) {
     actions.className = 'rules-catalog__actions';
     save.type = 'submit';
     save.className = 'btn btn-primary';
-    hint.textContent = 'Кнопка сохраняет сведения, введение и оглавление. Список источников книги, категория и аудитория не изменяются.';
+    hint.textContent = 'Кнопка сохраняет сведения, введение, оглавление и общие источники книги. Категория и аудитория не изменяются.';
     form.append(heading, hint);
 
     for (const field of FIELDS) {
@@ -68,6 +78,7 @@ export function createDraftEditorPanel({ host, onInput, onSave, onReload }) {
 
     reload.addEventListener('click', onReload, options);
     actions.append(save, reload);
+    form.append(sourcesHost);
     form.append(status, error, actions);
     host.replaceChildren(form);
     host.hidden = true;
@@ -81,6 +92,7 @@ export function createDraftEditorPanel({ host, onInput, onSave, onReload }) {
             input.readOnly = Boolean(state.busy) || state.blocked;
         }
 
+        sourcesPanel.render(state.sources, Boolean(state.busy) || state.blocked);
         form.setAttribute('aria-busy', String(Boolean(state.busy)));
         save.disabled = !state.canSave;
         reload.disabled = Boolean(state.busy);
@@ -100,7 +112,7 @@ export function createDraftEditorPanel({ host, onInput, onSave, onReload }) {
         error.hidden = !state.error;
         hint.textContent = state.blocked
             ? 'Запись заблокирована. Текст можно выделить и скопировать. Загрузка с сервера заменит локальную форму.'
-            : 'Кнопка сохраняет сведения, введение и оглавление. Список источников книги, категория и аудитория не изменяются.';
+            : 'Кнопка сохраняет сведения, введение, оглавление и общие источники книги. Категория и аудитория не изменяются.';
     }
 
     function clear() {
@@ -108,10 +120,12 @@ export function createDraftEditorPanel({ host, onInput, onSave, onReload }) {
         for (const input of fields.values()) input.value = '';
         status.textContent = '';
         error.textContent = '';
+        sourcesPanel.clear();
     }
 
     function dispose() {
         events.abort();
+        sourcesPanel.dispose();
         host.replaceChildren();
         host.hidden = true;
     }

@@ -1,6 +1,7 @@
 // frontend/src/js/features/rules/authoring/authoring-controller.js
 
 import { catalogQuery, ruleId } from '../rules-http.js';
+import { readWorkingEditor } from '../draft/draft-working-data.js';
 
 const DEFAULTS = { system_id: '', q: '', edition_key: '', language: '' };
 const LIMITS = { q: 100, edition_key: 100, language: 20 };
@@ -85,6 +86,17 @@ function parsePage(data) {
 }
 
 function parseEditor(data, bookId) {
+    if (data?.draft?.content_json?.schema_version === 2) {
+        const checked = readWorkingEditor(data, bookId);
+        const content = checked.draft.content_json;
+
+        check(text(content.title) && content.title.trim());
+        check(text(content.summary) && text(content.introduction) && text(content.language));
+        check(content.edition_key === null || text(content.edition_key));
+
+        return checked;
+    }
+
     check(data && data.book && data.draft);
     check(data.book.id === bookId && data.draft.book_id === bookId);
     check(revision(data.draft.revision));
@@ -252,7 +264,13 @@ export function createAuthoringController({ api, onChange = () => {}, pageSize =
     function acceptDraft(draft) {
         if (disposed || !state.editor || state.reading) return;
 
-        const editor = parseEditor({ ...state.editor, draft }, state.selectedId);
+        const candidate = { ...state.editor, draft };
+
+        if (draft.content_json?.schema_version === 2) {
+            candidate.has_unpublished_changes = true;
+        }
+
+        const editor = parseEditor(candidate, state.selectedId);
         state.editor = editor;
 
         const content = editor.draft.content_json;

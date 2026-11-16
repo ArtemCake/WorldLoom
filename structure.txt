@@ -466,6 +466,9 @@ WorldLoom/
 │   │   │   │   │   │   └── section-picker-state.js
 │   │   │   │   │   ├── books/
 │   │   │   │   │   │   ├── book-authoring-api.js
+│   │   │   │   │   │   ├── book-create-data.js
+│   │   │   │   │   │   ├── book-create-panel.js
+│   │   │   │   │   │   ├── book-create-state.js
 │   │   │   │   │   │   ├── book-reader.js
 │   │   │   │   │   │   └── books-api.js
 │   │   │   │   │   ├── catalog/
@@ -473,6 +476,7 @@ WorldLoom/
 │   │   │   │   │   │   ├── catalog-page.js
 │   │   │   │   │   │   └── catalog-view.js
 │   │   │   │   │   ├── draft/
+│   │   │   │   │   │   ├── book-create-data.js
 │   │   │   │   │   │   ├── draft-editor-panel.js
 │   │   │   │   │   │   ├── draft-editor-state.js
 │   │   │   │   │   │   ├── draft-publication-data.js
@@ -481,8 +485,13 @@ WorldLoom/
 │   │   │   │   │   │   ├── draft-section-replacement-data.js
 │   │   │   │   │   │   ├── draft-section-replacement-panel.js
 │   │   │   │   │   │   ├── draft-section-replacement-state.js
+│   │   │   │   │   │   ├── draft-source-data.js
+│   │   │   │   │   │   ├── draft-text-data.js
+│   │   │   │   │   │   ├── draft-text-panel.js
+│   │   │   │   │   │   ├── draft-text-sources-panel.js
 │   │   │   │   │   │   ├── draft-toc-data.js
-│   │   │   │   │   │   └── draft-toc-panel.js
+│   │   │   │   │   │   ├── draft-toc-panel.js
+│   │   │   │   │   │   └── draft-working-data.js
 │   │   │   │   │   ├── articles-api.js
 │   │   │   │   │   └── rules-http.js
 │   │   │   │   └── users/
@@ -589,6 +598,8 @@ WorldLoom/
 │   │   │   ├── map_view.html
 │   │   │   └── maps.html
 │   │   ├── rules/
+│   │   │   ├── partials/
+│   │   │   │   └── book-create.html
 │   │   │   ├── catalog.html
 │   │   │   └── workspace.html
 │   │   ├── shared/
@@ -606,13 +617,13 @@ WorldLoom/
 │           └── maps/
 ├── logs/
 │   ├── worldloom.log
-│   ├── worldloom.log.2026-11-06
 │   ├── worldloom.log.2026-11-07
 │   ├── worldloom.log.2026-11-08
 │   ├── worldloom.log.2026-11-09
 │   ├── worldloom.log.2026-11-10
 │   ├── worldloom.log.2026-11-12
 │   ├── worldloom.log.2026-11-13
+│   ├── worldloom.log.2026-11-14
 │   └── worldloom_error.log
 ├── staging/
 ├── tests/
@@ -643,14 +654,21 @@ WorldLoom/
 │   │       ├── rules-authoring-controller.test.mjs
 │   │       ├── rules-authoring-navigation.test.mjs
 │   │       ├── rules-book-authoring-api.test.mjs
+│   │       ├── rules-book-create.test.mjs
 │   │       ├── rules-book-reader.test.mjs
+│   │       ├── rules-book-sources.test.mjs
 │   │       ├── rules-catalog.test.mjs
 │   │       ├── rules-draft-editor-state.test.mjs
 │   │       ├── rules-draft-publication.test.mjs
 │   │       ├── rules-draft-section-data.test.mjs
+│   │       ├── rules-draft-text-data.test.mjs
 │   │       ├── rules-draft-toc-data.test.mjs
 │   │       ├── rules-section-replacement.test.mjs
-│   │       └── rules-system-books-api.test.mjs
+│   │       ├── rules-system-books-api.test.mjs
+│   │       ├── rules-text-arrangement-sources.test.mjs
+│   │       ├── rules-working-api.test.mjs
+│   │       ├── rules-working-editor-state.test.mjs
+│   │       └── rules-working-workspace.test.mjs
 │   ├── python/
 │   │   ├── game_systems/
 │   │   │   ├── __init__.py

@@ -33,7 +33,7 @@ export function createBookAuthoringApi(request = requestRulesJson) {
         },
 
         getEditor(bookId, { signal } = {}) {
-            return request(`/rules/books/${ruleId(bookId)}/editor`, { signal });
+            return request(`/rules/books/${ruleId(bookId)}/working-editor`, { signal });
         }
     });
 }

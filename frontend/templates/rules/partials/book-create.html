@@ -1,0 +1,58 @@
+<!-- frontend/templates/rules/partials/book-create.html -->
+
+<section data-book-create aria-label="Создание книги правил">
+	<button type="button" class="btn btn-primary" data-book-create-open>
+		Создать книгу правил
+	</button>
+	
+	<form class="rules-catalog__filters" data-book-create-form hidden>
+		<h2 tabindex="-1" data-book-create-heading>Новая книга правил</h2>
+		
+		<label>
+			<span>Игровая система</span>
+			<select name="system_id" required>
+				<option value="">Выберите игровую систему</option>
+				{% for system in rule_systems %}
+				<option value="{{ system.id }}">{{ system.name }}</option>
+				{% endfor %}
+			</select>
+		</label>
+		
+		<label>
+			<span>Название книги</span>
+			<input type="text" name="title" maxlength="200" required>
+		</label>
+		
+		<label>
+			<span>Описание</span>
+			<textarea name="summary" rows="4" maxlength="5000"></textarea>
+		</label>
+		
+		<label>
+			<span>Код языка</span>
+			<input type="text" name="language" value="ru" minlength="2" maxlength="20" required>
+		</label>
+		
+		<label>
+			<span>Код редакции, если нужен</span>
+			<input type="text" name="edition_key" maxlength="100">
+		</label>
+		
+		<p>Книга будет создана закрытой. Главы, тексты и источники добавляются в редакторе.</p>
+		
+		<p data-book-create-error role="alert" hidden></p>
+		
+		<div class="rules-catalog__actions">
+			<button type="submit" class="btn btn-primary" data-book-create-submit>
+				Создать и открыть
+			</button>
+			<button type="button" class="btn btn-outline-primary" data-book-create-cancel>
+				Отмена
+			</button>
+		</div>
+	</form>
+	
+	{% if not rule_systems %}
+	<p>Сначала создайте игровую систему-контейнер. Публиковать её для добавления книг не требуется.</p>
+	{% endif %}
+</section>

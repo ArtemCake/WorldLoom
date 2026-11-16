@@ -776,6 +776,30 @@ class BookPostgreSQLTests(PostgresTestCase):
         self.assertEqual([item.id for item in page.items], [book_id])
         self.assertFalse(page.items[0].is_active)
 
+    async def test_http_creates_book_in_inactive_unpublished_system(self):
+        system_id = await self.create_test_system(active=False)
+        before = await self.count_rows(BOOKS)
+        payload = {
+            "system_id": str(system_id),
+            "slug": f"draft-system-book-{uuid4().hex}",
+            "content": self.book_content([]).model_dump(mode="json"),
+        }
+
+        async with self.rules_http_client() as client:
+            response = await client.post("/rules/books", json=payload)
+
+            self.assertEqual(response.status_code, 201, response.text)
+            created = response.json()
+            book_id = UUID(created["book"]["id"])
+            opened = await client.get(f"/rules/books/{book_id}/editor")
+
+        self.assertEqual(await self.count_rows(BOOKS), before + 1)
+        self.assertEqual(await self.read_book_system(book_id), system_id)
+        self.assertEqual(created["book"]["system_id"], str(system_id))
+        self.assertEqual(opened.status_code, 200, opened.text)
+        self.assertEqual(opened.json()["draft"]["revision"], 1)
+        self.assertEqual(opened.json()["draft"]["content_json"]["toc"], [])
+
     async def test_http_system_book_creation_persists_assignment(self):
         system_id = await self.create_test_system()
         content = self.book_content([])

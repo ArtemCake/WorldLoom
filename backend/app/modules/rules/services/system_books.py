@@ -43,10 +43,11 @@ def _request(model, data):
 	except ValueError as exc:
 		raise errors.InvalidRuleBook("Данные операции не прошли проверку") from exc
 
-async def _active_system(session: AsyncSession, system_id: UUID) -> None:
+async def _system_for_authoring(session: AsyncSession, system_id: UUID) -> None:
+	"""Проверить существование контейнера; разрешение автора проверяет вызывающий слой."""
 	statement = (
 		select(_SYSTEMS.c.id)
-		.where(_SYSTEMS.c.id == system_id, _SYSTEMS.c.is_active.is_(True))
+		.where(_SYSTEMS.c.id == system_id)
 		.with_for_update(read=True)
 	)
 	found = (await session.execute(statement)).scalar_one_or_none()
@@ -85,7 +86,7 @@ async def create_system_book(session: AsyncSession, actor_id: UUID, data: contra
 	_prepare(session, actor_id)
 	data = _request(contracts.SystemBookCreate, data)
 
-	await _active_system(session, data.system_id)
+	await _system_for_authoring(session, data.system_id)
 
 	payload = data.model_dump(mode="python", exclude={"system_id"})
 	request = book_contracts.RuleBookCreate.model_validate(payload)
@@ -110,7 +111,7 @@ async def assign_book_system(session: AsyncSession, book_id: UUID, actor_id: UUI
 	_prepare(session, actor_id, book_id)
 	data = _request(contracts.BookSystemAssign, data)
 
-	await _active_system(session, data.system_id)
+	await _system_for_authoring(session, data.system_id)
 	book = await _owned_book(session, book_id, actor_id)
 	draft = await _locked_draft(session, book_id)
 

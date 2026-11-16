@@ -1,6 +1,7 @@
 // frontend/src/js/features/rules/draft/draft-editor-panel.js
 
 import { createDraftSourcesPanel } from './draft-text-sources-panel.js';
+import { createDraftProsePreview } from './draft-prose-preview.js';
 
 const FIELDS = [
     { name: 'title', label: 'Название', limit: 200 },
@@ -24,6 +25,10 @@ export function createDraftEditorPanel({ host, onInput, onSave, onReload, onBook
     const options = { signal: events.signal };
     const form = document.createElement('form');
     const fields = new Map();
+    const introductionPreview = createDraftProsePreview({
+        document,
+        title: 'Предпросмотр введения'
+    });
     const heading = document.createElement('h3');
     const status = document.createElement('p');
     const error = document.createElement('p');
@@ -68,6 +73,7 @@ export function createDraftEditorPanel({ host, onInput, onSave, onReload, onBook
         input.addEventListener('input', () => onInput(field.name, input.value), options);
         label.append(title, input);
         form.append(label);
+        if (field.name === 'introduction') form.append(introductionPreview.root);
         fields.set(field.name, input);
     }
 
@@ -92,6 +98,7 @@ export function createDraftEditorPanel({ host, onInput, onSave, onReload, onBook
             input.readOnly = Boolean(state.busy) || state.blocked;
         }
 
+        introductionPreview.render(state.values.introduction ?? '');
         sourcesPanel.render(state.sources, Boolean(state.busy) || state.blocked);
         form.setAttribute('aria-busy', String(Boolean(state.busy)));
         save.disabled = !state.canSave;
@@ -121,11 +128,13 @@ export function createDraftEditorPanel({ host, onInput, onSave, onReload, onBook
         status.textContent = '';
         error.textContent = '';
         sourcesPanel.clear();
+        introductionPreview.clear();
     }
 
     function dispose() {
         events.abort();
         sourcesPanel.dispose();
+        introductionPreview.dispose();
         host.replaceChildren();
         host.hidden = true;
     }

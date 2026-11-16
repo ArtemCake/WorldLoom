@@ -1,6 +1,7 @@
 // frontend/src/js/features/rules/draft/draft-text-panel.js
 
 import { createDraftTextSourcesPanel } from './draft-text-sources-panel.js';
+import { createDraftProsePreview } from './draft-prose-preview.js';
 
 const FIELDS = [
     { name: 'title', label: 'Название текста' },
@@ -60,6 +61,10 @@ export function createDraftTextPanel({ host, onAdd, onInput, onRemove, onSource 
     const sources = element(document, 'div');
     const remove = button(document, 'Убрать собственный текст');
     const fields = new Map();
+    const textPreview = createDraftProsePreview({
+        document,
+        title: 'Предпросмотр содержания раздела'
+    });
     let current = null;
     let selectedKey = '';
     let listSignature = '';
@@ -103,6 +108,7 @@ export function createDraftTextPanel({ host, onAdd, onInput, onRemove, onSource 
 
         label.append(title, input);
         editor.append(label);
+        if (field.name === 'body') editor.append(textPreview.root);
         fields.set(field.name, input);
     }
 
@@ -191,6 +197,7 @@ export function createDraftTextPanel({ host, onAdd, onInput, onRemove, onSource 
         selectedLabel.hidden = !texts.length;
         if (!node) {
             sourcePanel.clear();
+            textPreview.clear();
             return;
         }
 
@@ -204,7 +211,7 @@ export function createDraftTextPanel({ host, onAdd, onInput, onRemove, onSource 
                 input.readOnly = locked;
             }
         }
-
+        textPreview.render(node.content.body);
         remove.disabled = locked;
         sourcePanel.render(node, locked);
     }
@@ -221,6 +228,7 @@ export function createDraftTextPanel({ host, onAdd, onInput, onRemove, onSource 
         parentSignature = '';
         parent.replaceChildren();
         selected.replaceChildren();
+        textPreview.clear();
         sourcePanel.clear();
         for (const input of fields.values()) input.value = '';
         section.hidden = true;
@@ -230,6 +238,7 @@ export function createDraftTextPanel({ host, onAdd, onInput, onRemove, onSource 
         events.abort();
         sourcePanel.dispose();
         section.remove();
+		textPreview.dispose();
     }
 
     return Object.freeze({ render, select, clear, dispose });

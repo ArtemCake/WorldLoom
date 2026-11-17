@@ -472,10 +472,12 @@ WorldLoom/
 │   │   │   │   │   │   ├── book-create-page.js
 │   │   │   │   │   │   ├── book-create-panel.js
 │   │   │   │   │   │   ├── book-create-state.js
+│   │   │   │   │   │   ├── book-inline-data.js
 │   │   │   │   │   │   ├── book-prose-data.js
 │   │   │   │   │   │   ├── book-prose-view.js
 │   │   │   │   │   │   ├── book-reader.js
 │   │   │   │   │   │   ├── book-sources-view.js
+│   │   │   │   │   │   ├── book-table-data.js
 │   │   │   │   │   │   └── books-api.js
 │   │   │   │   │   ├── catalog/
 │   │   │   │   │   │   ├── catalog-controller.js
@@ -662,9 +664,11 @@ WorldLoom/
 │   │       ├── rules-book-authoring-api.test.mjs
 │   │       ├── rules-book-content-view.test.mjs
 │   │       ├── rules-book-create.test.mjs
+│   │       ├── rules-book-inline-links.test.mjs
 │   │       ├── rules-book-prose.test.mjs
 │   │       ├── rules-book-reader.test.mjs
 │   │       ├── rules-book-sources.test.mjs
+│   │       ├── rules-book-table.test.mjs
 │   │       ├── rules-catalog.test.mjs
 │   │       ├── rules-draft-book-preview.test.mjs
 │   │       ├── rules-draft-editor-state.test.mjs

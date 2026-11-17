@@ -202,3 +202,16 @@
         text-align: right;
     }
 }
+
+.rules-catalog__prose {
+    a {
+        text-decoration-line: underline;
+        text-underline-offset: 0.18em;
+        overflow-wrap: anywhere;
+    }
+
+    a:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 3px;
+    }
+}

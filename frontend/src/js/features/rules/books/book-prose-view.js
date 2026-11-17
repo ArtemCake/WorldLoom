@@ -17,6 +17,15 @@ function appendInline(document, host, value) {
         for (const part of readBookInline(line)) {
             if (part.type === 'text') {
                 host.append(document.createTextNode(part.text));
+            } else if (part.type === 'link') {
+                const link = element(document, 'a', part.text);
+
+                link.setAttribute('href', part.href);
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+                link.setAttribute('hx-boost', 'false');
+
+                host.append(link);
             } else {
                 const tags = { strong: 'strong', em: 'em', code: 'code' };
                 host.append(element(document, tags[part.type], part.text));

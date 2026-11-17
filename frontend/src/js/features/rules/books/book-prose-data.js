@@ -99,28 +99,4 @@ export function readBookProse(value) {
     return blocks;
 }
 
-export function readBookInline(value) {
-    const source = textValue(value);
-    const pattern = /(`[^`\n]+`|\*\*[^*\n]+\*\*|\*[^*\n]+\*)/gu;
-    const parts = [];
-    let position = 0;
-
-    for (const match of source.matchAll(pattern)) {
-        if (match.index > position) {
-            parts.push({ type: 'text', text: source.slice(position, match.index) });
-        }
-
-        const marked = match[0];
-        const type = marked.startsWith('`') ? 'code' : marked.startsWith('**') ? 'strong' : 'em';
-        const width = type === 'strong' ? 2 : 1;
-
-        parts.push({ type, text: marked.slice(width, -width) });
-        position = match.index + marked.length;
-    }
-
-    if (position < source.length) {
-        parts.push({ type: 'text', text: source.slice(position) });
-    }
-
-    return parts;
-}
+export { readBookInline } from './book-inline-data.js';

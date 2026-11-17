@@ -25,7 +25,49 @@ function appendInline(document, host, value) {
     });
 }
 
+function tableRow(document, values, alignments, header = false) {
+    const row = document.createElement('tr');
+
+    values.forEach((value, index) => {
+        const cell = document.createElement(header ? 'th' : 'td');
+        const alignment = alignments[index];
+
+        if (header) cell.setAttribute('scope', 'col');
+        if (alignment) cell.className = `rules-catalog__cell--${alignment}`;
+
+        appendInline(document, cell, value);
+        row.append(cell);
+    });
+
+    return row;
+}
+
+function tableElement(document, block) {
+    const wrapper = document.createElement('div');
+    const table = document.createElement('table');
+    const head = document.createElement('thead');
+    const body = document.createElement('tbody');
+
+    wrapper.className = 'rules-catalog__table-scroll';
+    wrapper.setAttribute('role', 'region');
+    wrapper.setAttribute('aria-label', 'Таблица правил. При необходимости прокрутите по горизонтали.');
+    wrapper.setAttribute('tabindex', '0');
+
+    table.className = 'rules-catalog__table';
+    head.append(tableRow(document, block.headers, block.alignments, true));
+
+    for (const values of block.rows) {
+        body.append(tableRow(document, values, block.alignments));
+    }
+
+    table.append(head, body);
+    wrapper.append(table);
+    return wrapper;
+}
+
 function blockElement(document, block, headingLevel) {
+    if (block.type === 'table') return tableElement(document, block);
+
     if (block.type === 'code') {
         const pre = document.createElement('pre');
         pre.append(element(document, 'code', block.text));

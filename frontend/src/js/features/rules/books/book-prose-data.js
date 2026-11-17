@@ -1,5 +1,7 @@
 // frontend/src/js/features/rules/books/book-prose-data.js
 
+import { readBookTable } from './book-table-data.js';
+
 function textValue(value) {
     if (typeof value !== 'string') throw new TypeError('Содержание должно быть строкой.');
     return value;
@@ -31,6 +33,14 @@ export function readBookProse(value) {
     while (index < lines.length) {
         if (!lines[index].trim()) {
             index += 1;
+            continue;
+        }
+
+        const table = readBookTable(lines, index);
+
+        if (table) {
+            blocks.push(table.block);
+            index = table.nextIndex;
             continue;
         }
 
@@ -78,7 +88,7 @@ export function readBookProse(value) {
 
         while (index < lines.length && lines[index].trim()) {
             const next = lineKind(lines[index]);
-            if (next.type !== first.type) break;
+            if (next.type !== first.type || readBookTable(lines, index)) break;
             content.push(next.text);
             index += 1;
         }

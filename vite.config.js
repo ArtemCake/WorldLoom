@@ -2,7 +2,7 @@
 
 import { extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
+import { vendorAssets } from './tools/vendor-assets.js';
 import autoprefixer from 'autoprefixer';
 import { defineConfig } from 'vite';
 
@@ -63,6 +63,7 @@ export default defineConfig({
 
     plugins: [
         buildMessages(),
+        vendorAssets(),
     ],
 
     resolve: {

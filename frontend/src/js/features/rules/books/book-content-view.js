@@ -2,6 +2,7 @@
 
 import { createBookProse } from './book-prose-view.js';
 import { createBookSources } from './book-sources-view.js';
+import { createBookLocalLink } from './book-content-navigation.js';
 
 let sequence = 0;
 
@@ -12,19 +13,12 @@ function element(document, tag, className, text = '') {
     return node;
 }
 
-function localLink(document, target, title) {
-    const link = element(document, 'a', '', title);
-    link.href = `#${target}`;
-    link.setAttribute('hx-boost', 'false');
-    return link;
-}
-
 function appendSources(document, host, sources, title) {
     const view = createBookSources(document, sources, title);
     if (view) host.append(view);
 }
 
-function appendSections(document, host, navigation, sections, prefix, tocId) {
+function appendSections(document, host, navigation, sections, prefix, tocHeading) {
     const rootList = document.createElement('ul');
     const parents = new Map();
 
@@ -53,11 +47,11 @@ function appendSections(document, host, navigation, sections, prefix, tocId) {
         appendSources(document, block, section.sources, 'Источники раздела и условия использования');
 
         const back = element(document, 'p', '');
-        back.append(localLink(document, tocId, 'К оглавлению'));
+        back.append(createBookLocalLink(document, tocHeading, 'К оглавлению'));
         block.append(back);
 
         const item = document.createElement('li');
-        item.append(localLink(document, target, section.title));
+        item.append(createBookLocalLink(document, heading, section.title));
 
         if (parent) {
             if (!parent.list) {
@@ -115,7 +109,7 @@ export function createBookContent(document, book, { mode = 'published' } = {}) {
     navigation.append(tocHeading);
     host.append(navigation);
 
-    appendSections(document, host, navigation, book.sections, prefix, tocId);
+    appendSections(document, host, navigation, book.sections, prefix, tocHeading);
     appendSources(document, host, book.sources, 'Источники книги и условия использования');
 
     return host;

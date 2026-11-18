@@ -23,6 +23,8 @@
     "vite": "^6.4.5"
   },
   "dependencies": {
+    "htmx-ext-json-enc": "2.0.1",
+    "htmx.org": "2.0.4",
     "pixi.js": "^8.22.0"
   }
 }

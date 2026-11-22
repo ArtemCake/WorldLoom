@@ -77,6 +77,19 @@ class EngineNumericContractTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             RulesProfile.model_validate(raw)
 
+    def test_random_operation_is_not_expressible(self):
+        """Бросок нельзя выразить в определении: допустимы только целочисленные операции (§28.3)."""
+        for operation in ("dice", "random", "roll", "d20"):
+            with self.subTest(operation=operation):
+                raw = make_profile()
+                raw["calculations"]["derived"]["modifier"]["formula"] = {
+                    "operation": operation,
+                    "arguments": [20],
+                }
+
+                with self.assertRaises(ValidationError):
+                    RulesProfile.model_validate(raw)
+
     def test_old_format_is_not_relabelled_automatically(self):
         raw = make_profile()
         raw["schema_version"] = 2

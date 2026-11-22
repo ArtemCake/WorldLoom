@@ -35,6 +35,12 @@ from backend.app.web.csrf import enforce_csrf
 from backend.app.modules.game_systems.schemas.game_system_editor import GameSystemEditorCreate, GameSystemEditorRead, GameSystemEditorUpdate
 from backend.app.modules.game_systems.services.delete_service import delete_game_system
 from backend.app.modules.game_systems.schemas.game_rules import GameSystemRulesVersionPage
+from backend.app.modules.rules.schemas.workspace_overview import WorkspaceOverview
+from backend.app.modules.rules.services import workspace_overview
+from backend.app.modules.rules.schemas.books.book_migration import RuleBookMigrationRead
+from backend.app.modules.rules.schemas.books.migrate_rulebook_request import MigrateRulebookRequest
+from backend.app.modules.rules.services.books.rulebook_service import migrate_system_rulebook
+from backend.app.modules.rules import errors as rules_errors
 
 
 logger = logging.getLogger(__name__)
@@ -102,6 +108,26 @@ def _rules_http_error(error: GameSystemError) -> HTTPException:
 
 	return _http_error(500, "Не удалось выполнить операцию с правилами")
 
+def _book_http_error(error: rules_errors.RuleBookError | rules_errors.RuleArticleError) -> HTTPException:
+	"""Преобразовать ошибку модуля правил в безопасный HTTP-ответ."""
+	if isinstance(error, (rules_errors.RuleBookNotFound, rules_errors.RuleArticleNotFound)):
+		return _http_error(404, "Игровая система, книга или публикация не найдена")
+
+	if isinstance(error, (rules_errors.RuleBookConflict, rules_errors.RuleArticleConflict)):
+		return _http_error(
+			409,
+			"Перенос конфликтует с текущим состоянием книги или системы. "
+			"Проверьте актуальную ревизию и занятый код книги",
+		)
+
+	if isinstance(error, (rules_errors.InvalidRuleBook, rules_errors.InvalidRuleArticle)):
+		return _http_error(422, "Раздел rulebook или входные данные не прошли проверку")
+
+	if isinstance(error, (rules_errors.RuleBookStorageError, rules_errors.RuleArticleStorageError)):
+		return _http_error(500, "Не удалось прочитать сохранённые данные книги")
+
+	return _http_error(500, "Не удалось выполнить операцию с правилами")
+
 def _integrity_http_error(error: IntegrityError) -> HTTPException:
 	"""Преобразовать известные нарушения PostgreSQL без разбора текста SQL."""
 	original = error.orig
@@ -146,6 +172,15 @@ async def _rules_operation(session: AsyncSession, *, write: bool) -> AsyncIterat
 
 		if error.status_code >= 500:
 			logger.exception("Ошибка административной операции правил")
+
+		raise error from exc
+
+	except (rules_errors.RuleBookError, rules_errors.RuleArticleError) as exc:
+		await session.rollback()
+		error = _book_http_error(exc)
+
+		if error.status_code >= 500:
+			logger.exception("Ошибка административной операции книг")
 
 		raise error from exc
 
@@ -337,6 +372,13 @@ async def get_system_engine_origin(system_id: UUID, response: Response, session:
 	async with _rules_operation(session, write=False):
 		return await editor_service.get_system_engine_origin(session, system_id)
 
+@router.get("/game-systems/{system_id}/workspace", response_model=WorkspaceOverview, operation_id="adminGetGameSystemWorkspace")
+async def get_system_workspace(system_id: UUID, response: Response, session: SessionDependency) -> WorkspaceOverview:
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _rules_operation(session, write=False):
+		return await workspace_overview.get_workspace_overview(session, system_id)
+
 @router.put("/game-systems/{system_id}/editor/engine", response_model=GameSystemEditorRead,
             operation_id="adminUpdateGameSystemFromEngine", dependencies=[Depends(enforce_csrf)])
 async def save_system_from_engine(system_id: UUID, data: GameSystemEngineEditorUpdate, response: Response, session: SessionDependency,
@@ -360,3 +402,54 @@ async def set_current_rules_version(system_id: UUID, version_id: UUID, response:
 
 	async with _rules_operation(session, write=True):
 		return await editor_service.set_current_rules_version(session, system_id, version_id)
+
+
+@router.post("/game-systems/{system_id}/rules/migrate-rulebook", response_model=RuleBookMigrationRead, status_code=201,
+	operation_id="adminMigrateGameSystemRulebook", dependencies=[Depends(enforce_csrf)])
+async def migrate_system_rulebook_route(
+	system_id: UUID,
+	data: MigrateRulebookRequest,
+	response: Response,
+	session: SessionDependency,
+	actor_id: ActorDependency,
+) -> RuleBookMigrationRead:
+	"""Перенести раздел rulebook карточки системы в отдельную книгу.
+
+	Создаёт книгу, заполняет её текстами из ``rulebook`` в черновике
+	системы; числовой профиль правил не изменяется.
+
+	Требования:
+	- в черновике должен быть раздел ``rulebook`` с текстами;
+	- черновик системы блокируется на время операции;
+	- вызывающий слой обязан проверить право управления системой
+	  (зависимость ``require_content_manager``).
+	"""
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _rules_operation(session, write=True):
+		system, draft = await editor_service.lock_rules_draft_for_migration(session, system_id)
+
+		rules_json = draft["rules_json"]
+		rulebook = rules_json.get("rulebook") if isinstance(rules_json, dict) else None
+
+		if not isinstance(rulebook, dict):
+			raise HTTPException(
+				status_code=422,
+				detail="В черновике правил отсутствует раздел rulebook с текстами",
+				headers={"Cache-Control": "no-store"},
+			)
+
+		title = data.title or system["name"]
+
+		result = await migrate_system_rulebook(
+			session,
+			system_id=system_id,
+			actor_id=actor_id,
+			rules_json=rules_json,
+			title=title,
+			summary=data.summary,
+			language=data.language,
+			edition_key=data.edition_key,
+		)
+
+		return result

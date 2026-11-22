@@ -1,8 +1,8 @@
-"""СозданиеПроекта
+"""Создание базы данных
 
-Revision ID: ce197d4917e3
+Revision ID: 02aa427370e3
 Revises: 
-Create Date: 2026-11-14 13:09:51.539165
+Create Date: 2026-11-22 21:33:59.438551
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'ce197d4917e3'
+revision: str = '02aa427370e3'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -1288,6 +1288,21 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_active_sessions_cache_current_game_id'), 'active_sessions_cache', ['current_game_id'], unique=False)
     op.create_index(op.f('ix_active_sessions_cache_user_id'), 'active_sessions_cache', ['user_id'], unique=True)
+    op.create_table('character_content_selections',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('character_id', sa.UUID(), nullable=False),
+    sa.Column('source_type', sa.String(length=30), nullable=False),
+    sa.Column('source_id', sa.UUID(), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('applied_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint("source_type <> ''", name='ck_character_content_selections_source_type'),
+    sa.ForeignKeyConstraint(['character_id'], ['characters.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('character_id', 'source_type', name='uq_character_content_selections_char_type')
+    )
+    op.create_index(op.f('ix_character_content_selections_character_id'), 'character_content_selections', ['character_id'], unique=False)
     op.create_table('invites',
     sa.Column('token', sa.String(length=64), nullable=False),
     sa.Column('game_id', sa.UUID(), nullable=False),
@@ -1492,6 +1507,39 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_character_sheet_spells_sheet_id'), 'character_sheet_spells', ['sheet_id'], unique=False)
     op.create_index(op.f('ix_character_sheet_spells_spell_id'), 'character_sheet_spells', ['spell_id'], unique=False)
+    op.create_table('effect_instances',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('character_sheet_id', sa.UUID(), nullable=True),
+    sa.Column('character_id', sa.UUID(), nullable=True),
+    sa.Column('owner_key', sa.UUID(), sa.Computed('COALESCE(character_sheet_id, character_id)', ), nullable=False),
+    sa.Column('status', sa.String(length=20), server_default='active', nullable=False),
+    sa.Column('effect_id', sa.UUID(), nullable=True),
+    sa.Column('source_type', sa.String(length=30), nullable=False),
+    sa.Column('source_id', sa.UUID(), nullable=True),
+    sa.Column('application_key', sa.UUID(), nullable=True),
+    sa.Column('modifiers', postgresql.JSONB(none_as_null=True, astext_type=sa.Text()), server_default=sa.text("'[]'::jsonb"), nullable=False),
+    sa.Column('conditions', postgresql.JSONB(none_as_null=True, astext_type=sa.Text()), nullable=True),
+    sa.Column('duration_value', sa.Integer(), nullable=True),
+    sa.Column('duration_unit', sa.String(length=20), nullable=True),
+    sa.Column('end_events', postgresql.JSONB(none_as_null=True, astext_type=sa.Text()), nullable=True),
+    sa.Column('started_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('started_event', sa.String(length=100), nullable=True),
+    sa.Column('ended_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint("jsonb_typeof(modifiers) = 'array'", name='ck_effect_instances_modifiers_array'),
+    sa.CheckConstraint("source_type <> ''", name='ck_effect_instances_source_type'),
+    sa.CheckConstraint("status IN ('active', 'suppressed', 'withdrawn')", name='ck_effect_instances_status'),
+    sa.CheckConstraint('\n\t\t\t(\n\t\t\t\tcharacter_sheet_id IS NOT NULL\n\t\t\t\tAND character_id IS NULL\n\t\t\t)\n\t\t\tOR\n\t\t\t(\n\t\t\t\tcharacter_sheet_id IS NULL\n\t\t\t\tAND character_id IS NOT NULL\n\t\t\t)\n\t\t\t', name='ck_effect_instances_owner'),
+    sa.ForeignKeyConstraint(['character_id'], ['characters.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['character_sheet_id'], ['character_sheets.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['effect_id'], ['effects.id'], ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('owner_key', 'application_key', name='uq_effect_instances_application_key')
+    )
+    op.create_index(op.f('ix_effect_instances_character_id'), 'effect_instances', ['character_id'], unique=False)
+    op.create_index(op.f('ix_effect_instances_character_sheet_id'), 'effect_instances', ['character_sheet_id'], unique=False)
+    op.create_index(op.f('ix_effect_instances_effect_id'), 'effect_instances', ['effect_id'], unique=False)
     op.create_table('map_layers',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('map_id', sa.UUID(), nullable=False),
@@ -1527,6 +1575,75 @@ def upgrade() -> None:
     op.create_index(op.f('ix_messages_dice_roll_id'), 'messages', ['dice_roll_id'], unique=False)
     op.create_index(op.f('ix_messages_npc_id'), 'messages', ['npc_id'], unique=False)
     op.create_index(op.f('ix_messages_sender_id'), 'messages', ['sender_id'], unique=False)
+    op.create_table('sheet_attribute_provenance',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('character_sheet_id', sa.UUID(), nullable=True),
+    sa.Column('character_id', sa.UUID(), nullable=True),
+    sa.Column('owner_key', sa.UUID(), sa.Computed('COALESCE(character_sheet_id, character_id)', ), nullable=False),
+    sa.Column('code', sa.String(length=100), nullable=False),
+    sa.Column('source_type', sa.String(length=30), nullable=False),
+    sa.Column('source_id', sa.UUID(), nullable=True),
+    sa.Column('mode', sa.String(length=10), server_default='add', nullable=False),
+    sa.Column('amount', sa.Integer(), server_default='0', nullable=False),
+    sa.Column('previous_value', sa.Integer(), server_default='0', nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint("\n\t\t\t(source_type = 'manual' AND source_id IS NULL)\n\t\t\tOR\n\t\t\t(source_type <> 'manual' AND source_id IS NOT NULL)\n\t\t\t", name='ck_sheet_attribute_provenance_source_id'),
+    sa.CheckConstraint("mode IN ('add', 'set')", name='ck_sheet_attribute_provenance_mode'),
+    sa.CheckConstraint("source_type <> ''", name='ck_sheet_attribute_provenance_source_type'),
+    sa.CheckConstraint('\n\t\t\t(\n\t\t\t\tcharacter_sheet_id IS NOT NULL\n\t\t\t\tAND character_id IS NULL\n\t\t\t)\n\t\t\tOR\n\t\t\t(\n\t\t\t\tcharacter_sheet_id IS NULL\n\t\t\t\tAND character_id IS NOT NULL\n\t\t\t)\n\t\t\t', name='ck_sheet_attribute_provenance_owner'),
+    sa.ForeignKeyConstraint(['character_id'], ['characters.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['character_sheet_id'], ['character_sheets.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('owner_key', 'code', 'source_type', 'source_id', name='uq_sheet_attribute_provenance_source', postgresql_nulls_not_distinct=True)
+    )
+    op.create_index(op.f('ix_sheet_attribute_provenance_character_id'), 'sheet_attribute_provenance', ['character_id'], unique=False)
+    op.create_index(op.f('ix_sheet_attribute_provenance_character_sheet_id'), 'sheet_attribute_provenance', ['character_sheet_id'], unique=False)
+    op.create_table('sheet_resource_changes',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('character_sheet_id', sa.UUID(), nullable=True),
+    sa.Column('character_id', sa.UUID(), nullable=True),
+    sa.Column('owner_key', sa.UUID(), sa.Computed('COALESCE(character_sheet_id, character_id)', ), nullable=False),
+    sa.Column('code', sa.String(length=100), nullable=False),
+    sa.Column('reason_type', sa.String(length=20), nullable=False),
+    sa.Column('previous_value', sa.Integer(), nullable=False),
+    sa.Column('value', sa.Integer(), nullable=False),
+    sa.Column('delta', sa.Integer(), nullable=False),
+    sa.Column('maximum', sa.Integer(), nullable=True),
+    sa.Column('event_code', sa.String(length=100), nullable=True),
+    sa.Column('source_type', sa.String(length=30), nullable=True),
+    sa.Column('source_id', sa.UUID(), nullable=True),
+    sa.Column('comment', sa.Text(), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint("\n\t\t\treason_type IN\n\t\t\t('init', 'spend', 'restore', 'recover', 'limit', 'manual')\n\t\t\t", name='ck_sheet_resource_changes_reason_type'),
+    sa.CheckConstraint("code <> ''", name='ck_sheet_resource_changes_code'),
+    sa.CheckConstraint('\n\t\t\t(\n\t\t\t\tcharacter_sheet_id IS NOT NULL\n\t\t\t\tAND character_id IS NULL\n\t\t\t)\n\t\t\tOR\n\t\t\t(\n\t\t\t\tcharacter_sheet_id IS NULL\n\t\t\t\tAND character_id IS NOT NULL\n\t\t\t)\n\t\t\t', name='ck_sheet_resource_changes_owner'),
+    sa.ForeignKeyConstraint(['character_id'], ['characters.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['character_sheet_id'], ['character_sheets.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_sheet_resource_changes_character_id'), 'sheet_resource_changes', ['character_id'], unique=False)
+    op.create_index(op.f('ix_sheet_resource_changes_character_sheet_id'), 'sheet_resource_changes', ['character_sheet_id'], unique=False)
+    op.create_index(op.f('ix_sheet_resource_changes_created_at'), 'sheet_resource_changes', ['created_at'], unique=False)
+    op.create_table('sheet_resource_values',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('character_sheet_id', sa.UUID(), nullable=True),
+    sa.Column('character_id', sa.UUID(), nullable=True),
+    sa.Column('owner_key', sa.UUID(), sa.Computed('COALESCE(character_sheet_id, character_id)', ), nullable=False),
+    sa.Column('code', sa.String(length=100), nullable=False),
+    sa.Column('value', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint("code <> ''", name='ck_sheet_resource_values_code'),
+    sa.CheckConstraint('\n\t\t\t(\n\t\t\t\tcharacter_sheet_id IS NOT NULL\n\t\t\t\tAND character_id IS NULL\n\t\t\t)\n\t\t\tOR\n\t\t\t(\n\t\t\t\tcharacter_sheet_id IS NULL\n\t\t\t\tAND character_id IS NOT NULL\n\t\t\t)\n\t\t\t', name='ck_sheet_resource_values_owner'),
+    sa.CheckConstraint('value >= 0', name='ck_sheet_resource_values_non_negative'),
+    sa.ForeignKeyConstraint(['character_id'], ['characters.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['character_sheet_id'], ['character_sheets.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('owner_key', 'code', name='uq_sheet_resource_values_owner_code')
+    )
+    op.create_index(op.f('ix_sheet_resource_values_character_id'), 'sheet_resource_values', ['character_id'], unique=False)
+    op.create_index(op.f('ix_sheet_resource_values_character_sheet_id'), 'sheet_resource_values', ['character_sheet_id'], unique=False)
     op.create_table('spatial_audio_zones',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('map_id', sa.UUID(), nullable=False),
@@ -1575,6 +1692,33 @@ def upgrade() -> None:
     op.create_index(op.f('ix_uploaded_assets_equipment_id'), 'uploaded_assets', ['equipment_id'], unique=False)
     op.create_index(op.f('ix_uploaded_assets_job_id'), 'uploaded_assets', ['job_id'], unique=False)
     op.create_index(op.f('ix_uploaded_assets_uploader_id'), 'uploaded_assets', ['uploader_id'], unique=False)
+    op.create_table('effect_changes',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('character_sheet_id', sa.UUID(), nullable=True),
+    sa.Column('character_id', sa.UUID(), nullable=True),
+    sa.Column('owner_key', sa.UUID(), sa.Computed('COALESCE(character_sheet_id, character_id)', ), nullable=False),
+    sa.Column('instance_id', sa.UUID(), nullable=True),
+    sa.Column('reason_type', sa.String(length=20), nullable=False),
+    sa.Column('status_before', sa.String(length=20), nullable=True),
+    sa.Column('status_after', sa.String(length=20), nullable=False),
+    sa.Column('event_code', sa.String(length=100), nullable=True),
+    sa.Column('request_id', sa.UUID(), nullable=True),
+    sa.Column('source_type', sa.String(length=30), nullable=True),
+    sa.Column('source_id', sa.UUID(), nullable=True),
+    sa.Column('comment', sa.Text(), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint("reason_type IN ('apply', 'extend', 'suppress', 'withdraw')", name='ck_effect_changes_reason_type'),
+    sa.CheckConstraint("status_after IN ('active', 'suppressed', 'withdrawn')", name='ck_effect_changes_status_after'),
+    sa.CheckConstraint('\n\t\t\t(\n\t\t\t\tcharacter_sheet_id IS NOT NULL\n\t\t\t\tAND character_id IS NULL\n\t\t\t)\n\t\t\tOR\n\t\t\t(\n\t\t\t\tcharacter_sheet_id IS NULL\n\t\t\t\tAND character_id IS NOT NULL\n\t\t\t)\n\t\t\t', name='ck_effect_changes_owner'),
+    sa.ForeignKeyConstraint(['character_id'], ['characters.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['character_sheet_id'], ['character_sheets.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['instance_id'], ['effect_instances.id'], ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_effect_changes_character_id'), 'effect_changes', ['character_id'], unique=False)
+    op.create_index(op.f('ix_effect_changes_character_sheet_id'), 'effect_changes', ['character_sheet_id'], unique=False)
+    op.create_index(op.f('ix_effect_changes_created_at'), 'effect_changes', ['created_at'], unique=False)
+    op.create_index(op.f('ix_effect_changes_instance_id'), 'effect_changes', ['instance_id'], unique=False)
     op.create_table('map_hexes',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('layer_id', sa.UUID(), nullable=False),
@@ -1678,6 +1822,11 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_map_hexes_terrain_type_id'), table_name='map_hexes')
     op.drop_index(op.f('ix_map_hexes_layer_id'), table_name='map_hexes')
     op.drop_table('map_hexes')
+    op.drop_index(op.f('ix_effect_changes_instance_id'), table_name='effect_changes')
+    op.drop_index(op.f('ix_effect_changes_created_at'), table_name='effect_changes')
+    op.drop_index(op.f('ix_effect_changes_character_sheet_id'), table_name='effect_changes')
+    op.drop_index(op.f('ix_effect_changes_character_id'), table_name='effect_changes')
+    op.drop_table('effect_changes')
     op.drop_index(op.f('ix_uploaded_assets_uploader_id'), table_name='uploaded_assets')
     op.drop_index(op.f('ix_uploaded_assets_job_id'), table_name='uploaded_assets')
     op.drop_index(op.f('ix_uploaded_assets_equipment_id'), table_name='uploaded_assets')
@@ -1686,6 +1835,16 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_spatial_audio_zones_map_id'), table_name='spatial_audio_zones')
     op.drop_index(op.f('ix_spatial_audio_zones_creator_id'), table_name='spatial_audio_zones')
     op.drop_table('spatial_audio_zones')
+    op.drop_index(op.f('ix_sheet_resource_values_character_sheet_id'), table_name='sheet_resource_values')
+    op.drop_index(op.f('ix_sheet_resource_values_character_id'), table_name='sheet_resource_values')
+    op.drop_table('sheet_resource_values')
+    op.drop_index(op.f('ix_sheet_resource_changes_created_at'), table_name='sheet_resource_changes')
+    op.drop_index(op.f('ix_sheet_resource_changes_character_sheet_id'), table_name='sheet_resource_changes')
+    op.drop_index(op.f('ix_sheet_resource_changes_character_id'), table_name='sheet_resource_changes')
+    op.drop_table('sheet_resource_changes')
+    op.drop_index(op.f('ix_sheet_attribute_provenance_character_sheet_id'), table_name='sheet_attribute_provenance')
+    op.drop_index(op.f('ix_sheet_attribute_provenance_character_id'), table_name='sheet_attribute_provenance')
+    op.drop_table('sheet_attribute_provenance')
     op.drop_index(op.f('ix_messages_sender_id'), table_name='messages')
     op.drop_index(op.f('ix_messages_npc_id'), table_name='messages')
     op.drop_index(op.f('ix_messages_dice_roll_id'), table_name='messages')
@@ -1693,6 +1852,10 @@ def downgrade() -> None:
     op.drop_table('messages')
     op.drop_index(op.f('ix_map_layers_map_id'), table_name='map_layers')
     op.drop_table('map_layers')
+    op.drop_index(op.f('ix_effect_instances_effect_id'), table_name='effect_instances')
+    op.drop_index(op.f('ix_effect_instances_character_sheet_id'), table_name='effect_instances')
+    op.drop_index(op.f('ix_effect_instances_character_id'), table_name='effect_instances')
+    op.drop_table('effect_instances')
     op.drop_index(op.f('ix_character_sheet_spells_spell_id'), table_name='character_sheet_spells')
     op.drop_index(op.f('ix_character_sheet_spells_sheet_id'), table_name='character_sheet_spells')
     op.drop_table('character_sheet_spells')
@@ -1729,6 +1892,8 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_invites_creator_id'), table_name='invites')
     op.drop_index(op.f('ix_invites_claimed_by'), table_name='invites')
     op.drop_table('invites')
+    op.drop_index(op.f('ix_character_content_selections_character_id'), table_name='character_content_selections')
+    op.drop_table('character_content_selections')
     op.drop_index(op.f('ix_active_sessions_cache_user_id'), table_name='active_sessions_cache')
     op.drop_index(op.f('ix_active_sessions_cache_current_game_id'), table_name='active_sessions_cache')
     op.drop_table('active_sessions_cache')

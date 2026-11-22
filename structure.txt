@@ -98,11 +98,17 @@ WorldLoom/
 │   │   │   │   ├── schemas/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── content_schemas.py
+│   │   │   │   │   ├── effect_schemas.py
+│   │   │   │   │   ├── resource_schemas.py
 │   │   │   │   │   ├── schemas.py
+│   │   │   │   │   ├── selection_schemas.py
 │   │   │   │   │   └── sheet_runtime.py
 │   │   │   │   ├── services/
 │   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── content_selection_service.py
 │   │   │   │   │   ├── content_service.py
+│   │   │   │   │   ├── effect_service.py
+│   │   │   │   │   ├── resource_service.py
 │   │   │   │   │   ├── service.py
 │   │   │   │   │   └── sheet_runtime_service.py
 │   │   │   │   ├── __init__.py
@@ -121,8 +127,11 @@ WorldLoom/
 │   │   │   │   ├── rules/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── attribute_engine.py
+│   │   │   │   │   ├── effect_stacking.py
 │   │   │   │   │   ├── formula_engine.py
+│   │   │   │   │   ├── procedure_lifecycle.py
 │   │   │   │   │   ├── resource_engine.py
+│   │   │   │   │   ├── resource_policy.py
 │   │   │   │   │   ├── resource_validation.py
 │   │   │   │   │   ├── rules_composition.py
 │   │   │   │   │   └── rules_engine.py
@@ -139,7 +148,8 @@ WorldLoom/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── game_rules.py
 │   │   │   │   │   ├── game_system_editor.py
-│   │   │   │   │   └── game_system_origin.py
+│   │   │   │   │   ├── game_system_origin.py
+│   │   │   │   │   └── system_book_set.py
 │   │   │   │   ├── services/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── delete_service.py
@@ -147,6 +157,7 @@ WorldLoom/
 │   │   │   │   │   ├── rule_engine_lifecycle_service.py
 │   │   │   │   │   ├── rule_engine_removal_service.py
 │   │   │   │   │   ├── rule_engine_service.py
+│   │   │   │   │   ├── system_book_commands.py
 │   │   │   │   │   └── system_rule_origin.py
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── api.py
@@ -216,12 +227,15 @@ WorldLoom/
 │   │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   │   ├── book_authoring.py
 │   │   │   │   │   │   ├── book_draft_content.py
+│   │   │   │   │   │   ├── book_migration.py
 │   │   │   │   │   │   ├── book_working_draft.py
-│   │   │   │   │   │   └── books.py
+│   │   │   │   │   │   ├── books.py
+│   │   │   │   │   │   └── migrate_rulebook_request.py
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── articles.py
 │   │   │   │   │   ├── catalog.py
-│   │   │   │   │   └── system_books.py
+│   │   │   │   │   ├── system_books.py
+│   │   │   │   │   └── workspace_overview.py
 │   │   │   │   ├── services/
 │   │   │   │   │   ├── books/
 │   │   │   │   │   │   ├── __init__.py
@@ -232,13 +246,16 @@ WorldLoom/
 │   │   │   │   │   │   ├── book_reader_service.py
 │   │   │   │   │   │   ├── book_service.py
 │   │   │   │   │   │   ├── book_working_editor.py
-│   │   │   │   │   │   └── book_working_publication.py
+│   │   │   │   │   │   ├── book_working_publication.py
+│   │   │   │   │   │   ├── rulebook_migration.py
+│   │   │   │   │   │   └── rulebook_service.py
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── article_service.py
 │   │   │   │   │   ├── article_version_lookup.py
 │   │   │   │   │   ├── catalog_service.py
 │   │   │   │   │   ├── system_books.py
-│   │   │   │   │   └── system_catalog.py
+│   │   │   │   │   ├── system_catalog.py
+│   │   │   │   │   └── workspace_overview.py
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── api.py
 │   │   │   │   ├── articles_api.py
@@ -294,14 +311,14 @@ WorldLoom/
 │   │   └── migrate.py
 │   ├── db_migrations/
 │   │   ├── versions/
-│   │   │   ├── 47b059d75bdc_publication_protection.py
-│   │   │   └── ce197d4917e3_созданиепроекта.py
+│   │   │   └── 02aa427370e3_создание_базы_данных.py
 │   │   ├── __init__.py
 │   │   ├── env.py
 │   │   ├── publication_protection.py
 │   │   ├── README
 │   │   ├── rule_engine_protection.py
-│   │   └── script.py.mako
+│   │   ├── script.py.mako
+│   │   └── system_rules_protection.py
 │   └── __init__.py
 ├── content/
 │   └── legal/
@@ -397,7 +414,8 @@ WorldLoom/
 │   │   │   │   │   │   ├── presets/
 │   │   │   │   │   │   │   ├── dnd5e-2014-extension.js
 │   │   │   │   │   │   │   ├── dnd5e-2014-rulebook.js
-│   │   │   │   │   │   │   └── dnd5e-2014.js
+│   │   │   │   │   │   │   ├── dnd5e-2014.js
+│   │   │   │   │   │   │   └── preset-coverage.js
 │   │   │   │   │   │   ├── shared/
 │   │   │   │   │   │   │   ├── editor-dom.js
 │   │   │   │   │   │   │   ├── formula-contract.js
@@ -467,6 +485,7 @@ WorldLoom/
 │   │   │   │   │   │   └── section-picker-state.js
 │   │   │   │   │   ├── books/
 │   │   │   │   │   │   ├── book-authoring-api.js
+│   │   │   │   │   │   ├── book-content-navigation.js
 │   │   │   │   │   │   ├── book-content-view.js
 │   │   │   │   │   │   ├── book-create-data.js
 │   │   │   │   │   │   ├── book-create-page.js
@@ -612,8 +631,6 @@ WorldLoom/
 │   │   │   ├── map_view.html
 │   │   │   └── maps.html
 │   │   ├── rules/
-│   │   │   ├── partials/
-│   │   │   │   └── book-create.html
 │   │   │   ├── book-create.html
 │   │   │   ├── catalog.html
 │   │   │   └── workspace.html
@@ -632,6 +649,8 @@ WorldLoom/
 │           └── maps/
 ├── logs/
 │   ├── worldloom.log
+│   ├── worldloom.log.2026-11-17
+│   ├── worldloom.log.2026-11-18
 │   └── worldloom_error.log
 ├── staging/
 ├── tests/
@@ -655,50 +674,69 @@ WorldLoom/
 │   │   │   ├── dnd5e-2014-resources.test.mjs
 │   │   │   ├── engine-formula-text.test.mjs
 │   │   │   ├── engine-presets.test.mjs
+│   │   │   ├── preset-coverage.test.mjs
 │   │   │   ├── resource-contract.test.mjs
 │   │   │   └── rule-sections.test.mjs
-│   │   └── rules/
-│   │       ├── rules-api.test.mjs
-│   │       ├── rules-authoring-controller.test.mjs
-│   │       ├── rules-authoring-navigation.test.mjs
-│   │       ├── rules-book-authoring-api.test.mjs
-│   │       ├── rules-book-content-view.test.mjs
-│   │       ├── rules-book-create.test.mjs
-│   │       ├── rules-book-inline-links.test.mjs
-│   │       ├── rules-book-prose.test.mjs
-│   │       ├── rules-book-reader.test.mjs
-│   │       ├── rules-book-sources.test.mjs
-│   │       ├── rules-book-table.test.mjs
-│   │       ├── rules-catalog.test.mjs
-│   │       ├── rules-draft-book-preview.test.mjs
-│   │       ├── rules-draft-editor-state.test.mjs
-│   │       ├── rules-draft-preview-session.test.mjs
-│   │       ├── rules-draft-publication.test.mjs
-│   │       ├── rules-draft-section-data.test.mjs
-│   │       ├── rules-draft-text-data.test.mjs
-│   │       ├── rules-draft-toc-data.test.mjs
-│   │       ├── rules-section-replacement.test.mjs
-│   │       ├── rules-system-books-api.test.mjs
-│   │       ├── rules-text-arrangement-sources.test.mjs
-│   │       ├── rules-working-api.test.mjs
-│   │       ├── rules-working-editor-state.test.mjs
-│   │       └── rules-working-workspace.test.mjs
+│   │   ├── rules/
+│   │   │   ├── rules-api.test.mjs
+│   │   │   ├── rules-authoring-controller.test.mjs
+│   │   │   ├── rules-authoring-navigation.test.mjs
+│   │   │   ├── rules-book-authoring-api.test.mjs
+│   │   │   ├── rules-book-content-navigation.test.mjs
+│   │   │   ├── rules-book-content-view.test.mjs
+│   │   │   ├── rules-book-create.test.mjs
+│   │   │   ├── rules-book-inline-links.test.mjs
+│   │   │   ├── rules-book-prose.test.mjs
+│   │   │   ├── rules-book-reader.test.mjs
+│   │   │   ├── rules-book-sources.test.mjs
+│   │   │   ├── rules-book-table.test.mjs
+│   │   │   ├── rules-catalog.test.mjs
+│   │   │   ├── rules-draft-book-preview.test.mjs
+│   │   │   ├── rules-draft-editor-state.test.mjs
+│   │   │   ├── rules-draft-preview-session.test.mjs
+│   │   │   ├── rules-draft-publication.test.mjs
+│   │   │   ├── rules-draft-section-data.test.mjs
+│   │   │   ├── rules-draft-text-data.test.mjs
+│   │   │   ├── rules-draft-toc-data.test.mjs
+│   │   │   ├── rules-section-replacement.test.mjs
+│   │   │   ├── rules-system-books-api.test.mjs
+│   │   │   ├── rules-text-arrangement-sources.test.mjs
+│   │   │   ├── rules-working-api.test.mjs
+│   │   │   ├── rules-working-editor-state.test.mjs
+│   │   │   └── rules-working-workspace.test.mjs
+│   │   └── vendor-assets.test.mjs
 │   ├── python/
+│   │   ├── characters/
+│   │   │   ├── test_content_selection.py
+│   │   │   ├── test_effect_service.py
+│   │   │   └── test_resource_service.py
 │   │   ├── game_systems/
 │   │   │   ├── __init__.py
 │   │   │   ├── test_attribute_choices.py
 │   │   │   ├── test_dnd5e_2014_checks_extension.py
 │   │   │   ├── test_dnd5e_2014_extended_preset.py
 │   │   │   ├── test_dnd5e_2014_preset.py
+│   │   │   ├── test_effect_stacking.py
+│   │   │   ├── test_empty_draft.py
 │   │   │   ├── test_engine_numeric_contract.py
 │   │   │   ├── test_engine_resource_storage.py
+│   │   │   ├── test_g1_publication_acceptance.py
 │   │   │   ├── test_game_system_draft_validation.py
+│   │   │   ├── test_procedure_lifecycle.py
 │   │   │   ├── test_profile_resources.py
+│   │   │   ├── test_publication_immunity.py
 │   │   │   ├── test_resource_engine.py
-│   │   │   └── test_rulebook_contract.py
+│   │   │   ├── test_resource_policy.py
+│   │   │   ├── test_rulebook_contract.py
+│   │   │   ├── test_system_book_commands.py
+│   │   │   └── test_system_rules_protection.py
+│   │   ├── games/
+│   │   │   └── test_game_state_services.py
 │   │   ├── rules/
 │   │   │   ├── __init__.py
 │   │   │   ├── pg_support.py
+│   │   │   ├── test_admin_migrate_rulebook_route.py
+│   │   │   ├── test_admin_workspace_route.py
 │   │   │   ├── test_article_foundation.py
 │   │   │   ├── test_article_postgresql.py
 │   │   │   ├── test_article_service.py
@@ -709,9 +747,12 @@ WorldLoom/
 │   │   │   ├── test_book_models.py
 │   │   │   ├── test_book_postgresql.py
 │   │   │   ├── test_book_publication_state.py
+│   │   │   ├── test_migrate_system_rulebook.py
+│   │   │   ├── test_rulebook_migration.py
 │   │   │   ├── test_rules_http.py
 │   │   │   ├── test_rules_pages.py
-│   │   │   └── test_system_catalog.py
+│   │   │   ├── test_system_catalog.py
+│   │   │   └── test_workspace_overview.py
 │   │   ├── web/
 │   │   │   ├── __init__.py
 │   │   │   └── test_web_assets.py
@@ -722,7 +763,8 @@ WorldLoom/
 │   ├── commands_tools.md
 │   ├── context_pack.py
 │   ├── delete_empty_files.py
-│   └── project_tree.py
+│   ├── project_tree.py
+│   └── vendor-assets.js
 ├── .env.example
 ├── .gitignore
 ├── alembic.ini

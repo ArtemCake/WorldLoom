@@ -15,7 +15,6 @@ from backend.app.modules.users.models.user import User
 from backend.app.modules.users.pages import router as users_pages_router
 from backend.app.web.rendering import render_page
 from backend.app.modules.game_systems.pages import router as game_systems_pages_router
-from backend.app.modules.characters.api.api import router as characters_router
 
 
 router = APIRouter()
@@ -33,4 +32,3 @@ router.include_router(games_pages_router)
 router.include_router(maps_pages_router)
 router.include_router(legal_pages_router)
 router.include_router(game_systems_pages_router)
-router.include_router(characters_router)

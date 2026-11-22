@@ -59,8 +59,21 @@ def _rules_payload(value: RulesProfile | Mapping[str, Any]) -> dict[str, Any]:
 
 	return profile.model_dump(mode="json")
 
-def _incoming_payload(profile: RulesProfile) -> dict[str, Any]:
-	"""Проверить сохраняемый черновик без выполнения начальных расчётов."""
+def _incoming_payload(profile: RulesProfile | None) -> dict[str, Any] | None:
+	"""Проверить сохраняемый черновик без выполнения начальных расчётов.
+
+	Если профиль не передан — возвращается пустой валидный черновик,
+	чтобы система в разработке могла существовать без правил.
+	"""
+	if profile is None:
+		empty = RulesProfile.model_validate({
+			"schema_version": 4,
+			"calculations": {"attributes": {}, "derived": {}},
+			"initial_attributes": {},
+			"resources": {},
+		})
+		return empty.model_dump(mode="json")
+
 	try:
 		checked = RulesProfile.model_validate(profile.model_dump(mode="python"))
 		return checked.model_dump(mode="json")
@@ -704,3 +717,27 @@ async def get_system_engine_origin(session: AsyncSession, system_id: UUID) -> Ga
 		)
 	except ValueError as exc:
 		raise GameSystemRulesStorageError("Сохранённая основа имеет неподдерживаемый формат") from exc
+
+
+async def lock_rules_draft_for_migration(session: AsyncSession, system_id: UUID) -> tuple[Mapping[str, Any], Mapping[str, Any]]:
+	"""Заблокировать карточку и черновик перед переносом раздела rulebook.
+
+	Перенос создаёт книгу и не изменяет черновик системы, поэтому
+	блокировка на запись нужна для сериализации с одновременным
+	редактированием правил: без неё книга могла бы перенести тексты,
+	которые черновик уже отбросил.
+
+	Возвращает заблокированные карточку и черновик.
+	"""
+	_require_clean_session(session)
+
+	system = await _get_system(session, system_id, write=True, active_only=False)
+	draft = await _find_draft(session, system_id, write=True)
+
+	if draft is None:
+		raise GameSystemRulesConflict("Для переноса нужен сохранённый черновик правил")
+
+	if not isinstance(draft["rules_json"], dict):
+		raise GameSystemRulesConflict("Исправьте формат черновика перед переносом")
+
+	return system, draft

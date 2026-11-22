@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.modules.game_systems.errors import GameSystemNotFound, GameSystemDeletionBlocked, GameSystemRulesConflict, GameSystemRulesStorageError, InvalidGameSystemRules
 from backend.app.modules.game_systems.models.game_systems import GameSystem, GameSystemRulesDraft, HomebrewRule, GameSystemRulesVersion
 from backend.app.modules.games.models.lobby import Game
+from backend.db_migrations.system_rules_protection import REMOVAL_SETTING
 
 
 _SYSTEMS = GameSystem.__table__
@@ -221,6 +222,16 @@ async def delete_game_system(session: AsyncSession, system_id: UUID) -> dict[str
 		raise GameSystemNotFound("Игровая система не найдена")
 
 	await _reject_references(session, [system_id], removal_chain=False)
+
+	# Опубликованные версии правил защищены триггером неизменяемости
+	# (§27-G). Удаление свободной системы — единственный легальный путь
+	# их удалить, поэтому транзакция объявляет свой идентификатор
+	# локальным параметром. is_local = true: параметр исчезает вместе с
+	# транзакцией и не переживает её ни при каком исходе.
+	await session.execute(
+		text("SELECT set_config(:setting, CAST(:system_id AS text), true)"),
+		{"setting": REMOVAL_SETTING, "system_id": str(system_id)},
+	)
 
 	await session.execute(delete(_DRAFTS).where(_DRAFTS.c.system_id == system_id))
 	await session.execute(delete(_VERSIONS).where(_VERSIONS.c.system_id == system_id))

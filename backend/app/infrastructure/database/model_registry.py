@@ -121,6 +121,12 @@ _MODEL_MODULES: tuple[tuple[str, tuple[str, ...]], ...] = (
 			"CharacterInventory",
 			"CharacterSheetAbilityScore",
 			"CharacterSheetSpell",
+			"SheetAttributeProvenance",
+			"CharacterContentSelection",
+			"SheetResourceValue",
+			"SheetResourceChange",
+			"EffectInstance",
+			"EffectChange",
 		),
 	),
 

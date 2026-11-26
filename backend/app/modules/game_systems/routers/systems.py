@@ -16,6 +16,13 @@ from backend.app.modules.game_systems.errors import (GameSystemError, GameSystem
 from backend.app.modules.game_systems.schemas.game_rules import (GameSystemRulesPublishedState, GameSystemRulesVersionRead)
 from backend.app.modules.game_systems.services import (editor_service)
 from backend.app.modules.game_systems.schemas.game_rules import GameSystemRulesVersionPage
+from backend.app.modules.game_systems.schemas.game_system_versions import (
+	GameSystemTextPublishedState, GameSystemTextVersionPage, GameSystemTextVersionRead,
+	GameSystemMechanicPublishedState, GameSystemMechanicVersionPage, GameSystemMechanicVersionRead,
+	GameSystemVersionPage, GameSystemCurrentVersionState, GameSystemVersionRead,
+	GameSystemPublishedDocumentState,
+)
+from backend.app.modules.game_systems.services import text_service, mechanic_service, version_service
 
 
 logger = logging.getLogger(__name__)
@@ -92,3 +99,95 @@ async def get_rules_version(system_id: UUID, version_id: UUID, response: Respons
 			system_id,
 			version_id,
 		)
+
+
+# ── Публичные read-маршруты для раздельных блоков ─────────────────────────────
+
+@router.get("/items/{system_id}/text/latest", response_model=GameSystemTextPublishedState, operation_id="getActiveGameSystemLatestText")
+async def get_latest_text(system_id: UUID, response: Response, session: SessionDependency) -> GameSystemTextPublishedState:
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _read_operation(session):
+		version = await text_service.get_latest_text_version(session, system_id)
+		return GameSystemTextPublishedState(version=version)
+
+
+@router.get("/items/{system_id}/text/versions", response_model=GameSystemTextVersionPage, operation_id="listActiveGameSystemTextVersions")
+async def list_text_versions(system_id: UUID, response: Response, session: SessionDependency, limit: int = 20, before: int | None = None) -> GameSystemTextVersionPage:
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _read_operation(session):
+		return await text_service.list_text_versions(session, system_id, limit=limit, before=before)
+
+
+@router.get("/items/{system_id}/text/versions/{version_id}", response_model=GameSystemTextVersionRead, operation_id="getActiveGameSystemTextVersion")
+async def get_text_version(system_id: UUID, version_id: UUID, response: Response, session: SessionDependency) -> GameSystemTextVersionRead:
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _read_operation(session):
+		return await text_service.get_text_version(session, system_id, version_id)
+
+
+@router.get("/items/{system_id}/mechanic/latest", response_model=GameSystemMechanicPublishedState, operation_id="getActiveGameSystemLatestMechanic")
+async def get_latest_mechanic(system_id: UUID, response: Response, session: SessionDependency) -> GameSystemMechanicPublishedState:
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _read_operation(session):
+		version = await mechanic_service.get_latest_mechanic_version(session, system_id)
+		return GameSystemMechanicPublishedState(version=version)
+
+
+@router.get("/items/{system_id}/mechanic/versions", response_model=GameSystemMechanicVersionPage, operation_id="listActiveGameSystemMechanicVersions")
+async def list_mechanic_versions(system_id: UUID, response: Response, session: SessionDependency, limit: int = 20, before: int | None = None) -> GameSystemMechanicVersionPage:
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _read_operation(session):
+		return await mechanic_service.list_mechanic_versions(session, system_id, limit=limit, before=before)
+
+
+@router.get("/items/{system_id}/mechanic/versions/{version_id}", response_model=GameSystemMechanicVersionRead, operation_id="getActiveGameSystemMechanicVersion")
+async def get_mechanic_version(system_id: UUID, version_id: UUID, response: Response, session: SessionDependency) -> GameSystemMechanicVersionRead:
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _read_operation(session):
+		return await mechanic_service.get_mechanic_version(session, system_id, version_id)
+
+
+@router.get("/items/{system_id}/versions/current", response_model=GameSystemCurrentVersionState, operation_id="getCurrentGameSystemVersion")
+async def get_current_version(system_id: UUID, response: Response, session: SessionDependency) -> GameSystemCurrentVersionState:
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _read_operation(session):
+		return await version_service.get_current_version_state(session, system_id)
+
+
+@router.get("/items/{system_id}/versions", response_model=GameSystemVersionPage, operation_id="listActiveGameSystemVersions")
+async def list_system_versions(system_id: UUID, response: Response, session: SessionDependency, limit: int = 20, before: int | None = None) -> GameSystemVersionPage:
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _read_operation(session):
+		return await version_service.list_system_versions(session, system_id, limit=limit, before=before)
+
+
+@router.get("/items/{system_id}/versions/{version_id}", response_model=GameSystemVersionRead, operation_id="getActiveGameSystemVersion")
+async def get_system_version(system_id: UUID, version_id: UUID, response: Response, session: SessionDependency) -> GameSystemVersionRead:
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _read_operation(session):
+		return await version_service.get_system_version(session, system_id, version_id)
+
+
+@router.get("/items/{system_id}/published", response_model=GameSystemPublishedDocumentState, operation_id="getActiveGameSystemPublishedDocument")
+async def get_published_document(system_id: UUID, response: Response, session: SessionDependency) -> GameSystemPublishedDocumentState:
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _read_operation(session):
+		return await version_service.get_published_document(session, system_id)
+
+
+@router.get("/items/{system_id}/published/{version_id}", response_model=GameSystemPublishedDocumentState, operation_id="getActiveGameSystemPublishedVersionDocument")
+async def get_published_version_document(system_id: UUID, version_id: UUID, response: Response, session: SessionDependency) -> GameSystemPublishedDocumentState:
+	response.headers["Cache-Control"] = "no-store"
+
+	async with _read_operation(session):
+		return await version_service.get_published_document(session, system_id, version_id)

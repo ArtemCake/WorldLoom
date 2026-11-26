@@ -64,21 +64,20 @@ class GameSystem(Base):
 		onupdate=text("now()"),
 		server_default=text("now()"),
 	)
-	current_rules_version_id: Mapped[UUID | None] = mapped_column(
+	current_version_id: Mapped[UUID | None] = mapped_column(
 		PG_UUID(as_uuid=True),
 		ForeignKey(
-			"game_system_rules_versions.id",
+			"game_system_versions.id",
 			ondelete="SET NULL",
 			use_alter=True,
-			name="fk_game_systems_current_rules_version",
+			name="fk_game_systems_current_version",
 		),
 		nullable=True,
 		index=True,
 	)
-	current_rules_version: Mapped["GameSystemRulesVersion | None"] = relationship(
-		"GameSystemRulesVersion",
-		foreign_keys="GameSystem.current_rules_version_id",
-		back_populates="current_in_system",
+	current_version: Mapped["GameSystemVersion | None"] = relationship(
+		"GameSystemVersion",
+		foreign_keys="GameSystem.current_version_id",
 		viewonly=True,
 	)
 	races: Mapped[list["Race"]] = relationship(
@@ -262,180 +261,3 @@ class HomebrewRule(Base):
 	def __repr__(self) -> str:
 		return _identity_repr(self, label="HomebrewRule")
 
-class GameSystemRulesDraft(Base):
-	"""Редактируемый черновик с проверкой конкурентных изменений."""
-
-	__tablename__ = "game_system_rules_drafts"
-
-	__table_args__ = (
-		UniqueConstraint(
-			"system_id",
-			name="uq_game_system_rules_drafts_system",
-		),
-		CheckConstraint(
-			"revision >= 1",
-			name="ck_game_system_rules_drafts_revision_positive",
-		),
-		CheckConstraint(
-			"jsonb_typeof(rules_json) = 'object'",
-			name="ck_game_system_rules_drafts_rules_object",
-		),
-		CheckConstraint(
-			"""
-			(
-				engine_version_id IS NULL
-				AND rules_overrides_json IS NULL
-			)
-			OR
-			(
-				engine_version_id IS NOT NULL
-				AND rules_overrides_json IS NOT NULL
-				AND jsonb_typeof(rules_overrides_json) = 'object'
-			)
-			""",
-			name="ck_game_system_rules_drafts_engine_origin",
-		),
-	)
-
-	id: Mapped[UUID] = mapped_column(
-		PG_UUID(as_uuid=True),
-		primary_key=True,
-		default=uuid4,
-	)
-	system_id: Mapped[UUID] = mapped_column(
-		PG_UUID(as_uuid=True),
-		ForeignKey("game_systems.id", ondelete="CASCADE"),
-		nullable=False,
-	)
-	engine_version_id: Mapped[UUID | None] = mapped_column(
-		PG_UUID(as_uuid=True),
-		ForeignKey("rule_engine_versions.id", ondelete="RESTRICT"),
-		nullable=True,
-		index=True,
-	)
-	rules_overrides_json: Mapped[dict | None] = mapped_column(
-		JSONB,
-		nullable=True,
-	)
-	rules_json: Mapped[dict] = mapped_column(
-		JSONB,
-		nullable=False,
-	)
-	revision: Mapped[int] = mapped_column(
-		Integer,
-		nullable=False,
-		default=1,
-		server_default=text("1"),
-	)
-	created_at: Mapped[datetime] = mapped_column(
-		DateTime(timezone=True),
-		nullable=False,
-		server_default=text("now()"),
-	)
-	updated_at: Mapped[datetime] = mapped_column(
-		DateTime(timezone=True),
-		nullable=False,
-		server_default=text("now()"),
-		onupdate=text("now()"),
-	)
-
-	system: Mapped["GameSystem"] = relationship("GameSystem")
-
-	__mapper_args__ = {
-		"version_id_col": revision,
-	}
-
-	def __repr__(self) -> str:
-		return _identity_repr(self, label="GameSystemRulesDraft")
-
-class GameSystemRulesVersion(Base):
-	"""Опубликованный снимок конфигурации правил игровой системы."""
-
-	__tablename__ = "game_system_rules_versions"
-
-	__table_args__ = (
-		UniqueConstraint(
-			"system_id",
-			"version_number",
-			name="uq_game_system_rules_versions_number",
-		),
-		UniqueConstraint(
-			"system_id",
-			"id",
-			name="uq_game_system_rules_versions_system_id",
-		),
-		CheckConstraint(
-			"version_number >= 1",
-			name="ck_game_system_rules_versions_number_positive",
-		),
-		CheckConstraint(
-			"jsonb_typeof(rules_json) = 'object'",
-			name="ck_game_system_rules_versions_rules_object",
-		),
-		CheckConstraint(
-			"""
-			(
-				engine_version_id IS NULL
-				AND rules_overrides_json IS NULL
-			)
-			OR
-			(
-				engine_version_id IS NOT NULL
-				AND rules_overrides_json IS NOT NULL
-				AND jsonb_typeof(rules_overrides_json) = 'object'
-			)
-			""",
-			name="ck_game_system_rules_versions_engine_origin",
-		),
-	)
-
-	id: Mapped[UUID] = mapped_column(
-		PG_UUID(as_uuid=True),
-		primary_key=True,
-		default=uuid4,
-	)
-	system_id: Mapped[UUID] = mapped_column(
-		PG_UUID(as_uuid=True),
-		ForeignKey("game_systems.id", ondelete="RESTRICT"),
-		nullable=False,
-	)
-	version_number: Mapped[int] = mapped_column(
-		Integer,
-		nullable=False,
-	)
-	engine_version_id: Mapped[UUID | None] = mapped_column(
-		PG_UUID(as_uuid=True),
-		ForeignKey("rule_engine_versions.id", ondelete="RESTRICT"),
-		nullable=True,
-		index=True,
-	)
-	rules_overrides_json: Mapped[dict | None] = mapped_column(
-		JSONB,
-		nullable=True,
-	)
-	rules_json: Mapped[dict] = mapped_column(
-		JSONB,
-		nullable=False,
-	)
-	rules_engine_version: Mapped[str] = mapped_column(
-		String(20),
-		nullable=False,
-	)
-	published_at: Mapped[datetime] = mapped_column(
-		DateTime(timezone=True),
-		nullable=False,
-		server_default=text("now()"),
-	)
-	system: Mapped["GameSystem"] = relationship(
-		"GameSystem",
-		foreign_keys="GameSystemRulesVersion.system_id",
-	)
-	current_in_system: Mapped["GameSystem | None"] = relationship(
-		"GameSystem",
-		foreign_keys="GameSystem.current_rules_version_id",
-		back_populates="current_rules_version",
-		viewonly=True,
-	)
-
-	def __repr__(self) -> str:
-		return _identity_repr(self, label="GameSystemRulesVersion")

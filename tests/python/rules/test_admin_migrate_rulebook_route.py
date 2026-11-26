@@ -23,10 +23,11 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from backend.app.infrastructure.database.model_registry import configure_models
-from backend.app.modules.game_systems.models.game_systems import (
-    GameSystem,
-    GameSystemRulesDraft,
+from backend.app.modules.game_systems.models.game_systems import GameSystem
+from backend.app.modules.game_systems.models.system_versions import (
+    GameSystemMechanicDraft,
 )
+from backend.app.modules.game_systems.rules.mechanic_codec import profile_to_mechanic
 from backend.app.modules.rules.models.books import RuleBook, RuleBookDraft
 from backend.app.modules.admin.api import router
 from backend.app.modules.admin.dependencies import require_content_manager
@@ -48,7 +49,7 @@ configure_models()
 
 _ROUTE = "/admin/game-systems/{system_id}/rules/migrate-rulebook"
 _GAME_SYSTEMS = GameSystem.__table__
-_GAME_DRAFTS = GameSystemRulesDraft.__table__
+_GAME_DRAFTS = GameSystemMechanicDraft.__table__
 _BOOKS = RuleBook.__table__
 _BOOK_DRAFTS = RuleBookDraft.__table__
 
@@ -160,15 +161,15 @@ class AdminMigrateRulebookRouteTests(PostgresTestCase):
             await self.admin_engine.dispose()
 
     async def _insert_draft(self, rules_json):
-        """Вставить черновик системы в тестовую схему."""
+        """Вставить черновик механики системы в тестовую схему."""
         async with self.engine.begin() as connection:
             await connection.execute(
                 insert(_GAME_DRAFTS).values(
                     system_id=self.system_id,
                     revision=1,
                     engine_version_id=null(),
-                    rules_overrides_json=null(),
-                    rules_json=rules_json,
+                    mechanic_overrides_json=null(),
+                    mechanic_json=profile_to_mechanic(rules_json),
                 )
             )
 

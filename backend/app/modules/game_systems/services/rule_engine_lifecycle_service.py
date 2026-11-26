@@ -22,8 +22,12 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.selectable import FromClause, Select
 from backend.app.modules.game_systems.errors import GameSystemNotFound, GameSystemRulesStorageError, InvalidGameSystemRules
-from backend.app.modules.game_systems.models.game_systems import GameSystem, GameSystemRulesDraft, GameSystemRulesVersion
+from backend.app.modules.game_systems.models.game_systems import GameSystem
 from backend.app.modules.game_systems.models.rule_engines import RuleEngine, RuleEngineVersion
+from backend.app.modules.game_systems.models.system_versions import (
+    GameSystemMechanicDraft,
+    GameSystemMechanicVersion,
+)
 from backend.app.modules.game_systems.schemas.rules.rule_engine_lifecycle import RuleEngineRemovalPreview
 from backend.app.modules.games.models.lobby import Game, Session as GameSession
 
@@ -31,8 +35,10 @@ from backend.app.modules.games.models.lobby import Game, Session as GameSession
 _ENGINES = RuleEngine.__table__
 _ENGINE_VERSIONS = RuleEngineVersion.__table__
 _SYSTEMS = GameSystem.__table__
-_SYSTEM_DRAFTS = GameSystemRulesDraft.__table__
-_SYSTEM_VERSIONS = GameSystemRulesVersion.__table__
+# Происхождение от основы правил хранится в блоке механики: текстовые
+# правила к движку не привязаны.
+_SYSTEM_DRAFTS = GameSystemMechanicDraft.__table__
+_SYSTEM_VERSIONS = GameSystemMechanicVersion.__table__
 _GAMES = Game.__table__
 _SESSIONS = GameSession.__table__
 

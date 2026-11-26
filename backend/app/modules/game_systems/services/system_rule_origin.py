@@ -24,6 +24,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.modules.game_systems.errors import (GameSystemNotFound, GameSystemRulesConflict, InvalidGameSystemRules)
 from backend.app.modules.game_systems.models.rule_engines import (RuleEngine, RuleEngineVersion)
+from backend.app.modules.game_systems.rules.mechanic_codec import (profile_to_mechanic)
 from backend.app.modules.game_systems.rules.rules_composition import compose_system_draft, compose_system_rules
 from backend.app.modules.game_systems.rules.rules_engine import (validate_rules_profile)
 from backend.app.modules.game_systems.schemas.game_rules import (RulesProfile)
@@ -234,7 +235,11 @@ async def load_editor_engine_origin(session: AsyncSession, source: EngineRulesSo
 	)
 
 async def origin_for_publication(session: AsyncSession, draft: Mapping[str, Any], executor_version: str, payload: dict[str, Any]) -> dict[str, Any]:
-	"""Сверить сохранённый снимок с основой и переопределениями."""
+	"""Сверить сохранённый снимок с основой и переопределениями.
+
+	Сравниваются только числовые разделы: текстовые главы черновика
+	автономны от опубликованной основы и не участвуют в проверке.
+	"""
 	version_id, overrides = _saved_origin(draft)
 
 	if version_id is None:
@@ -254,7 +259,11 @@ async def origin_for_publication(session: AsyncSession, draft: Mapping[str, Any]
 		stored=True,
 	)
 
-	if assembled["rules_json"] != payload:
+	# Сравниваем только числовую часть: текстовые главы черновика
+	# автономны от опубликованной основы и не участвуют в проверке.
+	from backend.app.modules.game_systems.rules.mechanic_codec import profile_to_mechanic
+
+	if profile_to_mechanic(assembled["rules_json"]) != profile_to_mechanic(payload):
 		raise GameSystemRulesConflict(
 			"Сохранённый профиль не совпадает "
 			"с основой и переопределениями"

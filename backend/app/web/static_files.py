@@ -44,6 +44,7 @@ class PublicStaticFiles(StaticFiles):
 	async def get_response(self, path: str, scope: Scope) -> Response:
 		response = await super().get_response(path, scope)
 		response.headers["X-Content-Type-Options"] = "nosniff"
+		response.headers["Cache-Control"] = "no-cache, must-revalidate"
 		return response
 
 def mount_static_files(app: FastAPI) -> None:

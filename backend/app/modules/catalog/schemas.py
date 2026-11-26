@@ -20,7 +20,9 @@ class GameSystemAdminRead(GameSystemRead):
 	is_active: bool
 	created_at: datetime
 	updated_at: datetime
-	current_rules_version_id: UUID | None = None
+	# Идентификатор текущего комплекта системы (game_system_versions.id),
+	# а не отдельной версии правил: комплект связывает механику и текст.
+	current_version_id: UUID | None = None
 
 class GameSystemCreate(BaseModel):
 	model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")

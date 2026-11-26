@@ -17,10 +17,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from backend.app.infrastructure.database.model_registry import configure_models
-from backend.app.modules.game_systems.models.game_systems import (
-    GameSystem,
-    GameSystemRulesDraft,
-)
+from backend.app.modules.game_systems.models.game_systems import GameSystem
 from backend.app.modules.games.models.lobby import (
     DiceRoll,
     Game,
@@ -52,7 +49,6 @@ from tests.python.rules.pg_support import (
 configure_models()
 
 _GAME_SYSTEMS = GameSystem.__table__
-_GAME_DRAFTS = GameSystemRulesDraft.__table__
 _GAMES = Game.__table__
 _PARTIES = Party.__table__
 _SESSIONS = GameSession.__table__

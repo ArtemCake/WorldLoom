@@ -1,8 +1,8 @@
-"""Создание базы данных
+"""create_BD
 
-Revision ID: 02aa427370e3
+Revision ID: efacd4888d8b
 Revises: 
-Create Date: 2026-11-22 21:33:59.438551
+Create Date: 2026-11-26 19:02:30.957195
 
 """
 from typing import Sequence, Union
@@ -11,8 +11,10 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from backend.db_migrations import system_rules_protection
+
 # revision identifiers, used by Alembic.
-revision: str = '02aa427370e3'
+revision: str = 'efacd4888d8b'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -40,13 +42,13 @@ def upgrade() -> None:
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('current_rules_version_id', sa.UUID(), nullable=True),
-    sa.ForeignKeyConstraint(['current_rules_version_id'], ['game_system_rules_versions.id'], name='fk_game_systems_current_rules_version', ondelete='SET NULL', use_alter=True),
+    sa.Column('current_version_id', sa.UUID(), nullable=True),
+    sa.ForeignKeyConstraint(['current_version_id'], ['game_system_versions.id'], name='fk_game_systems_current_version', ondelete='SET NULL', use_alter=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name'),
     sa.UniqueConstraint('slug')
     )
-    op.create_index(op.f('ix_game_systems_current_rules_version_id'), 'game_systems', ['current_rules_version_id'], unique=False)
+    op.create_index(op.f('ix_game_systems_current_version_id'), 'game_systems', ['current_version_id'], unique=False)
     op.create_table('map_deletion_jobs',
     sa.Column('map_id', sa.UUID(), nullable=False),
     sa.Column('game_id', sa.UUID(), nullable=False),
@@ -350,6 +352,35 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['friend_user_id'], ['users.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('user_id', 'friend_user_id')
+    )
+    op.create_table('game_system_text_drafts',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('system_id', sa.UUID(), nullable=False),
+    sa.Column('text_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('revision', sa.Integer(), server_default=sa.text('1'), nullable=False),
+    sa.Column('is_published', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint("jsonb_typeof(text_json) = 'object'", name='ck_game_system_text_drafts_text_object'),
+    sa.CheckConstraint('revision >= 1', name='ck_game_system_text_drafts_revision_positive'),
+    sa.ForeignKeyConstraint(['system_id'], ['game_systems.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('system_id', name='uq_game_system_text_drafts_system')
+    )
+    op.create_table('game_system_text_versions',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('system_id', sa.UUID(), nullable=False),
+    sa.Column('version_number', sa.Integer(), nullable=False),
+    sa.Column('source_draft_revision', sa.Integer(), nullable=False),
+    sa.Column('text_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('published_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint("jsonb_typeof(text_json) = 'object'", name='ck_game_system_text_versions_text_object'),
+    sa.CheckConstraint('source_draft_revision >= 1', name='ck_game_system_text_versions_source_revision'),
+    sa.CheckConstraint('version_number >= 1', name='ck_game_system_text_versions_number_positive'),
+    sa.ForeignKeyConstraint(['system_id'], ['game_systems.id'], ondelete='RESTRICT'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('system_id', 'id', name='uq_game_system_text_versions_system_id'),
+    sa.UniqueConstraint('system_id', 'version_number', name='uq_game_system_text_versions_number')
     )
     op.create_table('homebrew_rules',
     sa.Column('id', sa.UUID(), nullable=False),
@@ -998,43 +1029,46 @@ def upgrade() -> None:
     )
     op.create_index('ix_creature_type_race_race', 'creature_type_race_link', ['race_id'], unique=False)
     op.create_index('ix_creature_type_race_type', 'creature_type_race_link', ['creature_type_id'], unique=False)
-    op.create_table('game_system_rules_drafts',
+    op.create_table('game_system_mechanic_drafts',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('system_id', sa.UUID(), nullable=False),
     sa.Column('engine_version_id', sa.UUID(), nullable=True),
-    sa.Column('rules_overrides_json', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('rules_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('mechanic_overrides_json', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('mechanic_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('revision', sa.Integer(), server_default=sa.text('1'), nullable=False),
+    sa.Column('is_published', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.CheckConstraint("\n\t\t\t(\n\t\t\t\tengine_version_id IS NULL\n\t\t\t\tAND rules_overrides_json IS NULL\n\t\t\t)\n\t\t\tOR\n\t\t\t(\n\t\t\t\tengine_version_id IS NOT NULL\n\t\t\t\tAND rules_overrides_json IS NOT NULL\n\t\t\t\tAND jsonb_typeof(rules_overrides_json) = 'object'\n\t\t\t)\n\t\t\t", name='ck_game_system_rules_drafts_engine_origin'),
-    sa.CheckConstraint("jsonb_typeof(rules_json) = 'object'", name='ck_game_system_rules_drafts_rules_object'),
-    sa.CheckConstraint('revision >= 1', name='ck_game_system_rules_drafts_revision_positive'),
+    sa.CheckConstraint("\n\t\t\t(\n\t\t\t\tengine_version_id IS NULL\n\t\t\t\tAND mechanic_overrides_json IS NULL\n\t\t\t)\n\t\t\tOR\n\t\t\t(\n\t\t\t\tengine_version_id IS NOT NULL\n\t\t\t\tAND mechanic_overrides_json IS NOT NULL\n\t\t\t\tAND jsonb_typeof(mechanic_overrides_json) = 'object'\n\t\t\t)\n\t\t\t", name='ck_game_system_mechanic_drafts_engine_origin'),
+    sa.CheckConstraint("jsonb_typeof(mechanic_json) = 'object'", name='ck_game_system_mechanic_drafts_mechanic_object'),
+    sa.CheckConstraint('revision >= 1', name='ck_game_system_mechanic_drafts_revision_positive'),
     sa.ForeignKeyConstraint(['engine_version_id'], ['rule_engine_versions.id'], ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['system_id'], ['game_systems.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('system_id', name='uq_game_system_rules_drafts_system')
+    sa.UniqueConstraint('system_id', name='uq_game_system_mechanic_drafts_system')
     )
-    op.create_index(op.f('ix_game_system_rules_drafts_engine_version_id'), 'game_system_rules_drafts', ['engine_version_id'], unique=False)
-    op.create_table('game_system_rules_versions',
+    op.create_index(op.f('ix_game_system_mechanic_drafts_engine_version_id'), 'game_system_mechanic_drafts', ['engine_version_id'], unique=False)
+    op.create_table('game_system_mechanic_versions',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('system_id', sa.UUID(), nullable=False),
     sa.Column('version_number', sa.Integer(), nullable=False),
+    sa.Column('source_draft_revision', sa.Integer(), nullable=False),
     sa.Column('engine_version_id', sa.UUID(), nullable=True),
-    sa.Column('rules_overrides_json', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('rules_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('mechanic_overrides_json', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('mechanic_json', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('rules_engine_version', sa.String(length=20), nullable=False),
     sa.Column('published_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.CheckConstraint("\n\t\t\t(\n\t\t\t\tengine_version_id IS NULL\n\t\t\t\tAND rules_overrides_json IS NULL\n\t\t\t)\n\t\t\tOR\n\t\t\t(\n\t\t\t\tengine_version_id IS NOT NULL\n\t\t\t\tAND rules_overrides_json IS NOT NULL\n\t\t\t\tAND jsonb_typeof(rules_overrides_json) = 'object'\n\t\t\t)\n\t\t\t", name='ck_game_system_rules_versions_engine_origin'),
-    sa.CheckConstraint("jsonb_typeof(rules_json) = 'object'", name='ck_game_system_rules_versions_rules_object'),
-    sa.CheckConstraint('version_number >= 1', name='ck_game_system_rules_versions_number_positive'),
+    sa.CheckConstraint("\n\t\t\t(\n\t\t\t\tengine_version_id IS NULL\n\t\t\t\tAND mechanic_overrides_json IS NULL\n\t\t\t)\n\t\t\tOR\n\t\t\t(\n\t\t\t\tengine_version_id IS NOT NULL\n\t\t\t\tAND mechanic_overrides_json IS NOT NULL\n\t\t\t\tAND jsonb_typeof(mechanic_overrides_json) = 'object'\n\t\t\t)\n\t\t\t", name='ck_game_system_mechanic_versions_engine_origin'),
+    sa.CheckConstraint("jsonb_typeof(mechanic_json) = 'object'", name='ck_game_system_mechanic_versions_mechanic_object'),
+    sa.CheckConstraint('source_draft_revision >= 1', name='ck_game_system_mechanic_versions_source_revision'),
+    sa.CheckConstraint('version_number >= 1', name='ck_game_system_mechanic_versions_number_positive'),
     sa.ForeignKeyConstraint(['engine_version_id'], ['rule_engine_versions.id'], ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['system_id'], ['game_systems.id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('system_id', 'id', name='uq_game_system_rules_versions_system_id'),
-    sa.UniqueConstraint('system_id', 'version_number', name='uq_game_system_rules_versions_number')
+    sa.UniqueConstraint('system_id', 'id', name='uq_game_system_mechanic_versions_system_id'),
+    sa.UniqueConstraint('system_id', 'version_number', name='uq_game_system_mechanic_versions_number')
     )
-    op.create_index(op.f('ix_game_system_rules_versions_engine_version_id'), 'game_system_rules_versions', ['engine_version_id'], unique=False)
+    op.create_index(op.f('ix_game_system_mechanic_versions_engine_version_id'), 'game_system_mechanic_versions', ['engine_version_id'], unique=False)
     op.create_table('magical_items',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('base_item_id', sa.UUID(), nullable=False),
@@ -1214,12 +1248,29 @@ def upgrade() -> None:
     sa.CheckConstraint('revision >= 1', name='ck_characters_revision_positive'),
     sa.ForeignKeyConstraint(['background_id'], ['backgrounds.id'], ),
     sa.ForeignKeyConstraint(['race_id'], ['races.id'], ),
-    sa.ForeignKeyConstraint(['state_rules_version_id'], ['game_system_rules_versions.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['state_rules_version_id'], ['game_system_mechanic_versions.id'], ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_characters_state_rules_version_id'), 'characters', ['state_rules_version_id'], unique=False)
     op.create_index(op.f('ix_characters_user_id'), 'characters', ['user_id'], unique=False)
+    op.create_table('game_system_versions',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('system_id', sa.UUID(), nullable=False),
+    sa.Column('version_number', sa.Integer(), nullable=False),
+    sa.Column('text_version_id', sa.UUID(), nullable=True),
+    sa.Column('mechanic_version_id', sa.UUID(), nullable=False),
+    sa.Column('published_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint('version_number >= 1', name='ck_game_system_versions_number_positive'),
+    sa.ForeignKeyConstraint(['system_id', 'mechanic_version_id'], ['game_system_mechanic_versions.system_id', 'game_system_mechanic_versions.id'], name='fk_game_system_versions_mechanic', ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['system_id', 'text_version_id'], ['game_system_text_versions.system_id', 'game_system_text_versions.id'], name='fk_game_system_versions_text', ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['system_id'], ['game_systems.id'], ondelete='RESTRICT'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('system_id', 'id', name='uq_game_system_versions_system_id'),
+    sa.UniqueConstraint('system_id', 'version_number', name='uq_game_system_versions_number')
+    )
+    op.create_index(op.f('ix_game_system_versions_mechanic_version_id'), 'game_system_versions', ['mechanic_version_id'], unique=False)
+    op.create_index(op.f('ix_game_system_versions_text_version_id'), 'game_system_versions', ['text_version_id'], unique=False)
     op.create_table('games',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('master_id', sa.UUID(), nullable=True),
@@ -1236,7 +1287,7 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['master_id'], ['users.id'], ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['system_id', 'rules_version_id'], ['game_system_rules_versions.system_id', 'game_system_rules_versions.id'], name='fk_games_rules_version_same_system', ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['system_id', 'rules_version_id'], ['game_system_mechanic_versions.system_id', 'game_system_mechanic_versions.id'], name='fk_games_rules_version_same_system', ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['system_id'], ['game_systems.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -1404,7 +1455,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['npc_id'], ['npcs.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['party_id'], ['party.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['player_id'], ['users.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['state_rules_version_id'], ['game_system_rules_versions.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['state_rules_version_id'], ['game_system_mechanic_versions.id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_character_sheets_base_character_id'), 'character_sheets', ['base_character_id'], unique=False)
@@ -1800,12 +1851,26 @@ def upgrade() -> None:
     op.create_index(op.f('ix_tokens_session_id'), 'tokens', ['session_id'], unique=False)
     op.execute("CREATE OR REPLACE FUNCTION worldloom_guard_rule_engine_version()\nRETURNS trigger\nLANGUAGE plpgsql\nAS $$\nBEGIN\n    IF TG_OP = 'DELETE'\n       AND current_setting(\n           'worldloom.removing_engine_id',\n           true\n       ) = OLD.engine_id::text\n    THEN\n        RETURN OLD;\n    END IF;\n\n    RAISE EXCEPTION\n        'Published rule engine versions are immutable'\n        USING ERRCODE = '23514';\n\n    RETURN NULL;\nEND;\n$$;\n")
     op.execute('\nCREATE TRIGGER trg_rule_engine_versions_immutable\nBEFORE UPDATE OR DELETE ON rule_engine_versions\nFOR EACH ROW\nEXECUTE FUNCTION worldloom_guard_rule_engine_version();\n')
+    # Защита неизменяемости опубликованных версий системы (§27-G).
+    # Функции-гарды создаются здесь, триггеры навешиваются на разделённые
+    # таблицы версий механики, текста и комплекта.
+    for statement in (
+        system_rules_protection.GUARD_FUNCTION_SQL,
+        system_rules_protection.GUARD_TRUNCATE_FUNCTION_SQL,
+    ):
+        op.execute(statement)
+    for statement in system_rules_protection.split_guard_upgrade_sql():
+        op.execute(statement)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
+    for statement in system_rules_protection.split_guard_downgrade_sql():
+        op.execute(statement)
+    op.execute(system_rules_protection.DROP_TRUNCATE_FUNCTION_SQL)
+    op.execute(system_rules_protection.DROP_FUNCTION_SQL)
     op.execute('\nDROP TRIGGER trg_rule_engine_versions_immutable\nON rule_engine_versions;\n')
     op.execute('\nDROP FUNCTION worldloom_guard_rule_engine_version();\n')
     op.drop_index(op.f('ix_tokens_session_id'), table_name='tokens')
@@ -1905,6 +1970,9 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_games_rules_version_id'), table_name='games')
     op.drop_index(op.f('ix_games_master_id'), table_name='games')
     op.drop_table('games')
+    op.drop_index(op.f('ix_game_system_versions_text_version_id'), table_name='game_system_versions')
+    op.drop_index(op.f('ix_game_system_versions_mechanic_version_id'), table_name='game_system_versions')
+    op.drop_table('game_system_versions')
     op.drop_index(op.f('ix_characters_user_id'), table_name='characters')
     op.drop_index(op.f('ix_characters_state_rules_version_id'), table_name='characters')
     op.drop_table('characters')
@@ -1935,10 +2003,10 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_magical_items_rarity_id'), table_name='magical_items')
     op.drop_index(op.f('ix_magical_items_base_item_id'), table_name='magical_items')
     op.drop_table('magical_items')
-    op.drop_index(op.f('ix_game_system_rules_versions_engine_version_id'), table_name='game_system_rules_versions')
-    op.drop_table('game_system_rules_versions')
-    op.drop_index(op.f('ix_game_system_rules_drafts_engine_version_id'), table_name='game_system_rules_drafts')
-    op.drop_table('game_system_rules_drafts')
+    op.drop_index(op.f('ix_game_system_mechanic_versions_engine_version_id'), table_name='game_system_mechanic_versions')
+    op.drop_table('game_system_mechanic_versions')
+    op.drop_index(op.f('ix_game_system_mechanic_drafts_engine_version_id'), table_name='game_system_mechanic_drafts')
+    op.drop_table('game_system_mechanic_drafts')
     op.drop_index('ix_creature_type_race_type', table_name='creature_type_race_link')
     op.drop_index('ix_creature_type_race_race', table_name='creature_type_race_link')
     op.drop_table('creature_type_race_link')
@@ -2033,6 +2101,8 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_homebrew_rules_system_id'), table_name='homebrew_rules')
     op.drop_index(op.f('ix_homebrew_rules_owner_id'), table_name='homebrew_rules')
     op.drop_table('homebrew_rules')
+    op.drop_table('game_system_text_versions')
+    op.drop_table('game_system_text_drafts')
     op.drop_table('friends')
     op.drop_index(op.f('ix_feats_system_id'), table_name='feats')
     op.drop_index(op.f('ix_feats_owner_id'), table_name='feats')
@@ -2077,7 +2147,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_map_deletion_jobs_master_id'), table_name='map_deletion_jobs')
     op.drop_index(op.f('ix_map_deletion_jobs_game_id'), table_name='map_deletion_jobs')
     op.drop_table('map_deletion_jobs')
-    op.drop_index(op.f('ix_game_systems_current_rules_version_id'), table_name='game_systems')
+    op.drop_index(op.f('ix_game_systems_current_version_id'), table_name='game_systems')
     op.drop_table('game_systems')
     op.drop_index(op.f('ix_game_deletion_jobs_master_id'), table_name='game_deletion_jobs')
     op.drop_index(op.f('ix_game_deletion_jobs_cleanup_complete'), table_name='game_deletion_jobs')

@@ -57,13 +57,21 @@ _MODEL_MODULES: tuple[tuple[str, tuple[str, ...]], ...] = (
 	),
 
 	# Игровые системы и движки правил.
-	(
-		"backend.app.modules.game_systems.models.game_systems",
 		(
-			"GameSystem",
-			"HomebrewRule",
-			"GameSystemRulesDraft",
-			"GameSystemRulesVersion",
+			"backend.app.modules.game_systems.models.game_systems",
+			(
+				"GameSystem",
+				"HomebrewRule",
+			),
+		),
+	(
+		"backend.app.modules.game_systems.models.system_versions",
+		(
+			"GameSystemTextDraft",
+			"GameSystemTextVersion",
+			"GameSystemMechanicDraft",
+			"GameSystemMechanicVersion",
+			"GameSystemVersion",
 		),
 	),
 	(

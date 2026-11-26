@@ -46,7 +46,8 @@ from backend.app.modules.characters.schemas.resource_schemas import (
 	ResourceValueRead,
 	ResourceValuesRead,
 )
-from backend.app.modules.game_systems.models.game_systems import GameSystemRulesVersion
+from backend.app.modules.game_systems.models.system_versions import GameSystemMechanicVersion
+from backend.app.modules.game_systems.rules.mechanic_codec import mechanic_to_profile
 from backend.app.modules.game_systems.rules import resource_engine
 from backend.app.modules.game_systems.rules.resource_policy import (
 	ResourceLimitPolicy,
@@ -107,8 +108,8 @@ async def _load_rules(session: AsyncSession, owner: StateOwner) -> tuple[RulesPr
 
 	version = (
 		await session.execute(
-			select(GameSystemRulesVersion)
-			.where(GameSystemRulesVersion.id == version_id)
+			select(GameSystemMechanicVersion)
+			.where(GameSystemMechanicVersion.id == version_id)
 			.options(lazyload("*"))
 			.execution_options(populate_existing=True)
 			.with_for_update(read=True)
@@ -121,7 +122,7 @@ async def _load_rules(session: AsyncSession, owner: StateOwner) -> tuple[RulesPr
 		)
 
 	try:
-		profile = RulesProfile.model_validate(version.rules_json)
+		profile = RulesProfile.model_validate(mechanic_to_profile(version.mechanic_json))
 		state = SheetState.model_validate(raw_state)
 	except ValueError as exc:
 		raise CharacterStateStorageError(

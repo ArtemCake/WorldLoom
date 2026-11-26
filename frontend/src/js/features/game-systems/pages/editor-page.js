@@ -3,12 +3,30 @@
 import {requestGameSystem} from '../api/game-system-api.js';
 import {createRulesBookState} from '../book/book-state.js';
 import {mountRulesBook} from '../book/book-view.js';
-import {collectEngineOverrides, readEngineOverrides} from '../editor/game-system-engine-origin.js';
 import {publishBookRules} from '../book/book-publication.js';
 import * as publicationSource from '../book/book-publication-source.js';
+import {createTextApi} from '../api/text-api.js';
+import {createMechanicApi} from '../api/mechanic-api.js';
+import {createVersionApi} from '../api/version-api.js';
+import {createSplitEditorSession} from '../editor/split-editor-session.js';
 
 const initializedRoots = new WeakSet();
 const MODES = new Set(['create', 'edit', 'view']);
+
+const textApi = createTextApi(requestGameSystem);
+const mechanicApi = createMechanicApi(requestGameSystem);
+const versionApi = createVersionApi(requestGameSystem);
+
+// Пустой валидный профиль правил для начального создания системы.
+function emptyRules() {
+    return Object.freeze({
+        schema_version: 4,
+        rulebook: {},
+        calculations: {attributes: {}, derived: {}},
+        initial_attributes: {},
+        resources: {}
+    });
+}
 
 function ensure(condition, message) {
     if (!condition) throw new Error(message);
@@ -27,15 +45,6 @@ function cardValues(system) {
         rules_engine_version: system.rules_engine_version,
         is_active: system.is_active
     };
-}
-
-function checkSnapshot(snapshot, id, kind) {
-    ensure(snapshot?.system_id === id, 'Ответ относится к другой игровой системе.');
-    ensure(snapshot.rules && typeof snapshot.rules === 'object', 'В ответе отсутствуют правила.');
-
-    const number = kind === 'draft' ? snapshot.revision : snapshot.version_number;
-
-    ensure(Number.isSafeInteger(number) && number >= 1, 'Некорректный номер ревизии или публикации.');
 }
 
 function validateCard(system) {
@@ -85,11 +94,23 @@ function mountBookPage(root) {
     let access = null;
     let state = null;
     let book = null;
+    let session = null;
+    let revisions = {text: null, mechanic: null};
     let busy = false;
     let sourceInitialized = false;
 
     const controller = new AbortController();
     const {signal} = controller;
+
+    function openSession(id) {
+        if (!id) throw new Error('Не указан идентификатор системы.');
+        return createSplitEditorSession({
+            systemId: id,
+            textApi,
+            mechanicApi,
+            versionApi
+        });
+    }
 
     function sync() {
         const snapshot = state?.read();
@@ -123,13 +144,12 @@ function mountBookPage(root) {
 
         if (systemId) {
             const id = encodeURIComponent(systemId);
-
             published.href = `/game-systems/catalog/${id}?source=published`;
         }
     }
 
     async function publishBook() {
-        if (busy || !state || !book) return;
+        if (busy || !state || !book || !session) return;
 
         const snapshot = state.read();
 
@@ -149,7 +169,7 @@ function mountBookPage(root) {
         }
 
         if (!snapshot.canPublish) {
-            message.textContent = 'Перед публикацией сохраните изменения и сверьте состояние книги.';
+            message.textContent = 'Сохраните изменения. Если это состояние уже опубликовано, повторная публикация не нужна.';
             return;
         }
 
@@ -160,62 +180,36 @@ function mountBookPage(root) {
         busy = true;
         login.hidden = true;
         sync();
-        message.textContent = 'Публикация сохранённого черновика…';
+        message.textContent = 'Публикация комплекта…';
 
         try {
             const version = await publishBookRules({
                 state,
                 systemId,
-                request: requestGameSystem,
+                session,
                 allowed: access.can_edit === true,
                 hasPendingChanges: () => book.hasPendingChanges()
             });
 
             book.refresh();
 
-            const revision = state.read().revision;
+            // Ревизии обоих черновиков увеличились на 1.
+            const newRev = state.read().revision;
+            revisions = {text: newRev, mechanic: newRev};
 
-            message.textContent = `Опубликована версия №${version.version_number}. Текущая ревизия черновика: ${revision}.`;
+            message.textContent = `Опубликован комплект №${version.version_number}. Текущая ревизия: ${newRev}.`;
             const link = document.createElement('a');
-
             link.href = publicationSource.bookPublicationHref(systemId, version.id);
-            link.textContent = `Открыть опубликованную версию №${version.version_number}`;
+            link.textContent = `Открыть опубликованный комплект №${version.version_number}`;
             link.setAttribute('hx-boost', 'false');
-
             message.append(document.createTextNode(' '), link);
-
         } catch (error) {
-            showError(error);
-
-            if (state.read().blocked) {
-                message.textContent += ' Повторная запись заблокирована. Загрузите данные заново и сверьте состояние.';
-            }
+            message.textContent = error instanceof Error ? error.message : 'Не удалось выполнить действие.';
+            login.hidden = error?.status !== 401;
         } finally {
             busy = false;
             sync();
         }
-    }
-
-    function showError(error) {
-        message.textContent = error instanceof Error ? error.message : 'Не удалось выполнить действие.';
-        login.hidden = error?.status !== 401;
-    }
-
-    async function loadOrigin(snapshot, adminPath) {
-        if (snapshot.engine_version_id == null) {
-            ensure(snapshot.rules_overrides == null, 'Переопределения получены без опубликованной основы.');
-            return null;
-        }
-
-        const origin = await requestGameSystem(`${adminPath}/editor/engine`);
-
-        ensure(origin?.draft_revision === snapshot.revision, 'Черновик изменился во время загрузки основы.');
-        readEngineOverrides(snapshot, origin.engine_version);
-
-        return {
-            engine_version: origin.engine_version,
-            rules_overrides: snapshot.rules_overrides
-        };
     }
 
     function replaceBook(document, revision) {
@@ -261,7 +255,10 @@ function mountBookPage(root) {
                     rules_engine_version: '1.0'
                 };
 
-                replaceBook({system, rules: null, origin: null}, null);
+                session = null;
+                revisions = {text: null, mechanic: null};
+
+                replaceBook({system, rules: emptyRules(), origin: null}, null);
                 message.textContent = 'Новая книга. Запись на сервер выполняется кнопкой сохранения.';
                 return;
             }
@@ -299,50 +296,46 @@ function mountBookPage(root) {
             && selectedVersion === null
             && manager && source.value === 'draft';
 
-            const result = draftMode
-            ? await requestGameSystem(`${adminPath}/rules/draft`)
-            : await publicationSource.loadBookPublishedRules({
-                request: requestGameSystem,
-                systemId,
-                manager,
-                versionId: selectedVersion
-            });
-            const key = draftMode ? 'draft' : 'version';
+            if (draftMode) {
+                session = openSession(systemId);
+                const loaded = await session.load();
+                revisions = {...loaded.revisions};
 
-            ensure(result && Object.hasOwn(result, key), 'Не удалось проверить ответ с правилами.');
+                if (!loaded.hasDraft) {
+                    replaceBook({system: cardValues(system), rules: emptyRules(), origin: null}, null);
+                    message.textContent = 'Сохранённого черновика нет.';
+                    return;
+                }
 
-            const snapshot = result[key];
+                const revision = revisions.mechanic ?? revisions.text;
+                replaceBook({system: cardValues(system), rules: loaded.document, origin: null}, revision);
+                message.textContent = loaded.hasDraft
+                ? `Сохранённый черновик · ревизия механики ${revisions.mechanic}, текста ${revisions.text}.`
+                : 'Нет черновиков.';
+            } else {
+                const result = await publicationSource.loadBookPublishedRules({
+                    request: requestGameSystem,
+                    systemId,
+                    manager,
+                    versionId: selectedVersion
+                });
 
-            if (snapshot === null) {
-                replaceBook({system: cardValues(system), rules: null, origin: null}, null);
-                message.textContent = draftMode ? 'Сохранённого черновика нет.' : 'Правила ещё не опубликованы.';
-                return;
+                if (result.version === null) {
+                    replaceBook({system: cardValues(system), rules: emptyRules(), origin: null}, null);
+                    message.textContent = 'Правила ещё не опубликованы.';
+                    return;
+                }
+
+                session = null;
+                const card = cardValues(system);
+                card.rules_engine_version = result.version.rules_engine_version;
+
+                replaceBook({system: card, rules: result.version.rules, origin: null, publication: result.version}, null);
+                message.textContent = `Опубликованная версия №${result.version.version_number}. Карточка системы показана в текущем состоянии.`;
             }
-
-            checkSnapshot(snapshot, systemId, key);
-
-            const origin = draftMode ? await loadOrigin(snapshot, adminPath) : null;
-            const revision = draftMode ? snapshot.revision : null;
-            const card = cardValues(system);
-
-            if (!draftMode) {
-                card.rules_engine_version = snapshot.rules_engine_version;
-            }
-            const publication = draftMode
-            ? null
-            : {
-                version_number: snapshot.version_number,
-                published_at: snapshot.published_at,
-                rules_engine_version: snapshot.rules_engine_version
-            };
-
-            replaceBook({system: card, rules: snapshot.rules, origin, publication}, revision);
-
-            message.textContent = draftMode
-            ? `Сохранённый черновик · ревизия ${snapshot.revision}.`
-            : `Опубликованная версия №${snapshot.version_number}. Карточка системы показана в текущем состоянии.`;
         } catch (error) {
-            showError(error);
+            message.textContent = error instanceof Error ? error.message : 'Не удалось выполнить действие.';
+            login.hidden = error?.status !== 401;
         } finally {
             busy = false;
             sync();
@@ -368,83 +361,57 @@ function mountBookPage(root) {
             ensure(!snapshot.blocked, 'Сначала загрузите и сверьте сохранённые данные.');
             ensure(creating ? access?.can_create === true : access?.can_edit === true, 'Сохранение недоступно.');
 
-            const system = validateCard(snapshot.document.system);
-            const origin = snapshot.document.origin;
-            const linked = origin !== null;
+            const card = validateCard(snapshot.document.system);
+            const rules = snapshot.document.rules;
 
-            let rulesPayload = {rules: snapshot.document.rules};
-
-            if (linked) {
-                const version = origin.engine_version;
-
-                ensure(version?.rules_engine_version === system.rules_engine_version, 'Версия основы не совпадает с системой.');
-
-                rulesPayload = {
-                    engine_id: version.engine_id,
-                    engine_version_id: version.id,
-                    rules_overrides: collectEngineOverrides(
-                        version.rules_json,
-                        snapshot.document.rules,
-                        origin.rules_overrides
-                    )
-                };
-            }
+            ensure(rules && typeof rules === 'object', 'Сначала заполните правила.');
 
             ticket = state.beginSave();
-
-            const payload = {system, ...rulesPayload};
-
-            if (!creating) payload.expected_revision = ticket.expectedRevision;
-
-            const id = systemId ? encodeURIComponent(systemId) : null;
-            const path = linked
-            ? creating ? '/admin/game-systems/from-engine' : `/admin/game-systems/${id}/editor/engine`
-            : creating ? '/admin/game-systems/editor/create' : `/admin/game-systems/${id}/editor`;
-
             busy = true;
             sync();
-            message.textContent = 'Сохранение системы и черновика…';
+            message.textContent = creating ? 'Создание системы…' : 'Сохранение…';
 
-            const result = await requestGameSystem(path, creating ? 'POST' : 'PUT', payload);
-            const savedId = result?.system?.id;
+            let savedCard;
 
-            ensure(typeof savedId === 'string' && savedId.length > 0, 'Не удалось проверить ответ сохранения.');
-            ensure(creating || savedId === systemId, 'Ответ сохранения относится к другой системе.');
-            checkSnapshot(result.draft, savedId, 'draft');
+            if (creating) {
+                // Шаг 1: создать карточку системы без правил.
+                const created = await requestGameSystem('/admin/game-systems', 'POST', card);
+                const savedId = created?.id;
 
-            let savedOrigin = null;
+                ensure(typeof savedId === 'string' && savedId.length > 0, 'Не удалось создать карточку системы.');
 
-            if (linked) {
-                readEngineOverrides(result.draft, origin.engine_version);
-
-                savedOrigin = {
-                    engine_version: origin.engine_version,
-                    rules_overrides: result.draft.rules_overrides
-                };
+                systemId = savedId;
+                root.dataset.systemId = savedId;
+                session = openSession(savedId);
+                savedCard = cardValues(created);
             } else {
-                ensure(result.draft.engine_version_id == null, 'Сервер вернул неожиданную связь с основой.');
-                ensure(result.draft.rules_overrides == null, 'Сервер вернул неожиданные переопределения.');
+                // Шаг 1: обновить карточку системы без правил.
+                const updated = await requestGameSystem(`/admin/game-systems/${encodeURIComponent(systemId)}`, 'PATCH', card);
+
+                ensure(updated?.id === systemId, 'Ответ обновления относится к другой системе.');
+                savedCard = cardValues(updated);
             }
 
+            // Шаг 2: сохранить раздельные черновики механики и текста.
+            revisions = await session.save(snapshot.document, revisions);
+
             const savedDocument = {
-                system: cardValues(result.system),
-                rules: result.draft.rules,
-                origin: savedOrigin
+                system: savedCard,
+                rules: snapshot.document.rules,
+                origin: null
             };
 
-            state.acceptSave(ticket, savedDocument, result.draft.revision);
+            state.acceptSave(ticket, savedDocument, revisions.mechanic ?? revisions.text);
             ticket = null;
-            systemId = savedId;
-            root.dataset.systemId = savedId;
-
             book.refresh();
 
             if (creating) {
                 mode = 'edit';
-                const path = `/game-systems/catalog/${encodeURIComponent(savedId)}/edit`;
-
+                const path = `/game-systems/catalog/${encodeURIComponent(systemId)}/edit`;
                 history.replaceState(null, '', path);
                 root.dataset.pageMode = 'edit';
+                message.textContent = `Система создана. Черновик · ревизия механики ${revisions.mechanic}, текста ${revisions.text}.`;
+                return;
             }
 
             message.textContent = 'Система и черновик сохранены. Публикация не выполнялась.';
@@ -454,7 +421,8 @@ function mountBookPage(root) {
                 book.refresh();
             }
 
-            showError(error);
+            message.textContent = error instanceof Error ? error.message : 'Не удалось выполнить действие.';
+            login.hidden = error?.status !== 401;
         } finally {
             busy = false;
             sync();

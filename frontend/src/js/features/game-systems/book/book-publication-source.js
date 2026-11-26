@@ -36,6 +36,8 @@ export function bookPublicationHref(systemId, versionId) {
 	return `/game-systems/catalog/${system}?source=published&version=${version}`;
 }
 
+// Собранный документ комплекта: сервер сам соединяет версию механики
+// и версию текста, поэтому клиент не запрашивает блоки по отдельности.
 export async function loadBookPublishedRules({request, systemId, manager, versionId = null}) {
 	ensure(typeof request === 'function', 'Не подключена загрузка публикации.');
 	ensure(identifier(systemId), 'Не указана игровая система.');
@@ -44,34 +46,39 @@ export async function loadBookPublishedRules({request, systemId, manager, versio
 
 	const id = encodeURIComponent(systemId);
 	const base = manager ? `/admin/game-systems/${id}` : `/game-systems/items/${id}`;
+	const path = versionId === null
+		? `${base}/published`
+		: `${base}/published/${encodeURIComponent(versionId)}`;
+	const response = await request(path);
 
-	let version;
+	ensure(record(response) && Object.hasOwn(response, 'document'), 'Некорректный ответ опубликованного комплекта.');
 
-	if (versionId === null) {
-		const response = await request(`${base}/rules/latest`);
+	const document = response.document;
 
-		ensure(record(response) && Object.hasOwn(response, 'version'), 'Некорректный ответ последней публикации.');
+	if (document === null) return {version: null};
 
-		version = response.version;
-
-		if (version === null) return {version: null};
-	} else {
-		version = await request(`${base}/rules/versions/${encodeURIComponent(versionId)}`);
-	}
-
-	ensure(record(version) && identifier(version.id), 'Не удалось проверить публикацию.');
-	ensure(version.system_id === systemId, 'Публикация относится к другой игровой системе.');
-	ensure(versionId === null || version.id === versionId, 'Сервер вернул другую публикацию.');
-	ensure(record(version.rules), 'В публикации отсутствуют правила.');
+	ensure(record(document), 'Опубликованный комплект должен быть объектом.');
+	ensure(record(document.version) && identifier(document.version.id), 'В комплекте отсутствует версия системы.');
+	ensure(document.version.system_id === systemId, 'Публикация относится к другой игровой системе.');
+	ensure(versionId === null || document.version.id === versionId, 'Сервер вернул другую публикацию.');
+	ensure(record(document.rules), 'В публикации отсутствуют правила.');
+	ensure(identifier(document.rules_engine_version), 'В публикации отсутствует версия исполнителя.');
 
 	ensure(
-		Number.isSafeInteger(version.version_number) && version.version_number >= 1,
+		Number.isSafeInteger(document.version.version_number) && document.version.version_number >= 1,
 		'Некорректный номер публикации.'
 	);
+	ensure(typeof document.version.published_at === 'string', 'В публикации отсутствует дата.');
+	ensure(Number.isFinite(Date.parse(document.version.published_at)), 'Некорректная дата публикации.');
 
-	ensure(identifier(version.rules_engine_version), 'В публикации отсутствует версия исполнителя.');
-	ensure(typeof version.published_at === 'string', 'В публикации отсутствует дата.');
-	ensure(Number.isFinite(Date.parse(version.published_at)), 'Некорректная дата публикации.');
-
-	return {version: structuredClone(version)};
+	return {
+		version: {
+			id: document.version.id,
+			system_id: document.version.system_id,
+			version_number: document.version.version_number,
+			published_at: document.version.published_at,
+			rules_engine_version: document.rules_engine_version,
+			rules: structuredClone(document.rules)
+		}
+	};
 }

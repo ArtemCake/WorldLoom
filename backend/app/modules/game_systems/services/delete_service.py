@@ -21,14 +21,27 @@ from uuid import UUID
 from sqlalchemy import and_, column, delete, select, table, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.modules.game_systems.errors import GameSystemNotFound, GameSystemDeletionBlocked, GameSystemRulesConflict, GameSystemRulesStorageError, InvalidGameSystemRules
-from backend.app.modules.game_systems.models.game_systems import GameSystem, GameSystemRulesDraft, HomebrewRule, GameSystemRulesVersion
+from backend.app.modules.game_systems.models.game_systems import (
+    GameSystem,
+    HomebrewRule,
+)
+from backend.app.modules.game_systems.models.system_versions import (
+    GameSystemMechanicDraft,
+    GameSystemMechanicVersion,
+    GameSystemTextDraft,
+    GameSystemTextVersion,
+    GameSystemVersion,
+)
 from backend.app.modules.games.models.lobby import Game
 from backend.db_migrations.system_rules_protection import REMOVAL_SETTING
 
 
 _SYSTEMS = GameSystem.__table__
-_DRAFTS = GameSystemRulesDraft.__table__
-_VERSIONS = GameSystemRulesVersion.__table__
+_DRAFTS = GameSystemMechanicDraft.__table__
+_TEXT_DRAFTS = GameSystemTextDraft.__table__
+_VERSIONS = GameSystemMechanicVersion.__table__
+_TEXT_VERSIONS = GameSystemTextVersion.__table__
+_BUNDLES = GameSystemVersion.__table__
 _GAMES = Game.__table__
 _HOME_BREW_RULES = HomebrewRule.__table__
 
@@ -133,7 +146,18 @@ def _is_handled_reference(reference: Mapping[str, Any], source_columns: list[str
 	if _SYSTEMS.schema is not None and target_schema != _SYSTEMS.schema:
 		return False
 
-	handled = (_DRAFTS, _VERSIONS, _GAMES) if removal_chain else (_DRAFTS, _VERSIONS)
+	# Разрешённые связи: черновики и опубликованные снимки механики, текста
+	# и комплекта. Игры допускаются только в режиме проверки будущей цепочки.
+	handled = (
+		_DRAFTS,
+		_TEXT_DRAFTS,
+		_VERSIONS,
+		_TEXT_VERSIONS,
+		_BUNDLES,
+	)
+
+	if removal_chain:
+		handled = (*handled, _GAMES)
 
 	return any(
 		reference["source_schema"] == (item.schema or target_schema)
@@ -223,18 +247,28 @@ async def delete_game_system(session: AsyncSession, system_id: UUID) -> dict[str
 
 	await _reject_references(session, [system_id], removal_chain=False)
 
-	# Опубликованные версии правил защищены триггером неизменяемости
-	# (§27-G). Удаление свободной системы — единственный легальный путь
-	# их удалить, поэтому транзакция объявляет свой идентификатор
-	# локальным параметром. is_local = true: параметр исчезает вместе с
-	# транзакцией и не переживает её ни при каком исходе.
+	# Опубликованные снимки защищены триггером неизменяемости (§27-G).
+	# Удаление свободной системы — единственный легальный путь их удалить,
+	# поэтому транзакция объявляет свой идентификатор локальным параметром.
+	# is_local = true: параметр исчезает вместе с транзакцией и не переживает
+	# её ни при каком исходе. Гард сверяет параметр с колонкой system_id,
+	# которая есть в каждой таблице версий, включая комплект.
 	await session.execute(
 		text("SELECT set_config(:setting, CAST(:system_id AS text), true)"),
 		{"setting": REMOVAL_SETTING, "system_id": str(system_id)},
 	)
 
-	await session.execute(delete(_DRAFTS).where(_DRAFTS.c.system_id == system_id))
-	await session.execute(delete(_VERSIONS).where(_VERSIONS.c.system_id == system_id))
+	# Порядок удаления определяется внешними ключами: комплект ссылается на
+	# версии механики и текста, поэтому снимается первым.
+	for statement in (
+		delete(_BUNDLES).where(_BUNDLES.c.system_id == system_id),
+		delete(_TEXT_VERSIONS).where(_TEXT_VERSIONS.c.system_id == system_id),
+		delete(_VERSIONS).where(_VERSIONS.c.system_id == system_id),
+		delete(_TEXT_DRAFTS).where(_TEXT_DRAFTS.c.system_id == system_id),
+		delete(_DRAFTS).where(_DRAFTS.c.system_id == system_id),
+	):
+		await session.execute(statement)
+
 	deleted = await session.execute(
 		delete(_SYSTEMS)
 		.where(_SYSTEMS.c.id == system_id)

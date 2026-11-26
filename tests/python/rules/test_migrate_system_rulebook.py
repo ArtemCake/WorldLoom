@@ -24,10 +24,11 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from backend.app.infrastructure.database.model_registry import configure_models
-from backend.app.modules.game_systems.models.game_systems import (
-    GameSystem,
-    GameSystemRulesDraft,
+from backend.app.modules.game_systems.models.game_systems import GameSystem
+from backend.app.modules.game_systems.models.system_versions import (
+    GameSystemMechanicDraft,
 )
+from backend.app.modules.game_systems.rules.mechanic_codec import profile_to_mechanic
 from backend.app.modules.rules import errors
 from backend.app.modules.rules.models.books import RuleBook, RuleBookDraft
 from backend.app.modules.rules.services.books.rulebook_service import (
@@ -47,7 +48,7 @@ configure_models()
 
 
 _GAME_SYSTEMS = GameSystem.__table__
-_GAME_DRAFTS = GameSystemRulesDraft.__table__
+_GAME_DRAFTS = GameSystemMechanicDraft.__table__
 _BOOKS = RuleBook.__table__
 _BOOK_DRAFTS = RuleBookDraft.__table__
 
@@ -217,8 +218,8 @@ class MigrateRulebookPostgreSQLTests(PostgresTestCase):
                     system_id=self.system_id,
                     revision=1,
                     engine_version_id=None,
-                    rules_overrides_json=null(),
-                    rules_json=FULL_PROFILE,
+                    mechanic_overrides_json=null(),
+                    mechanic_json=profile_to_mechanic(FULL_PROFILE),
                 )
             )
 
@@ -227,13 +228,13 @@ class MigrateRulebookPostgreSQLTests(PostgresTestCase):
         async with self.sessions() as session:
             row = (
                 await session.execute(
-                    select(_GAME_DRAFTS.c.revision, _GAME_DRAFTS.c.rules_json)
+                    select(_GAME_DRAFTS.c.revision, _GAME_DRAFTS.c.mechanic_json)
                     .where(_GAME_DRAFTS.c.system_id == self.system_id)
                 )
             ).mappings().one()
 
         self.assertEqual(row["revision"], 1)
-        self.assertEqual(row["rules_json"], FULL_PROFILE)
+        self.assertEqual(row["mechanic_json"], profile_to_mechanic(FULL_PROFILE))
 
     async def test_migrate_empty_rulebook(self):
         """Пустой rulebook даёт книгу с пустым оглавлением."""

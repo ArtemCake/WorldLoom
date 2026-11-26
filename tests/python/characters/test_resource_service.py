@@ -32,7 +32,8 @@ from backend.app.modules.characters.errors import (
 )
 from backend.app.modules.characters.models import Character, SheetResourceChange, SheetResourceValue
 from backend.app.modules.characters.services import resource_service as resources
-from backend.app.modules.game_systems.models.game_systems import GameSystemRulesVersion
+from backend.app.modules.game_systems.models.system_versions import GameSystemMechanicVersion
+from backend.app.modules.game_systems.rules.mechanic_codec import profile_to_mechanic
 from backend.app.modules.game_systems.schemas.game_rules import RulesProfile
 from tests.python.rules.pg_support import (
 	USER_INSERT_SQL,
@@ -43,7 +44,7 @@ from tests.python.rules.pg_support import (
 	user_values,
 )
 
-_VERSIONS = GameSystemRulesVersion.__table__
+_VERSIONS = GameSystemMechanicVersion.__table__
 _CHARACTERS = Character.__table__
 
 # Профиль версии 4: один показатель и два ресурса.
@@ -162,7 +163,10 @@ class ResourceServicePostgreSQLTests(PostgresTestCase):
 					id=version_id,
 					system_id=values["id"],
 					version_number=1,
-					rules_json=self.profile.model_dump(mode="json"),
+					source_draft_revision=1,
+					mechanic_json=profile_to_mechanic(
+						self.profile.model_dump(mode="json")
+					),
 					rules_engine_version="1.0",
 				)
 			)

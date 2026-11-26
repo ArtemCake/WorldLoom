@@ -1,6 +1,7 @@
 import asyncio
 
 from copy import deepcopy
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -178,15 +179,35 @@ def test_publication_rejects_nonexecutable_draft_before_database_write(monkeypat
         "rules_engine_version": "1.0",
     }
 
-    draft = {
+    # Пара черновиков: механика с неисполнимой формулой и пустой текст.
+    now = datetime.now(timezone.utc)
+    mechanic = {
+        "id": uuid4(),
+        "system_id": uuid4(),
         "revision": 3,
-        "rules_json": profile_data(0),
         "engine_version_id": None,
-        "rules_overrides_json": None,
+        "mechanic_overrides_json": None,
+        "mechanic_json": {
+            "schema_version": 1,
+            "calculations": profile_data(0)["calculations"],
+            "initial_attributes": profile_data(0)["initial_attributes"],
+            "resources": {},
+        },
+        "created_at": now,
+        "updated_at": now,
+    }
+    text = {
+        "id": uuid4(),
+        "revision": 3,
+        "text_json": {"schema_version": 1, "chapters": {}},
     }
 
     monkeypatch.setattr(editor_service, "_get_system", AsyncMock(return_value=system))
-    monkeypatch.setattr(editor_service, "_find_draft", AsyncMock(return_value=draft))
+    monkeypatch.setattr(
+        editor_service,
+        "_find_draft_rows",
+        AsyncMock(return_value=(mechanic, text)),
+    )
 
     data = GameSystemRulesPublish(expected_revision=3)
 
@@ -194,4 +215,4 @@ def test_publication_rejects_nonexecutable_draft_before_database_write(monkeypat
         asyncio.run(editor_service.publish_rules_version(session, uuid4(), data))
 
     session.execute.assert_not_awaited()
-    assert draft["revision"] == 3
+    assert mechanic["revision"] == 3

@@ -82,7 +82,7 @@ class Character(Base):
 	state_rules_version_id: Mapped[UUID | None] = mapped_column(
 		PG_UUID(as_uuid=True),
 		ForeignKey(
-			"game_system_rules_versions.id",
+			"game_system_mechanic_versions.id",
 			ondelete="RESTRICT",
 		),
 		nullable=True,
@@ -253,7 +253,7 @@ class CharacterSheet(Base):
 	state_rules_version_id: Mapped[UUID | None] = mapped_column(
 		PG_UUID(as_uuid=True),
 		ForeignKey(
-			"game_system_rules_versions.id",
+			"game_system_mechanic_versions.id",
 			ondelete="RESTRICT",
 		),
 		nullable=True,

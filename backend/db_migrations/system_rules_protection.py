@@ -23,15 +23,21 @@ DELETE разрешён только внутри транзакции удал�
 from alembic.operations import ops
 
 
-TABLE_NAME = "game_system_rules_versions"
-ROW_TRIGGER_NAME = "game_system_rules_versions_immutable"
-TRUNCATE_TRIGGER_NAME = "game_system_rules_versions_no_truncate"
 FUNCTION_NAME = "worldloom_guard_system_rules_version"
 TRUNCATE_FUNCTION_NAME = "worldloom_guard_system_rules_version_truncate"
 
 REMOVAL_SETTING = "worldloom.removing_system_id"
 
 TAG = "$worldloom$"
+
+# Опубликованные версии новых разделённых таблиц наследуют ту же защиту:
+# функция-гард опирается только на колонку system_id и параметр удаления
+# системы, которые есть в каждой таблице версий.
+SPLIT_TABLES = (
+    "game_system_mechanic_versions",
+    "game_system_text_versions",
+    "game_system_versions",
+)
 
 
 # UPDATE запрещён безусловно. DELETE разрешён только когда локальный
@@ -75,56 +81,82 @@ END;
 {TAG};
 """
 
-CREATE_ROW_TRIGGER_SQL = f"""
-CREATE TRIGGER {ROW_TRIGGER_NAME}
-BEFORE UPDATE OR DELETE ON {TABLE_NAME}
-FOR EACH ROW
-EXECUTE FUNCTION {FUNCTION_NAME}();
-"""
-
-CREATE_TRUNCATE_TRIGGER_SQL = f"""
-CREATE TRIGGER {TRUNCATE_TRIGGER_NAME}
-BEFORE TRUNCATE ON {TABLE_NAME}
-FOR EACH STATEMENT
-EXECUTE FUNCTION {TRUNCATE_FUNCTION_NAME}();
-"""
-
-DROP_ROW_TRIGGER_SQL = (
-    f"DROP TRIGGER IF EXISTS {ROW_TRIGGER_NAME} ON {TABLE_NAME};"
-)
-
-DROP_TRUNCATE_TRIGGER_SQL = (
-    f"DROP TRIGGER IF EXISTS {TRUNCATE_TRIGGER_NAME} ON {TABLE_NAME};"
-)
-
 DROP_FUNCTION_SQL = f"DROP FUNCTION IF EXISTS {FUNCTION_NAME}();"
 
 DROP_TRUNCATE_FUNCTION_SQL = (
     f"DROP FUNCTION IF EXISTS {TRUNCATE_FUNCTION_NAME}();"
 )
 
-# Порядок важен: функции создаются раньше ссылающихся на них триггеров.
-UPGRADE_SQL = (
-    GUARD_FUNCTION_SQL,
-    GUARD_TRUNCATE_FUNCTION_SQL,
-    CREATE_ROW_TRIGGER_SQL,
-    CREATE_TRUNCATE_TRIGGER_SQL,
-)
 
-# Откат снимает триггеры раньше функций.
-DOWNGRADE_SQL = (
-    DROP_ROW_TRIGGER_SQL,
-    DROP_TRUNCATE_TRIGGER_SQL,
-    DROP_FUNCTION_SQL,
-    DROP_TRUNCATE_FUNCTION_SQL,
-)
+def _split_row_trigger_sql(table_name: str) -> str:
+    return f"""
+CREATE TRIGGER {table_name}_immutable
+BEFORE UPDATE OR DELETE ON {table_name}
+FOR EACH ROW
+EXECUTE FUNCTION {FUNCTION_NAME}();
+"""
+
+
+def _split_truncate_trigger_sql(table_name: str) -> str:
+    return f"""
+CREATE TRIGGER {table_name}_no_truncate
+BEFORE TRUNCATE ON {table_name}
+FOR EACH STATEMENT
+EXECUTE FUNCTION {TRUNCATE_FUNCTION_NAME}();
+"""
+
+
+def split_guard_upgrade_sql() -> tuple[str, ...]:
+    """Триггеры защиты для разделённых таблиц версий.
+
+    Функция-гард уже создана начальной миграцией и опирается только на
+    колонку ``system_id`` и параметр удаления системы, поэтому для новых
+    таблиц навешиваются лишь триггеры. Применяется в ревизии разделения
+    сразу после создания таблиц.
+    """
+    statements: list[str] = []
+
+    for table_name in SPLIT_TABLES:
+        statements.append(_split_row_trigger_sql(table_name))
+        statements.append(_split_truncate_trigger_sql(table_name))
+
+    return tuple(statements)
+
+
+def split_guard_downgrade_sql() -> tuple[str, ...]:
+    """Снять триггеры защиты с разделённых таблиц версий."""
+    statements: list[str] = []
+
+    for table_name in SPLIT_TABLES:
+        statements.append(
+            f"DROP TRIGGER IF EXISTS {table_name}_immutable ON {table_name};"
+        )
+        statements.append(
+            f"DROP TRIGGER IF EXISTS {table_name}_no_truncate ON {table_name};"
+        )
+
+    return tuple(statements)
 
 
 def upgrade_operations() -> list:
     """Операции Alembic, включающие защиту версий правил."""
-    return [ops.ExecuteSQLOp(statement) for statement in UPGRADE_SQL]
+    return [
+        ops.ExecuteSQLOp(statement)
+        for statement in (
+            GUARD_FUNCTION_SQL,
+            GUARD_TRUNCATE_FUNCTION_SQL,
+            *split_guard_upgrade_sql(),
+        )
+    ]
 
 
 def downgrade_operations() -> list:
     """Операции Alembic, снимающие защиту версий правил."""
-    return [ops.ExecuteSQLOp(statement) for statement in DOWNGRADE_SQL]
+    return [
+        ops.ExecuteSQLOp(statement)
+        for statement in (
+            *split_guard_downgrade_sql(),
+            DROP_TRUNCATE_FUNCTION_SQL,
+            DROP_FUNCTION_SQL,
+        )
+    ]

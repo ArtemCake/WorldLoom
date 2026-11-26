@@ -18,10 +18,11 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from backend.app.modules.game_systems.errors import GameSystemNotFound
-from backend.app.modules.game_systems.models.game_systems import (
-	GameSystem,
-	GameSystemRulesDraft,
-	GameSystemRulesVersion,
+from backend.app.modules.game_systems.models.game_systems import GameSystem
+from backend.app.modules.game_systems.models.system_versions import (
+	GameSystemMechanicDraft,
+	GameSystemMechanicVersion,
+	GameSystemVersion,
 )
 from backend.app.modules.game_systems.models.rule_engines import RuleEngine, RuleEngineVersion
 from backend.app.modules.rules.models.books import RuleBook, RuleBookDraft, RuleBookVersion
@@ -39,16 +40,26 @@ from tests.python.rules.pg_support import (
 
 
 _SYSTEMS = GameSystem.__table__
-_DRAFTS = GameSystemRulesDraft.__table__
-_VERSIONS = GameSystemRulesVersion.__table__
+_MECHANIC_DRAFTS = GameSystemMechanicDraft.__table__
+_MECHANIC_VERSIONS = GameSystemMechanicVersion.__table__
+_SYSTEM_VERSIONS = GameSystemVersion.__table__
 _ENGINES = RuleEngine.__table__
 _ENGINE_VERSIONS = RuleEngineVersion.__table__
 _BOOKS = RuleBook.__table__
 _BOOK_DRAFTS = RuleBookDraft.__table__
 _BOOK_VERSIONS = RuleBookVersion.__table__
 
-EMPTY_PROFILE = {
+# Профиль движка-основы остаётся в формате правил (schema_version 4).
+ENGINE_PROFILE = {
 	"schema_version": 4,
+	"calculations": {"attributes": {}, "derived": {}},
+	"initial_attributes": {},
+	"resources": {},
+}
+
+# Снимок механики системы: числовая часть без текстового раздела.
+MECHANIC_SNAPSHOT = {
+	"schema_version": 1,
 	"calculations": {"attributes": {}, "derived": {}},
 	"initial_attributes": {},
 	"resources": {},
@@ -130,7 +141,7 @@ class WorkspaceOverviewPostgreSQLTests(PostgresTestCase):
 		async with self.sessions() as session:
 			return {
 				"systems": (await session.execute(select(func.count()).select_from(_SYSTEMS))).scalar_one(),
-				"drafts": (await session.execute(select(func.count()).select_from(_DRAFTS))).scalar_one(),
+				"drafts": (await session.execute(select(func.count()).select_from(_MECHANIC_DRAFTS))).scalar_one(),
 				"books": (await session.execute(select(func.count()).select_from(_BOOKS))).scalar_one(),
 				"book_versions": (await session.execute(select(func.count()).select_from(_BOOK_VERSIONS))).scalar_one(),
 			}
@@ -177,17 +188,17 @@ class WorkspaceOverviewPostgreSQLTests(PostgresTestCase):
 					engine_id=select(_ENGINES.c.id).scalar_subquery(),
 					version_number=1,
 					source_draft_revision=1,
-					rules_json=EMPTY_PROFILE,
+					rules_json=ENGINE_PROFILE,
 					rules_engine_version="1.0",
 				)
 			)
 			await session.execute(
-				insert(_DRAFTS).values(
+				insert(_MECHANIC_DRAFTS).values(
 					system_id=system_id,
 					revision=1,
 					engine_version_id=engine_version_id,
-					rules_overrides_json={"hp": 10},
-					rules_json=EMPTY_PROFILE,
+					mechanic_overrides_json={"hp": 10},
+					mechanic_json=MECHANIC_SNAPSHOT,
 				)
 			)
 
@@ -247,17 +258,30 @@ class WorkspaceOverviewPostgreSQLTests(PostgresTestCase):
 		self.assertIsNotNone(with_publication.books[0].latest_published_at)
 		self.assertEqual(with_publication.books_published, 1)
 
-		# 5. Публикация комплекта правил системы.
+		# 5. Публикация: версия механики и комплект системы.
+		mechanic_version_id = uuid4()
+		bundle_id = uuid4()
+
 		async with self.sessions.begin() as session:
 			await session.execute(
-				insert(_VERSIONS).values(
-					id=uuid4(),
+				insert(_MECHANIC_VERSIONS).values(
+					id=mechanic_version_id,
 					system_id=system_id,
 					version_number=1,
+					source_draft_revision=1,
 					engine_version_id=engine_version_id,
-					rules_overrides_json={"hp": 10},
-					rules_json=EMPTY_PROFILE,
+					mechanic_overrides_json={"hp": 10},
+					mechanic_json=MECHANIC_SNAPSHOT,
 					rules_engine_version="1.0",
+				)
+			)
+			await session.execute(
+				insert(_SYSTEM_VERSIONS).values(
+					id=bundle_id,
+					system_id=system_id,
+					version_number=1,
+					text_version_id=None,
+					mechanic_version_id=mechanic_version_id,
 				)
 			)
 
@@ -266,6 +290,7 @@ class WorkspaceOverviewPostgreSQLTests(PostgresTestCase):
 
 		self.assertTrue(final.rules_published)
 		self.assertTrue(final.rules_draft_present)
+		self.assertEqual(final.published_rules_version_id, bundle_id)
 		self.assertEqual(final.books_published, 1)
 
 		# 6. Read-only: обзор ничего не записывает (кроме явных вставок выше).

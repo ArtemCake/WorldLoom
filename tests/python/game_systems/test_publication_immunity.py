@@ -41,7 +41,11 @@ from backend.app.infrastructure.database.model_registry import configure_models
 configure_models()
 
 from backend.app.modules.game_systems import errors
-from backend.app.modules.game_systems.models.game_systems import GameSystemRulesVersion
+from backend.app.modules.game_systems.models.system_versions import (
+    GameSystemMechanicVersion,
+    GameSystemVersion,
+)
+from backend.app.modules.game_systems.rules.mechanic_codec import profile_to_mechanic
 from backend.app.modules.game_systems.schemas.game_rules import (
     GameSystemRulesDraftCreate,
     GameSystemRulesDraftUpdate,
@@ -60,7 +64,9 @@ from tests.python.rules.pg_support import (
 )
 
 
-VERSIONS = GameSystemRulesVersion.__table__
+# Публикация — это комплект; числовой снимок живёт в версии механики.
+BUNDLES = GameSystemVersion.__table__
+MECHANIC_VERSIONS = GameSystemMechanicVersion.__table__
 
 # Минимальный исполняемый профиль: один исходный показатель strength.
 # Начальное значение различается в двух профилях, чтобы показать, что
@@ -187,13 +193,23 @@ class PublicationImmunityPostgreSQLTests(PostgresTestCase):
             return await editor_service.publish_rules_version(session, system_id, data)
 
     async def stored_snapshot(self, version_id) -> dict:
-        statement = select(VERSIONS.c.rules_json).where(VERSIONS.c.id == version_id)
+        """Числовой снимок комплекта: версия механики, на которую он ссылается."""
+        statement = (
+            select(MECHANIC_VERSIONS.c.mechanic_json)
+            .select_from(
+                BUNDLES.join(
+                    MECHANIC_VERSIONS,
+                    MECHANIC_VERSIONS.c.id == BUNDLES.c.mechanic_version_id,
+                )
+            )
+            .where(BUNDLES.c.id == version_id)
+        )
 
         async with self.sessions() as session:
             return (await session.execute(statement)).scalar_one()
 
     async def version_count(self, system_id) -> int:
-        statement = select(func.count()).select_from(VERSIONS).where(VERSIONS.c.system_id == system_id)
+        statement = select(func.count()).select_from(BUNDLES).where(BUNDLES.c.system_id == system_id)
 
         async with self.sessions() as session:
             return (await session.execute(statement)).scalar_one()
@@ -248,7 +264,8 @@ class PublicationImmunityPostgreSQLTests(PostgresTestCase):
         system_id = await self.new_system()
         draft = await self.create_draft(system_id, 10)
         published = await self.publish(system_id, 1)
-        expected = editor_service._rules_payload(draft.rules)
+        # В версии механики хранится только числовая часть профиля.
+        expected = profile_to_mechanic(editor_service._rules_payload(draft.rules))
 
         self.assertEqual(await self.stored_snapshot(published.id), expected)
 
@@ -276,7 +293,7 @@ class PublicationImmunityPostgreSQLTests(PostgresTestCase):
         published = await self.publish(system_id, 1)
 
         await self.expect_database_error(
-            "UPDATE game_system_rules_versions SET version_number = 99 WHERE id = :vid",
+            "UPDATE game_system_versions SET version_number = 99 WHERE id = :vid",
             {"vid": published.id},
             "55000",
         )
@@ -288,7 +305,7 @@ class PublicationImmunityPostgreSQLTests(PostgresTestCase):
         published = await self.publish(system_id, 1)
 
         await self.expect_database_error(
-            "DELETE FROM game_system_rules_versions WHERE id = :vid",
+            "DELETE FROM game_system_versions WHERE id = :vid",
             {"vid": published.id},
             "55000",
         )
@@ -409,7 +426,22 @@ class PublicationImmunityPostgreSQLTests(PostgresTestCase):
             return await editor_service.set_rules_draft_engine(session, system_id, self.owner_id, data)
 
     async def version_row(self, version_id) -> dict:
-        statement = select(VERSIONS).where(VERSIONS.c.id == version_id)
+        """Прочитать номер версии комплекта и поля версии механики."""
+        statement = (
+            select(
+                BUNDLES.c.version_number,
+                MECHANIC_VERSIONS.c.engine_version_id,
+                MECHANIC_VERSIONS.c.mechanic_overrides_json,
+                MECHANIC_VERSIONS.c.mechanic_json,
+            )
+            .select_from(
+                MECHANIC_VERSIONS.join(
+                    BUNDLES,
+                    BUNDLES.c.mechanic_version_id == MECHANIC_VERSIONS.c.id,
+                )
+            )
+            .where(BUNDLES.c.id == version_id)
+        )
 
         async with self.sessions() as session:
             return dict((await session.execute(statement)).mappings().one())
@@ -430,8 +462,8 @@ class PublicationImmunityPostgreSQLTests(PostgresTestCase):
         row = await self.version_row(published.id)
 
         self.assertEqual(row["engine_version_id"], version_id)
-        self.assertEqual(row["rules_json"]["initial_attributes"]["strength"], 18)
-        self.assertEqual(row["rules_overrides_json"], {"initial_attributes": {"strength": 18}})
+        self.assertEqual(row["mechanic_json"]["initial_attributes"]["strength"], 18)
+        self.assertEqual(row["mechanic_overrides_json"], {"initial_attributes": {"strength": 18}})
 
     async def test_new_engine_release_does_not_change_published_system_version(self):
         """Новая версия основы не меняет уже выпущенную публикацию системы (§27-G)."""
@@ -461,7 +493,7 @@ class PublicationImmunityPostgreSQLTests(PostgresTestCase):
 
         self.assertEqual(after, original)
         self.assertEqual(after["engine_version_id"], first_version)
-        self.assertEqual(after["rules_json"]["initial_attributes"]["strength"], 12)
+        self.assertEqual(after["mechanic_json"]["initial_attributes"]["strength"], 12)
 
     async def test_deactivated_origin_keeps_published_system_version_readable(self):
         """Деактивация основы не меняет и не скрывает выпущенную публикацию системы (§27-G)."""
@@ -472,6 +504,7 @@ class PublicationImmunityPostgreSQLTests(PostgresTestCase):
             system_id, engine_id, version_id, {"initial_attributes": {"strength": 14}}, expected_revision=None
         )
         published = await self.publish(system_id, 1)
+        # Числовой снимок хранится в версии механики.
         original = await self.stored_snapshot(published.id)
 
         async with self.sessions.begin() as session:
@@ -479,8 +512,11 @@ class PublicationImmunityPostgreSQLTests(PostgresTestCase):
 
         async with self.sessions() as session:
             read = await editor_service.get_rules_version(session, system_id, published.id)
+            # profile_to_mechanic от полного профиля даст ту же числовую часть.
+            original_mech = profile_to_mechanic(original)
+            read_mech = profile_to_mechanic(read.rules.model_dump(mode="json"))
 
-        self.assertEqual(read.rules.model_dump(mode="json"), original)
+        self.assertEqual(read_mech, original_mech)
         self.assertEqual(read.rules.initial_attributes["strength"], 14)
 
     async def test_mismatched_saved_snapshot_is_rejected_before_release(self):
@@ -493,12 +529,13 @@ class PublicationImmunityPostgreSQLTests(PostgresTestCase):
         )
 
         # Черновик правят мимо сервиса: основа и переопределения остаются,
-        # а собранный профиль перестает им соответствовать.
-        tampered = _profile(29)
+        # а собранный профиль перестает им соответствовать. Правка идёт
+        # в числовую часть черновика механики.
+        tampered = profile_to_mechanic(_profile(29))
 
         async with self.sessions.begin() as session:
             await session.execute(
-                text("UPDATE game_system_rules_drafts SET rules_json = CAST(:rules AS jsonb) "
+                text("UPDATE game_system_mechanic_drafts SET mechanic_json = CAST(:rules AS jsonb) "
                      "WHERE system_id = :system_id"),
                 {"rules": json.dumps(tampered), "system_id": system_id},
             )

@@ -58,11 +58,23 @@ class EmptyDraftCreationTests(unittest.IsolatedAsyncioTestCase):
             "updated_at": self.now,
         }
 
-    def _make_draft_row(self, system_id, rules_json, revision=1):
+    def _make_mechanic_row(self, system_id, mechanic_json, revision=1):
         return {
             "id": uuid4(),
             "system_id": system_id,
-            "rules_json": rules_json,
+            "mechanic_json": mechanic_json,
+            "mechanic_overrides_json": None,
+            "engine_version_id": None,
+            "revision": revision,
+            "created_at": self.now,
+            "updated_at": self.now,
+        }
+
+    def _make_text_row(self, system_id, revision=1):
+        return {
+            "id": uuid4(),
+            "system_id": system_id,
+            "text_json": {"schema_version": 1, "chapters": {}},
             "revision": revision,
             "created_at": self.now,
             "updated_at": self.now,
@@ -97,21 +109,23 @@ class EmptyDraftCreationTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_create_with_empty_draft(self):
         system = self._make_system_row()
-        draft = self._make_draft_row(
+        mechanic = self._make_mechanic_row(
             system["id"],
             {
-                "schema_version": 4,
+                "schema_version": 1,
                 "calculations": {"attributes": {}, "derived": {}},
                 "initial_attributes": {},
                 "resources": {},
             },
             revision=1,
         )
+        text = self._make_text_row(system["id"], revision=1)
 
         session = make_session([
             unique_check_result(),  # check unique
-            row_result(system),  # insert systems -> returning
-            row_result(draft),   # insert drafts -> returning
+            row_result(system),     # insert systems -> returning
+            row_result(mechanic),   # insert mechanic draft -> returning
+            row_result(text),       # insert text draft -> returning
         ])
         session.execute.return_value.scalar_one_or_none.return_value = None
 
@@ -136,10 +150,10 @@ class EmptyDraftCreationTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_create_with_full_profile(self):
         system = self._make_system_row(is_active=True)
-        draft = self._make_draft_row(
+        mechanic = self._make_mechanic_row(
             system["id"],
             {
-                "schema_version": 4,
+                "schema_version": 1,
                 "calculations": {
                     "attributes": {
                         "level": {
@@ -155,11 +169,13 @@ class EmptyDraftCreationTests(unittest.IsolatedAsyncioTestCase):
             },
             revision=1,
         )
+        text = self._make_text_row(system["id"], revision=1)
 
         session = make_session([
             unique_check_result(),  # check unique
-            row_result(system),
-            row_result(draft),
+            row_result(system),     # insert systems -> returning
+            row_result(mechanic),   # insert mechanic draft -> returning
+            row_result(text),       # insert text draft -> returning
         ])
 
         result = await service.create_system_with_draft(session, GameSystemEditorCreate(

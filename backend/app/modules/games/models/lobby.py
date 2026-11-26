@@ -37,8 +37,8 @@ class Game(Base):
 		ForeignKeyConstraint(
 			["system_id", "rules_version_id"],
 			[
-				"game_system_rules_versions.system_id",
-				"game_system_rules_versions.id",
+				"game_system_mechanic_versions.system_id",
+				"game_system_mechanic_versions.id",
 			],
 			name="fk_games_rules_version_same_system",
 			ondelete="RESTRICT",
@@ -122,8 +122,8 @@ class Game(Base):
 		"GameSystem",
 		foreign_keys=[system_id],
 	)
-	rules_version: Mapped["GameSystemRulesVersion | None"] = relationship(
-		"GameSystemRulesVersion",
+	rules_version: Mapped["GameSystemMechanicVersion | None"] = relationship(
+		"GameSystemMechanicVersion",
 		foreign_keys=[rules_version_id],
 		lazy="raise",
 	)

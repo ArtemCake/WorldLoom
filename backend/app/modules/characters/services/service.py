@@ -20,7 +20,9 @@ from backend.app.modules.characters.errors import (CharacterAccessDenied, Charac
 from backend.app.modules.characters.models import (Character, CharacterSheet)
 from backend.app.modules.characters.schemas.schemas import (CharacterCreate, CharacterDelete, CharacterListQuery, CharacterListRead, CharacterMetadataUpdate, CharacterRead,
 	CharacterSheetCreate, CharacterSheetRead, CharacterStateRead, CharacterStateUpdate, CharacterSummary)
-from backend.app.modules.game_systems.models.game_systems import (GameSystemRulesVersion, GameSystem)
+from backend.app.modules.game_systems.models.game_systems import GameSystem
+from backend.app.modules.game_systems.models.system_versions import GameSystemMechanicVersion
+from backend.app.modules.game_systems.rules.mechanic_codec import mechanic_to_profile
 from backend.app.modules.game_systems.rules.rules_engine import (apply_sheet_changes, create_sheet_state, evaluate_sheet_state, validate_rules_profile)
 from backend.app.modules.game_systems.schemas.game_rules import (RulesProfile, SheetState)
 from backend.app.modules.game_systems.schemas.rules.rule_calculations import (AttributePreviewResult)
@@ -149,8 +151,8 @@ async def _get_sheet(session: AsyncSession, sheet_id: UUID, user_id: UUID, *, fo
 
 	if sheet.state_rules_version_id is not None:
 		publication_system_id = await session.scalar(
-			select(GameSystemRulesVersion.system_id).where(
-				GameSystemRulesVersion.id
+			select(GameSystemMechanicVersion.system_id).where(
+				GameSystemMechanicVersion.id
 				== sheet.state_rules_version_id
 			)
 		)
@@ -179,8 +181,8 @@ async def _load_state(session: AsyncSession, owner: StateOwner) -> tuple[RulesPr
 
 	version = (
 		await session.execute(
-			select(GameSystemRulesVersion)
-			.where(GameSystemRulesVersion.id == version_id)
+			select(GameSystemMechanicVersion)
+			.where(GameSystemMechanicVersion.id == version_id)
 			.options(lazyload("*"))
 			.execution_options(populate_existing=True)
 			.with_for_update(read=True)
@@ -193,7 +195,7 @@ async def _load_state(session: AsyncSession, owner: StateOwner) -> tuple[RulesPr
 		)
 
 	try:
-		profile = RulesProfile.model_validate(version.rules_json)
+		profile = RulesProfile.model_validate(mechanic_to_profile(version.mechanic_json))
 		state = SheetState.model_validate(raw_state)
 		result = evaluate_sheet_state(profile, state)
 	except ValueError as exc:
@@ -324,8 +326,8 @@ async def create_character(session: AsyncSession, user_id: UUID, data: Character
 	# Определяем систему выбранной публикации.
 	# Затем блокируем систему и саму публикацию до конца транзакции.
 	system_id = await session.scalar(
-		select(GameSystemRulesVersion.system_id).where(
-			GameSystemRulesVersion.id == data.rules_version_id
+		select(GameSystemMechanicVersion.system_id).where(
+			GameSystemMechanicVersion.id == data.rules_version_id
 		)
 	)
 
@@ -350,10 +352,10 @@ async def create_character(session: AsyncSession, user_id: UUID, data: Character
 
 	version = (
 		await session.execute(
-			select(GameSystemRulesVersion)
+			select(GameSystemMechanicVersion)
 			.where(
-				GameSystemRulesVersion.id == data.rules_version_id,
-				GameSystemRulesVersion.system_id == system_id,
+				GameSystemMechanicVersion.id == data.rules_version_id,
+				GameSystemMechanicVersion.system_id == system_id,
 				)
 			.options(lazyload("*"))
 			.execution_options(populate_existing=True)
@@ -365,7 +367,7 @@ async def create_character(session: AsyncSession, user_id: UUID, data: Character
 		raise CharacterNotFound("Публикация правил не найдена")
 
 	try:
-		profile = RulesProfile.model_validate(version.rules_json)
+		profile = RulesProfile.model_validate(mechanic_to_profile(version.mechanic_json))
 		profile = validate_rules_profile(profile)
 	except ValueError as exc:
 		raise CharacterStateStorageError(
@@ -495,8 +497,8 @@ async def create_character_sheet(session: AsyncSession, user_id: UUID, data: Cha
 	)
 
 	publication_system_id = await session.scalar(
-		select(GameSystemRulesVersion.system_id).where(
-			GameSystemRulesVersion.id
+		select(GameSystemMechanicVersion.system_id).where(
+			GameSystemMechanicVersion.id
 			== character.state_rules_version_id
 		)
 	)

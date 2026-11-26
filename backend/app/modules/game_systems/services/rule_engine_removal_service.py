@@ -44,13 +44,13 @@ _SNAPSHOT_SQL = text("""
     ),
     origin_systems AS (
         SELECT d.system_id
-        FROM game_system_rules_drafts AS d
+        FROM game_system_mechanic_drafts AS d
         JOIN engine_versions AS v ON v.id = d.engine_version_id
 
         UNION
 
         SELECT r.system_id
-        FROM game_system_rules_versions AS r
+        FROM game_system_mechanic_versions AS r
         JOIN engine_versions AS v ON v.id = r.engine_version_id
     ),
     linked_systems AS (
@@ -94,14 +94,14 @@ _SNAPSHOT_SQL = text("""
         'system_drafts',
         COALESCE((
             SELECT jsonb_agg(to_jsonb(d) ORDER BY d.id)
-            FROM game_system_rules_drafts AS d
+            FROM game_system_mechanic_drafts AS d
             JOIN linked_systems AS s ON s.id = d.system_id
         ), '[]'::jsonb),
 
         'system_versions',
         COALESCE((
             SELECT jsonb_agg(to_jsonb(v) ORDER BY v.id)
-            FROM game_system_rules_versions AS v
+            FROM game_system_mechanic_versions AS v
             JOIN linked_systems AS s ON s.id = v.system_id
         ), '[]'::jsonb),
 

@@ -1,26 +1,24 @@
 // frontend/src/js/features/game-systems/book/book-section-editor.js
 
+// Редактор одной главы механики. Глава — это технический тип параметра:
+// attributes, derived, modifiers или resources. Текстовые главы книги
+// этим модулем не обслуживаются.
+
 import {mountBookAttributes} from './book-attributes.js';
 import {mountBookDefinitions} from './book-definitions.js';
-import {isBookModifierCode} from './book-definition-data.js';
-import {bookParameterId, bookParameterLabel, bookRuleSectionTitle} from './book-sections.js';
-import {findBookSectionEntry, getBookSectionEntries} from './book-sections.js';
+import {bookParameterLabel, findBookKindEntry, getBookKindEntries, isBookMechanicChapter} from './book-sections.js';
 import {elementIn} from '../../../shared/dom/elements.js';
-
-const creationTypes = [
-    ['attributes', 'Исходное значение'],
-    ['derived', 'Вычисляемый показатель'],
-    ['modifiers', 'Вычисляемый модификатор'],
-    ['resources', 'Ресурс']
-];
 
 export function mountBookSection(host, options) {
     const {state, chapter, navigationHost = null, initialCode = null} = options;
+
+    if (!isBookMechanicChapter(chapter) || chapter === 'basis') {
+        throw new Error('Редактор параметров открывается только для главы механики.');
+    }
+
     const ownerDocument = host.ownerDocument;
-    const defaultSection = bookRuleSectionTitle(chapter);
 
     let selected = initialCode;
-    let creationType = 'attributes';
     let child = null;
     let generation = 0;
     let destroyed = false;
@@ -28,23 +26,13 @@ export function mountBookSection(host, options) {
     const navigation = elementIn(ownerDocument, 'div', '', 'rules-book__element-picker');
     const pickerLabel = elementIn(ownerDocument, 'label', '', 'rules-book__field');
     const picker = elementIn(ownerDocument, 'select');
-    const typeLabel = elementIn(ownerDocument, 'label', '', 'rules-book__field');
-    const type = elementIn(ownerDocument, 'select');
     const add = elementIn(ownerDocument, 'button', 'Добавить параметр', 'btn btn-outline-primary');
     const editorHost = elementIn(ownerDocument, 'div');
 
     add.type = 'button';
-    pickerLabel.append(elementIn(ownerDocument, 'span', 'Параметр раздела'), picker);
-    typeLabel.append(elementIn(ownerDocument, 'span', 'Тип нового параметра'), type);
+    pickerLabel.append(elementIn(ownerDocument, 'span', 'Параметр'), picker);
 
-    for (const [value, title] of creationTypes) {
-        const option = elementIn(ownerDocument, 'option', title);
-
-        option.value = value;
-        type.append(option);
-    }
-
-    navigation.append(pickerLabel, typeLabel, add);
+    navigation.append(pickerLabel, add);
     host.replaceChildren(editorHost);
 
     if (navigationHost) {
@@ -54,17 +42,11 @@ export function mountBookSection(host, options) {
     }
 
     function entries() {
-        return getBookSectionEntries(state.read().document.rules, chapter);
+        return getBookKindEntries(state.read().document.rules, chapter);
     }
 
     function selectedEntry() {
-        return findBookSectionEntry(state.read().document.rules, chapter, selected);
-    }
-
-    function technicalChapter(entry) {
-        if (entry.kind !== 'derived') return entry.kind;
-
-        return isBookModifierCode(entry.code) ? 'modifiers' : 'derived';
+        return findBookKindEntry(state.read().document.rules, chapter, selected);
     }
 
     function canDiscard() {
@@ -91,8 +73,6 @@ export function mountBookSection(host, options) {
         }
 
         picker.value = selected ?? '';
-        type.value = creationType;
-        type.disabled = !writable || !snapshot.document.rules;
         add.disabled = !writable || !snapshot.document.rules;
     }
 
@@ -111,18 +91,16 @@ export function mountBookSection(host, options) {
         const entry = selectedEntry();
 
         if (selected !== null && !entry) selected = null;
-        if (entry) creationType = technicalChapter(entry);
 
-        const childChapter = entry ? technicalChapter(entry) : creationType;
         const hiddenNavigation = elementIn(ownerDocument, 'div');
-        const mountEditor = childChapter === 'attributes' ? mountBookAttributes : mountBookDefinitions;
+        const mountEditor = chapter === 'attributes' ? mountBookAttributes : mountBookDefinitions;
 
         const childOptions = {
             state,
-            chapter: childChapter,
+            chapter,
             initialCode: entry?.code ?? null,
             navigationHost: hiddenNavigation,
-            defaultSection,
+            defaultSection: options.defaultSection ?? '',
 
             onTitleChange(title) {
                 if (destroyed || generation !== currentGeneration) return;
@@ -133,18 +111,17 @@ export function mountBookSection(host, options) {
             onSelectionChange(code) {
                 if (destroyed || generation !== currentGeneration) return;
 
-                const kind = childChapter === 'modifiers' ? 'derived' : childChapter;
-                const candidate = code === null ? null : bookParameterId(kind, code);
                 const rules = state.read().document.rules;
-                const current = findBookSectionEntry(rules, chapter, candidate);
+                const candidate = code === null ? null : `${chapter}:${code}`;
+                const current = findBookKindEntry(rules, chapter, candidate);
 
                 selected = current?.id ?? null;
 
                 syncNavigation();
                 notifySelection();
 
-                // После переноса параметра в другой раздел открываем новую форму
-                // только после завершения render() внутреннего редактора.
+                // После переноса параметра в другую главу текста открываем
+                // новую форму только после завершения render() внутреннего редактора.
                 if (candidate !== null && current === null) {
                     queueMicrotask(() => {
                         if (destroyed || generation !== currentGeneration) return;
@@ -171,8 +148,8 @@ export function mountBookSection(host, options) {
 
         const rules = state.read().document.rules;
 
-        if (id !== null && !findBookSectionEntry(rules, chapter, id)) {
-            throw new Error('Параметр отсутствует в выбранном разделе.');
+        if (id !== null && !findBookKindEntry(rules, chapter, id)) {
+            throw new Error('Параметр отсутствует в выбранной главе.');
         }
 
         if (!canDiscard()) return false;
@@ -185,20 +162,6 @@ export function mountBookSection(host, options) {
 
     picker.addEventListener('change', () => {
         if (!open(picker.value || null)) picker.value = selected ?? '';
-    });
-
-    type.addEventListener('change', () => {
-        const previous = creationType;
-
-        if (!canDiscard()) {
-            type.value = previous;
-            return;
-        }
-
-        creationType = type.value;
-        selected = null;
-        mountSelected();
-        options.onCreate?.();
     });
 
     add.addEventListener('click', () => {

@@ -1,20 +1,42 @@
 // frontend/src/js/features/game-systems/book/book-state.js
 
-import {BOOK_RULE_SECTIONS} from './book-sections.js';
+import {BOOK_DESIGN_CHAPTERS} from './book-design-catalog.js';
+import {BOOK_MECHANIC_CHAPTERS} from './book-sections.js';
 
-const chapters = [
-    {code: 'main', title: 'Об игровой системе'},
-    {code: 'basis', title: 'Основа правил'},
-    ...BOOK_RULE_SECTIONS,
-    {code: 'preview', title: 'Проверка правил'},
-    {code: 'publications', title: 'Публикации'},
-    {code: 'access', title: 'Доступ и управление'}
-];
+export {BOOK_MECHANIC_CHAPTERS};
 
-export const BOOK_CHAPTERS = Object.freeze(chapters.map((chapter) => Object.freeze(chapter)));
+// Главы текста — rulebook: описание мира, концепция, процедуры.
+export const BOOK_TEXT_CHAPTERS = Object.freeze([
+    Object.freeze({code: 'main', title: 'Об игровой системе'}),
+    ...BOOK_DESIGN_CHAPTERS.map((chapter) => Object.freeze({code: chapter.code, title: chapter.title})),
+    Object.freeze({code: 'preview', title: 'Проверка правил'}),
+    Object.freeze({code: 'publications', title: 'Публикации'}),
+    Object.freeze({code: 'access', title: 'Доступ и управление'})
+]);
+
+// Главы механики — технические типы параметров.
+export const BOOK_CHAPTERS = Object.freeze([
+    ...BOOK_TEXT_CHAPTERS,
+    ...BOOK_MECHANIC_CHAPTERS
+]);
+
+// Коды всех глав — объединение текста и механики.
+const CHAPTER_CODES = new Set(BOOK_CHAPTERS.map((chapter) => chapter.code));
+
+// Поверхности навигации редактора.
+export const BOOK_SURFACES = Object.freeze([
+    Object.freeze({code: 'text', title: 'Текст книги'}),
+    Object.freeze({code: 'mechanic', title: 'Механика'})
+]);
+
+const MECHANIC_CHAPTER_CODES = new Set(BOOK_MECHANIC_CHAPTERS.map((chapter) => chapter.code));
+
+function surfaceForChapter(code) {
+    return MECHANIC_CHAPTER_CODES.has(code) ? 'mechanic' : 'text';
+}
 
 const MODES = new Set(['create', 'edit', 'view']);
-const CHAPTER_CODES = new Set(BOOK_CHAPTERS.map((chapter) => chapter.code));
+const SURFACES = new Set(BOOK_SURFACES.map((surface) => surface.code));
 
 function record(value) {
 	if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -132,6 +154,7 @@ export function createRulesBookState(options) {
 	let currentRevision = revision;
 	let publishedRevision = null;
 	let chapter = 'main';
+	let surface = 'text';
 	let sample = {};
 	let preview = null;
 	let pendingPreview = null;
@@ -206,6 +229,7 @@ export function createRulesBookState(options) {
 				mode: currentMode,
 				revision: currentRevision,
 				chapter,
+				surface,
 				sample: copyJson(sample),
 				preview: copyJson(preview),
 				previewPending: pendingPreview !== null,
@@ -222,6 +246,21 @@ export function createRulesBookState(options) {
 			}
 
 			chapter = code;
+			surface = surfaceForChapter(code);
+		},
+
+		selectSurface(code) {
+			if (!SURFACES.has(code)) {
+				throw new Error('Неизвестный раздел редактора.');
+			}
+
+			surface = code;
+
+			if (surfaceForChapter(chapter) !== code) {
+				const first = code === 'mechanic' ? BOOK_MECHANIC_CHAPTERS[0] : BOOK_TEXT_CHAPTERS[0];
+
+				chapter = first.code;
+			}
 		},
 
 		update(change) {

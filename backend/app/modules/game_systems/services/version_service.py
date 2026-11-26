@@ -328,7 +328,7 @@ async def publish_system_version(
     await session.execute(
         update(_SYSTEMS)
         .where(_SYSTEMS.c.id == system_id)
-        .values(current_version_id=response["id"])
+        .values(current_version_id=response.id)
     )
 
     return response

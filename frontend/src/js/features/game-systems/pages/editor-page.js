@@ -393,7 +393,7 @@ function mountBookPage(root) {
             }
 
             // Шаг 2: сохранить раздельные черновики механики и текста.
-            revisions = await session.save(snapshot.document, revisions);
+            revisions = await session.save(snapshot.document.rules, revisions);
 
             const savedDocument = {
                 system: savedCard,

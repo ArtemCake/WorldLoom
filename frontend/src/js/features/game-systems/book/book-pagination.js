@@ -1,34 +1,27 @@
 // frontend/src/js/features/game-systems/book/book-pagination.js
 
-import {BOOK_CHAPTERS} from './book-state.js';
-import {isBookModifierCode} from './book-definition-data.js';
-import {groupedRuleEntries} from '../editor/shared/rule-sections.js';
-import {getBookSectionEntries, isBookRuleSection} from './book-sections.js';
+import {BOOK_TEXT_CHAPTERS, BOOK_MECHANIC_CHAPTERS} from './book-state.js';
+import {isBookMechanicChapter, getBookKindEntries} from './book-sections.js';
 
+// Список элементов главы.
+// Текстовые главы элементов не имеют: их содержание — поля rulebook.
+// Главы механики перечисляют параметры технического типа.
 export function getBookChapterItems(document, chapter) {
     const rules = document.rules;
 
     if (!rules) return [];
 
-    if (isBookRuleSection(chapter)) {
-        return getBookSectionEntries(rules, chapter).map((entry) => entry.id);
+    if (isBookMechanicChapter(chapter)) {
+        return getBookKindEntries(rules, chapter).map((entry) => entry.id);
     }
 
-    // Технические коллекции используются внутренними редакторами.
-    // В оглавление они больше не включаются.
-    if (chapter === 'modifiers' || chapter === 'derived') {
-        const modifiers = chapter === 'modifiers';
+    return [];
+}
 
-        return Object.keys(rules.calculations?.derived ?? {})
-            .filter((code) => isBookModifierCode(code) === modifiers);
-    }
-
-    const collections = {
-        attributes: rules.calculations?.attributes,
-        resources: rules.resources
-    };
-
-    return Object.keys(collections[chapter] ?? {});
+// Порядок глав зависит от раздела редактора: перелистывание не переносит
+// читателя из текста в механику и обратно.
+function chapterOrder(chapter) {
+    return isBookMechanicChapter(chapter) ? BOOK_MECHANIC_CHAPTERS : BOOK_TEXT_CHAPTERS;
 }
 
 export function getBookTurn(document, chapter, selectedCode, direction) {
@@ -36,7 +29,8 @@ export function getBookTurn(document, chapter, selectedCode, direction) {
 		throw new Error('Направление перелистывания должно быть -1 или 1.');
 	}
 
-	const chapterIndex = BOOK_CHAPTERS.findIndex((item) => item.code === chapter);
+	const order = chapterOrder(chapter);
+	const chapterIndex = order.findIndex((item) => item.code === chapter);
 
 	if (chapterIndex < 0) {
 		throw new Error('Неизвестная страница книги.');
@@ -63,7 +57,7 @@ export function getBookTurn(document, chapter, selectedCode, direction) {
 		return {chapter, itemCode: items[items.length - 1]};
 	}
 
-	const adjacent = BOOK_CHAPTERS[chapterIndex + direction];
+	const adjacent = order[chapterIndex + direction];
 
 	if (!adjacent) return null;
 

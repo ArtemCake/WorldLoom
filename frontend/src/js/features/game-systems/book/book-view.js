@@ -236,7 +236,8 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 
 	const title = bookPart(layout, 'title');
 	const status = bookPart(layout, 'status');
-	const navigation = bookPart(layout, 'navigation');
+	const cabinetHost = bookPart(layout, 'cabinet');
+	const cabinetBack = bookPart(layout, 'cabinet-back');
 
 	const leftTitle = bookPart(layout, 'left-title');
 	const settings = bookPart(layout, 'settings');
@@ -691,23 +692,6 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 
 		position.textContent = `Страница ${chapterIndex + 1} из ${order.length}${detail}`;
 	}
-    function revealChapterTab(tab) {
-        const container = chaptersBar.getBoundingClientRect();
-        const target = tab.getBoundingClientRect();
-
-        if (target.top < container.top) {
-            chaptersBar.scrollTop -= container.top - target.top;
-        } else if (target.bottom > container.bottom) {
-            chaptersBar.scrollTop += target.bottom - container.bottom;
-        }
-
-        if (target.left < container.left) {
-            chaptersBar.scrollLeft -= container.left - target.left;
-        } else if (target.right > container.right) {
-            chaptersBar.scrollLeft += target.right - container.right;
-        }
-    }
-
 	function openChapter(code, focus = true, itemCode = undefined) {
 		report(() => {
 			if (itemEditor?.isDirty()) {
@@ -844,17 +828,11 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
             renderSurfaces();
             renderChapters();
 
-            for (const tab of surfacesBar.querySelectorAll('button')) {
-                tab.setAttribute('aria-selected', String(tab.dataset.surface === state.read().surface));
-            }
+            const activeBook = cabinet.querySelector(`.rules-book__book[data-chapter="${code}"]`);
 
-            for (const tab of chaptersBar.querySelectorAll('button')) {
-                if (tab.dataset.chapter === code) {
-                    tab.setAttribute('aria-selected', 'true');
-                    revealChapterTab(tab);
-                } else {
-                    tab.setAttribute('aria-selected', 'false');
-                }
+            if (activeBook) {
+                activeBook.setAttribute('aria-selected', 'true');
+                activeBook.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'center'});
             }
 
 			renderReading();
@@ -865,68 +843,206 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 		});
 	}
 
-    const surfacesBar = element('div', '', 'rules-book__surfaces');
-    const chaptersBar = element('div', '', 'rules-book__tabs-list');
+	/* ═══════════════════════════════════════════════════════════
+	 *  Шкаф игровой системы: две полки, книги-корешки.
+	 *  Клик по книге → она открывается.
+	 * ═══════════════════════════════════════════════════════════ */
 
-    surfacesBar.setAttribute('role', 'tablist');
-    surfacesBar.setAttribute('aria-label', 'Разделы редактора');
-    chaptersBar.setAttribute('role', 'tablist');
-    chaptersBar.setAttribute('aria-label', 'Главы книги правил');
+	function showScreen(name) {
+		book.dataset.screen = name;
+		if (name === 'cabinet') renderCabinet();
+	}
 
-    navigation.replaceChildren(surfacesBar, chaptersBar);
+	function renderCabinet() {
+		cabinetHost.replaceChildren();
 
-    function renderSurfaces() {
-        const surface = state.read().surface;
+		const shelfList = element('div', '', 'book-shelf');
 
-        surfacesBar.replaceChildren();
+		for (const group of BOOK_SURFACES) {
+			const shelf = element('section', '', 'book-shelf__shelf');
+			shelf.dataset.surface = group.code;
+			shelf.setAttribute('aria-label', group.title);
 
-        for (const group of BOOK_SURFACES) {
-            const tab = button(group.title);
+			const title = element('h2', group.title, 'rules-book__shelf-title');
+			title.setAttribute('id', `rules-book-shelf-${group.code}`);
 
-            tab.type = 'button';
-            tab.className = 'rules-book__surface';
-            tab.dataset.surface = group.code;
-            tab.setAttribute('role', 'tab');
-            tab.setAttribute('aria-selected', String(group.code === surface));
+			const row = element('div', '', 'book-shelf__row');
+			row.setAttribute('role', 'tablist');
+			row.setAttribute('aria-label', `${group.title}: главы`);
+			row.setAttribute('aria-labelledby', title.id);
 
-            tab.addEventListener('click', () => {
-                if (state.read().surface === group.code) return;
+			group.chapters.forEach((chapter, index) => {
+				const book = element('article', '', 'book-shelf__book');
+				book.dataset.chapter = chapter.code;
+				book.dataset.tone = String(index % 6);
+				book.style.setProperty('--spine-width', '3rem');
+				book.style.setProperty('--spine-height', `${12 + (index % 3) * 0.6}rem`);
 
-                if (itemEditor?.isDirty()) {
-                    const discard = window.confirm('Перейти в другой раздел без применения правок элемента?');
+				const spine = element('button', '', 'book-shelf__spine');
+				spine.type = 'button';
+				spine.title = chapter.title;
+				spine.setAttribute('role', 'tab');
+				spine.append(element('span', chapter.title, 'book-shelf__title'));
+				spine.addEventListener('click', () => {
+					openChapter(chapter.code);
+				}, {signal});
 
-                    if (!discard) return;
+				book.append(spine, element('span', '', 'book-shelf__mark'));
+				row.append(book);
+			});
+
+			shelf.append(title, row);
+			shelfList.append(shelf);
+		}
+
+		cabinetHost.append(shelfList);
+		highlightCurrentBook();
+	}
+
+	function highlightCurrentBook() {
+		const snapshot = state.read();
+		const code = snapshot.chapter;
+		const surface = snapshot.surface;
+
+		for (const book of cabinetHost.querySelectorAll('.book-shelf__book')) {
+			const chapter = BOOK_CHAPTERS.find((item) => item.code === book.dataset.chapter);
+			const bookSurface = chapter && BOOK_MECHANIC_CHAPTERS.some((item) => item.code === chapter.code) ? 'mechanic' : 'text';
+			const active = book.dataset.chapter === code;
+
+			book.toggleAttribute('aria-current', active);
+			book.dataset.inactive = String(!active && bookSurface !== surface);
+			book.querySelector('.book-shelf__spine')?.setAttribute('aria-selected', String(active));
+		}
+	}
+
+	function openChapter(code, focus = true, itemCode = undefined) {
+		report(() => {
+			if (itemEditor?.isDirty()) {
+				const discard = window.confirm('Перейти на другую страницу без применения правок элемента?');
+
+				if (!discard) return;
+			}
+
+			destroyBasisEditors();
+			itemEditor?.destroy?.();
+			itemEditor = null;
+			previewEditor?.destroy();
+			previewEditor = null;
+			state.selectChapter(code);
+
+			const snapshot = state.read();
+			const items = getBookChapterItems(snapshot.document, code);
+			const selectedCode = itemCode === undefined ? items[0] ?? null : itemCode;
+			const chapter = BOOK_CHAPTERS.find((item) => item.code === code);
+
+			selectedItems.set(code, selectedCode);
+
+			leftTitle.textContent = chapter.title;
+			parametersTitle.textContent = chapter.title;
+			rightTitle.textContent = chapter.title;
+			settings.replaceChildren();
+			settingsNavigation.replaceChildren();
+
+
+			if (code === 'preview') {
+				previewEditor = mountBookPreview(settings, {
+					state,
+					request,
+					onChange: () => renderReading()
+				});
+			} else if (code === 'publications') {
+				paragraph(settings, 'История опубликованных правил показана справа.');
+				paragraph(
+					settings,
+					'Новая версия создаётся кнопкой публикации над книгой после сохранения черновика.',
+					'rules-book__muted'
+				);
+			} else if (snapshot.mode === 'view') {
+				paragraph(settings, 'Книга открыта для чтения. Изменение данных отключено.');
+
+                if (items.length && isBookMechanicChapter(code)) {
+                    const picker = element('select');
+                    const label = element('label', '', 'rules-book__field');
+                    const entries = getBookKindEntries(snapshot.document.rules, code);
+
+                    label.append(element('span', 'Параметр раздела'));
+
+                    for (const entry of entries) {
+                        const option = element('option', bookParameterLabel(entry));
+
+                        option.value = entry.id;
+                        picker.append(option);
+                    }
+
+                    picker.value = selectedCode ?? '';
+
+                    picker.addEventListener('change', () => {
+                        selectedItems.set(code, picker.value);
+                        renderReading();
+                        refreshPagination();
+                    }, {signal});
+
+                    label.append(picker);
+                    settingsNavigation.append(label);
                 }
 
-                state.selectSurface(group.code);
-                openChapter(state.read().chapter, true);
-            }, {signal});
+				if (snapshot.document.rules) {
+					readAttributes(settings, snapshot.document.rules, selectedCode);
+				}
+			} else if (code === 'main') {
+				readAttributes(settings, snapshot.document.rules, null);
+			} else if (code === 'basis') {
+				mountBookSystemCopy(settings, {state, request, systemId});
+			} else if (code === 'design') {
+				paragraph(settings, 'Дизайн книги подключим следующим этапом.');
+			} else if (code === 'access') {
+				mountBookPublications(settings, {state, request, systemId, manager});
+			} else if (snapshot.mode === 'edit') {
+				const editorOptions = {
+					state,
+					request,
+					systemId,
+					section: code,
+					allowed: manager,
+					onChange() {
+						touched = true;
+						refreshStatus();
+						renderReading();
+					}
+				};
 
-            surfacesBar.append(tab);
-        }
-    }
+                if (isBookMechanicChapter(code) && code !== 'basis') {
+                    itemEditor = mountBookSection(settings, editorOptions);
+				} else {
+					paragraph(settings, 'Редактирование этой главы подключим следующим этапом.');
+				}
 
-    function renderChapters() {
-        const surface = state.read().surface;
-        const groups = surface === 'mechanic' ? BOOK_MECHANIC_CHAPTERS : BOOK_TEXT_CHAPTERS;
+                if (snapshot.document.rules && findDesignChapter(code)) {
+                    const designHost = element('div');
 
-        chaptersBar.replaceChildren();
+                    settings.prepend(designHost);
 
-        for (const chapter of groups) {
-            const tab = button(chapter.title);
+                    mountBookDesign(designHost, {
+                        state,
+                        chapter: code,
 
-            tab.type = 'button';
-            tab.className = 'rules-book__tab';
-            tab.dataset.chapter = chapter.code;
-            tab.setAttribute('role', 'tab');
+                        onChange() {
+                            touched = true;
+                            refreshStatus();
+                            renderReading();
+                        }
+                    });
+                }
+			}
 
-            tab.addEventListener('click', () => openChapter(chapter.code), {signal});
-            chaptersBar.append(tab);
-        }
-    }
+			highlightCurrentBook();
+			refreshPagination();
 
-    renderSurfaces();
-    renderChapters();
+			showScreen('book');
+
+			if (focus) leftTitle.focus({preventScroll: true});
+		});
+	}
 
 	function pageIdentity() {
 		const chapter = state.read().chapter;
@@ -980,6 +1096,7 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 
 	previous.addEventListener('click', () => turnPage(-1), {signal});
 	next.addEventListener('click', () => turnPage(1), {signal});
+	cabinetBack.addEventListener('click', () => showScreen('cabinet'), {signal});
 
 	function hasChanges() {
 		const snapshot = state.read();
@@ -1032,6 +1149,7 @@ export function mountRulesBook(host, {state, request, systemId = null, manager =
 
 	observer.observe(document.documentElement, {childList: true, subtree: true});
 	openChapter(state.read().chapter, false);
+	showScreen('cabinet');
 
 	return {
 		destroy,

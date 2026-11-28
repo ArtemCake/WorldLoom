@@ -23,10 +23,11 @@ export const BOOK_CHAPTERS = Object.freeze([
 // Коды всех глав — объединение текста и механики.
 const CHAPTER_CODES = new Set(BOOK_CHAPTERS.map((chapter) => chapter.code));
 
-// Поверхности навигации редактора.
+// Стеллажи шкафа игровой системы: текстовые правила и игровые механики.
+// Каждый стеллаж несёт свои главы — навигация показывает их одновременно.
 export const BOOK_SURFACES = Object.freeze([
-    Object.freeze({code: 'text', title: 'Текст книги'}),
-    Object.freeze({code: 'mechanic', title: 'Механика'})
+    Object.freeze({code: 'text', title: 'Текстовые правила', chapters: BOOK_TEXT_CHAPTERS}),
+    Object.freeze({code: 'mechanic', title: 'Игровые механики', chapters: BOOK_MECHANIC_CHAPTERS})
 ]);
 
 const MECHANIC_CHAPTER_CODES = new Set(BOOK_MECHANIC_CHAPTERS.map((chapter) => chapter.code));

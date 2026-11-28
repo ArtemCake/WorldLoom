@@ -184,60 +184,85 @@
         );
     }
 
-    &__tabs {
+    /* ═══════════════════════════════════════════════════════════
+     *  Шкаф игровой системы: две полки, книги-корешки.
+     *  Клик по книге → она открывается.
+     * ═══════════════════════════════════════════════════════════ */
+
+    /* Шкаф (контейнер) */
+    &__cabinet {
         display: flex;
         flex-direction: column;
-        align-items: stretch;
-        justify-content: flex-start;
-        gap: 0;
+        gap: 1.5rem;
         width: 100%;
-        min-width: 0;
         height: 100%;
-        min-height: 0;
-        max-height: 100%;
-        margin: 0;
-        padding: 0.75rem 0.5rem 0.75rem 0;
-        overflow: hidden;
-    }
-
-    &__surfaces {
-        display: flex;
-        flex-direction: row;
-        gap: 0.35rem;
-        width: 100%;
-        min-width: 0;
-        margin-bottom: 0.35rem;
-        padding-bottom: 0.35rem;
-        border-bottom: 1px solid var(--color-border-subtle);
-    }
-
-    &__surface {
-        flex: 1 1 auto;
-        display: block;
-        min-width: 0;
-        min-height: 2.25rem;
-        padding: 0.5rem 0.75rem;
-        color: var(--color-text-secondary);
-        background: var(--color-bg-panel-alt);
+        padding: 1.5rem 2rem;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-border-subtle) transparent;
+        background:
+            linear-gradient(
+                to right,
+                rgb(0 0 0 / 25%) 0,
+                rgb(0 0 0 / 5%) 1.5rem,
+                transparent 2.5rem,
+                rgb(0 0 0 / 5%) calc(100% - 1.5rem),
+                rgb(0 0 0 / 25%) 100%
+            ),
+            linear-gradient(
+                to bottom,
+                var(--color-bg-panel-alt),
+                rgb(0 0 0 / 15%) 100%
+            );
         border: 1px solid var(--color-border-subtle);
+        border-radius: 0.75rem;
+        box-shadow:
+            inset 0 0 0 1px rgb(255 255 255 / 3%),
+            0 0.5rem 2rem rgb(0 0 0 / 30%);
+    }
+
+    &__shelf-title {
+        margin: 0;
+        color: var(--color-text-secondary);
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+     *  Правила экранов
+     * ═══════════════════════════════════════════════════════════ */
+
+    /* Экран: шкаф */
+    &[data-screen="cabinet"] {
+        & .rules-book__spread { display: none; }
+        & .rules-book__footer > button { display: none; }
+    }
+
+    /* Экран: открытая книга */
+    &[data-screen="book"] {
+        & .rules-book__cabinet { display: none; }
+    }
+
+    /* Кнопка «К шкафу» */
+    &__cabinet-back {
+        display: none;
+        align-self: flex-end;
+        padding: 0.5rem 1rem;
+        color: var(--color-text-primary);
+        background: var(--color-bg-panel);
+        border: 1px solid var(--color-border-accent);
         border-radius: 0.3rem;
         font-size: 0.85rem;
         font-weight: 600;
-        text-align: center;
-        white-space: normal;
-        overflow-wrap: anywhere;
-        transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+        cursor: pointer;
+        transition: background-color 0.16s ease, border-color 0.16s ease;
 
-        &[aria-selected="true"] {
-            color: var(--color-text-primary);
-            background: var(--color-bg-panel);
-            border-color: var(--color-border-accent);
-            box-shadow: inset 0 0.25rem 0 var(--color-border-accent);
-        }
-
-        &:not([aria-selected="true"]):hover:not(:disabled) {
-            color: var(--color-text-primary);
-            border-color: var(--color-border-accent);
+        &:hover:not(:disabled) {
+            background: var(--color-bg-panel-alt);
+            border-color: var(--color-text-primary);
         }
 
         &:focus-visible {
@@ -246,60 +271,13 @@
         }
     }
 
-    &__tabs-list {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.35rem;
-        width: 100%;
-        min-width: 0;
-        overflow-x: hidden;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        scrollbar-width: thin;
-        scrollbar-gutter: stable;
-        scrollbar-color: var(--color-border-subtle) transparent;
-    }
-
-    &__tab {
-        position: relative;
-        flex: 0 0 auto;
+    &[data-screen="book"] .rules-book__cabinet-back {
         display: block;
-        width: 100%;
-        min-width: 0;
-        min-height: 2.5rem;
-        margin: 0;
-        padding: 0.6rem 0.75rem;
-        color: var(--color-text-secondary);
-        background: var(--color-bg-panel-alt);
-        border: 1px solid var(--color-border-subtle);
-        border-left: 0;
-        border-radius: 0 0.45rem 0.45rem 0;
-        box-shadow: inset 0.2rem 0 0 rgb(0 0 0 / 10%);
-        font-size: 0.9rem;
-        line-height: 1.35;
-        text-align: left;
-        white-space: normal;
-        overflow-wrap: anywhere;
-
-        &:hover:not(:disabled) {
-            color: var(--color-text-primary);
-            border-color: var(--color-border-accent);
-        }
-
-        &[aria-selected="true"] {
-            color: var(--color-text-primary);
-            background: var(--color-bg-panel);
-            border-color: var(--color-border-accent);
-            box-shadow: inset 0.25rem 0 0 var(--color-border-accent);
-            font-weight: 700;
-        }
-
-        &:focus-visible {
-            outline: 2px solid var(--color-border-accent);
-            outline-offset: -3px;
-        }
     }
+
+    /* ═══════════════════════════════════════════════════════════
+     *  Заголовки и текст внутри книги
+     * ═══════════════════════════════════════════════════════════ */
 
     /* ── Поля ввода внутри листов ───────────────────────── */
 
@@ -373,58 +351,13 @@
     /* ── Адаптив ────────────────────────────────────────── */
 
     @media (max-width: 1100px) {
-        &__workspace {
-            grid-template-columns: minmax(0, 1fr);
-            grid-template-rows: 7rem minmax(0, 1fr);
+        &__page {
+            padding: 1.5rem 1.75rem;
         }
 
-        &__tabs {
-            grid-column: 1;
-            grid-row: 1;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 0.4rem;
-            width: 100%;
-            height: 100%;
-            min-height: 0;
-            padding: 0.35rem 0 0.75rem;
-            overflow: hidden;
-        }
-
-        &__surfaces {
-            flex-direction: row;
-            width: 100%;
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: 0;
-        }
-
-        &__tabs-list {
-            flex-direction: row;
-            align-items: stretch;
-            gap: 0.4rem;
-            width: 100%;
-            min-height: 0;
-            overflow-x: auto;
-            overflow-y: hidden;
-            scrollbar-gutter: auto;
-        }
-
-        &__tab {
-            flex: 0 0 auto;
-            display: flex;
-            align-items: center;
-            width: auto;
-            max-width: 13rem;
-            min-height: 0;
-            padding: 0.5rem 0.75rem;
-            border-left: 1px solid var(--color-border-subtle);
-            border-radius: 0.35rem 0.35rem 0 0;
-        }
-
-        &__spread {
-            grid-column: 1;
-            grid-row: 2;
+        &__cabinet {
+            padding: 1.25rem 1.5rem;
+            gap: 1.25rem;
         }
     }
 

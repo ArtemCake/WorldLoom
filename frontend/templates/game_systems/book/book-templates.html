@@ -1,17 +1,22 @@
 <!-- frontend/templates/game_systems/book/book_templates.html -->
 
 <template data-book-template="shell">
-	<section class="rules-book" data-book-part="root" aria-label="Книга игровой системы">
+	<section class="rules-book" data-book-part="root" data-screen="cabinet" aria-label="Книга игровой системы">
 		<header class="rules-book__header">
-			<div>
-				<h1 data-book-part="title"></h1>
-				<p class="rules-book__muted" data-book-part="status"></p>
-			</div>
-		</header>
-		
-		<p class="rules-book__error" data-book-part="error" role="alert" hidden></p>
-		
-		<div class="rules-book__workspace">
+                        <div>
+                                <h1 data-book-part="title"></h1>
+                                <p class="rules-book__muted" data-book-part="status"></p>
+                        </div>
+                        <button class="rules-book__cabinet-back"
+                                data-book-part="cabinet-back"
+                                type="button">
+                                ← К шкафу
+                        </button>
+                </header>
+
+                <p class="rules-book__error" data-book-part="error" role="alert" hidden></p>
+
+                <div class="rules-book__workspace" data-book-part="workspace">
 			<div class="rules-book__spread">
 				<section class="rules-book__page rules-book__page--settings" aria-label="Настройки главы">
 					<p class="rules-book__eyebrow">Настройка</p>
@@ -48,8 +53,8 @@
 				</article>
 			</div>
 			
-			<nav class="rules-book__tabs" data-book-part="navigation" aria-label="Главы книги правил"></nav>
-		</div>
+			<div class="rules-book__cabinet" data-book-part="cabinet" aria-label="Шкаф игровой системы"></div>
+                </div>
 		
 		<footer class="rules-book__footer">
 			<span class="rules-book__muted" data-book-part="position" aria-live="polite"></span>

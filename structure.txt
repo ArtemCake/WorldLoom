@@ -119,7 +119,8 @@ WorldLoom/
 │   │   │   │   ├── models/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── game_systems.py
-│   │   │   │   │   └── rule_engines.py
+│   │   │   │   │   ├── rule_engines.py
+│   │   │   │   │   └── system_versions.py
 │   │   │   │   ├── routers/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── calculations.py
@@ -129,6 +130,7 @@ WorldLoom/
 │   │   │   │   │   ├── attribute_engine.py
 │   │   │   │   │   ├── effect_stacking.py
 │   │   │   │   │   ├── formula_engine.py
+│   │   │   │   │   ├── mechanic_codec.py
 │   │   │   │   │   ├── procedure_lifecycle.py
 │   │   │   │   │   ├── resource_engine.py
 │   │   │   │   │   ├── resource_policy.py
@@ -149,16 +151,20 @@ WorldLoom/
 │   │   │   │   │   ├── game_rules.py
 │   │   │   │   │   ├── game_system_editor.py
 │   │   │   │   │   ├── game_system_origin.py
+│   │   │   │   │   ├── game_system_versions.py
 │   │   │   │   │   └── system_book_set.py
 │   │   │   │   ├── services/
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── delete_service.py
 │   │   │   │   │   ├── editor_service.py
+│   │   │   │   │   ├── mechanic_service.py
 │   │   │   │   │   ├── rule_engine_lifecycle_service.py
 │   │   │   │   │   ├── rule_engine_removal_service.py
 │   │   │   │   │   ├── rule_engine_service.py
 │   │   │   │   │   ├── system_book_commands.py
-│   │   │   │   │   └── system_rule_origin.py
+│   │   │   │   │   ├── system_rule_origin.py
+│   │   │   │   │   ├── text_service.py
+│   │   │   │   │   └── version_service.py
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── api.py
 │   │   │   │   ├── errors.py
@@ -311,7 +317,7 @@ WorldLoom/
 │   │   └── migrate.py
 │   ├── db_migrations/
 │   │   ├── versions/
-│   │   │   └── 02aa427370e3_создание_базы_данных.py
+│   │   │   └── efacd4888d8b_create_bd.py
 │   │   ├── __init__.py
 │   │   ├── env.py
 │   │   ├── publication_protection.py
@@ -385,7 +391,11 @@ WorldLoom/
 │   │   │   │   │   └── password-toggle.js
 │   │   │   │   ├── game-systems/
 │   │   │   │   │   ├── api/
-│   │   │   │   │   │   └── game-system-api.js
+│   │   │   │   │   │   ├── game-system-api.js
+│   │   │   │   │   │   ├── mechanic-api.js
+│   │   │   │   │   │   ├── split-document.js
+│   │   │   │   │   │   ├── text-api.js
+│   │   │   │   │   │   └── version-api.js
 │   │   │   │   │   ├── book/
 │   │   │   │   │   │   ├── book-attributes.js
 │   │   │   │   │   │   ├── book-basis-changes.js
@@ -431,7 +441,8 @@ WorldLoom/
 │   │   │   │   │   │   │   └── short-label.js
 │   │   │   │   │   │   ├── engine-formula-text.js
 │   │   │   │   │   │   ├── engine-presets.js
-│   │   │   │   │   │   └── game-system-engine-origin.js
+│   │   │   │   │   │   ├── game-system-engine-origin.js
+│   │   │   │   │   │   └── split-editor-session.js
 │   │   │   │   │   ├── pages/
 │   │   │   │   │   │   ├── catalog-controller.js
 │   │   │   │   │   │   ├── catalog-page.js
@@ -648,9 +659,12 @@ WorldLoom/
 │           │   └── Тест-Юзер_3dfd4ad3-420c-49b2-8806-7fb3ffebb8ec/
 │           └── maps/
 ├── logs/
+│   ├── uvicorn-check.log
 │   ├── worldloom.log
 │   ├── worldloom.log.2026-11-17
 │   ├── worldloom.log.2026-11-18
+│   ├── worldloom.log.2026-11-22
+│   ├── worldloom.log.2026-11-24
 │   └── worldloom_error.log
 ├── staging/
 ├── tests/
@@ -677,6 +691,10 @@ WorldLoom/
 │   │   │   ├── preset-coverage.test.mjs
 │   │   │   ├── resource-contract.test.mjs
 │   │   │   └── rule-sections.test.mjs
+│   │   ├── game-systems/
+│   │   │   ├── split-api.test.mjs
+│   │   │   ├── split-document.test.mjs
+│   │   │   └── split-editor-session.test.mjs
 │   │   ├── rules/
 │   │   │   ├── rules-api.test.mjs
 │   │   │   ├── rules-authoring-controller.test.mjs
@@ -728,8 +746,8 @@ WorldLoom/
 │   │   │   ├── test_resource_engine.py
 │   │   │   ├── test_resource_policy.py
 │   │   │   ├── test_rulebook_contract.py
-│   │   │   ├── test_system_book_commands.py
-│   │   │   └── test_system_rules_protection.py
+│   │   │   ├── test_split_protection.py
+│   │   │   └── test_system_book_commands.py
 │   │   ├── games/
 │   │   │   └── test_game_state_services.py
 │   │   ├── rules/
